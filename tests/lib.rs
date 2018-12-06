@@ -6,7 +6,7 @@ use text_grid::TextGrid;
 #[test]
 fn cell_1() -> Result {
     let mut g = TextGrid::new();
-    g.row().cell("aaa", Right)?;
+    g.push_row().push("aaa", Right)?;
     print!("{}", g);
 
     let e = " aaa |\n";
@@ -19,8 +19,8 @@ fn cell_1() -> Result {
 #[test]
 fn separator() -> Result {
     let mut g = TextGrid::new();
-    g.row().cell("aaa", Right)?;
-    g.row_separator();
+    g.push_row().push("aaa", Right)?;
+    g.push_separator();
     print!("{}", g);
 
     let e = " aaa |\n-----|\n";

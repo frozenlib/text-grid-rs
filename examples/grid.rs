@@ -4,25 +4,25 @@ use text_grid::TextGrid;
 
 fn main() -> Result {
     let mut g = TextGrid::new();
-    g.row()
-        .cell("name", Right)?
-        .cell("value1", Right)?
-        .cell("value2", Right)?
-        .cell("value3", Right)?;
+    g.push_row()
+        .push("name", Right)?
+        .push("value1", Right)?
+        .push("value2", Right)?
+        .push("value3", Right)?;
 
-    g.row_separator();
+    g.push_separator();
 
-    g.row()
-        .cell("root", Right)?
-        .cell(10, Right)?
-        .cell(5, Right)?
-        .cell("a", Left)?;
+    g.push_row()
+        .push("root", Right)?
+        .push(10, Right)?
+        .push(5, Right)?
+        .push("a", Left)?;
 
-    g.row()
-        .cell("p1", Right)?
-        .cell(1, Right)?
-        .cell(20, Right)?
-        .cell("b", Left)?;
+    g.push_row()
+        .push("p1", Right)?
+        .push(1, Right)?
+        .push(20, Right)?
+        .push("b", Left)?;
 
     print!("{}", g);
 

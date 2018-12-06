@@ -27,15 +27,15 @@ impl TextGrid {
             rows: Vec::new(),
         }
     }
-    pub fn row(&mut self) -> TextGridRowGuard {
+    pub fn push_row(&mut self) -> TextGridRowGuard {
         TextGridRowGuard(self)
     }
-    fn row_end(&mut self) {
+    fn finish_row(&mut self) {
         self.rows.push(Row::Cells {
             cells_end: self.cells.len(),
         });
     }
-    pub fn row_separator(&mut self) {
+    pub fn push_separator(&mut self) {
         self.rows.push(Row::Separator);
     }
 
@@ -56,14 +56,14 @@ impl TextGrid {
 }
 
 impl TextGridRowGuard<'_> {
-    pub fn cell(
+    pub fn push(
         &mut self,
         value: impl Display,
         align: Alignment,
     ) -> std::result::Result<&mut Self, Error> {
-        self.cell_by(|b| write!(b, "{}", value), align)
+        self.push_by(|b| write!(b, "{}", value), align)
     }
-    pub fn cell_by(
+    pub fn push_by(
         &mut self,
         f: impl FnOnce(&mut String) -> Result,
         align: Alignment,
@@ -71,7 +71,7 @@ impl TextGridRowGuard<'_> {
         self.0.push_cell_by(f, align)?;
         Ok(self)
     }
-    pub fn cell_empty(&mut self) -> &mut Self {
+    pub fn push_empty(&mut self) -> &mut Self {
         self.0.cells.push(Cell {
             b_end: self.0.b.len(),
             width: 0,
@@ -82,7 +82,7 @@ impl TextGridRowGuard<'_> {
 }
 impl Drop for TextGridRowGuard<'_> {
     fn drop(&mut self) {
-        self.0.row_end()
+        self.0.finish_row()
     }
 }
 
