@@ -71,6 +71,14 @@ impl TextGridRowGuard<'_> {
         self.0.push_cell_by(f, align)?;
         Ok(self)
     }
+    pub fn cell_empty(&mut self) -> &mut Self {
+        self.0.cells.push(Cell {
+            b_end: self.0.b.len(),
+            width: 0,
+            align: Alignment::Left,
+        });
+        self
+    }
 }
 impl Drop for TextGridRowGuard<'_> {
     fn drop(&mut self) {
