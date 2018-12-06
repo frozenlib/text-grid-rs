@@ -1,0 +1,8 @@
+[package]
+name = "text-grid"
+version = "0.1.0"
+authors = ["frozenlib"]
+edition = "2018"
+
+[dependencies]
+unicode-width = "0.1.5"
