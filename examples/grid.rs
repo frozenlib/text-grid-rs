@@ -1,25 +1,28 @@
+use std::fmt::Alignment::*;
 use std::fmt::*;
 use text_grid::TextGrid;
 
 fn main() -> Result {
     let mut g = TextGrid::new();
-    g.push_cell("name", Alignment::Right)?;
-    g.push_cell("value1", Alignment::Right)?;
-    g.push_cell("value2", Alignment::Right)?;
-    g.push_cell("value3", Alignment::Right)?;
-    g.finish_row_with(true);
+    g.row()
+        .cell("name", Right)?
+        .cell("value1", Right)?
+        .cell("value2", Right)?
+        .cell("value3", Right)?;
 
-    g.push_cell("root", Alignment::Right)?;
-    g.push_cell(10, Alignment::Right)?;
-    g.push_cell(5, Alignment::Right)?;
-    g.push_cell("a", Alignment::Left)?;
-    g.finish_row();
+    g.row_separator();
 
-    g.push_cell("p1", Alignment::Right)?;
-    g.push_cell(1, Alignment::Right)?;
-    g.push_cell(20, Alignment::Right)?;
-    g.push_cell("b", Alignment::Left)?;
-    g.finish_row();
+    g.row()
+        .cell("root", Right)?
+        .cell(10, Right)?
+        .cell(5, Right)?
+        .cell("a", Left)?;
+
+    g.row()
+        .cell("p1", Right)?
+        .cell(1, Right)?
+        .cell(20, Right)?
+        .cell("b", Left)?;
 
     print!("{}", g);
 
