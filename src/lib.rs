@@ -122,7 +122,7 @@ impl TextGrid {
         let mut widths = Vec::new();
         for row in 0..self.rows.len() {
             for c in self.row(row) {
-                if widths.len() <= c.column {
+                while widths.len() <= c.column {
                     widths.push(0);
                 }
                 if c.colspan == 1 {
