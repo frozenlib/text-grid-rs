@@ -122,7 +122,7 @@ impl TextGrid {
         let mut widths = Vec::new();
         for row in 0..self.rows.len() {
             for c in self.row(row) {
-                while widths.len() <= c.column {
+                while widths.len() < c.column + c.colspan {
                     widths.push(0);
                 }
                 if c.colspan == 1 {
@@ -134,15 +134,14 @@ impl TextGrid {
         for row in 0..self.rows.len() {
             for c in self.row(row) {
                 if c.colspan > 1 {
-                    let colspan = min(widths.len() - c.column, c.colspan);
-                    let mut width_sum: usize = widths[c.column..c.column + colspan].iter().sum();
-                    width_sum = width_sum + (colspan - 1) * 3;
+                    let mut width_sum: usize = widths[c.column..c.column + c.colspan].iter().sum();
+                    width_sum = width_sum + (c.colspan - 1) * 3;
                     while width_sum < c.width {
                         smalls.clear();
                         smalls.push(0);
                         let mut min_width = widths[c.column];
                         let mut next_width = usize::max_value();
-                        for i in 1..colspan {
+                        for i in 1..c.colspan {
                             let width = widths[c.column + i];
                             if width < min_width {
                                 smalls.clear();
@@ -196,9 +195,8 @@ impl Display for TextGrid {
         let widths = self.get_widths();
         for row in 0..self.rows.len() {
             for c in self.row(row) {
-                let colspan = min(widths.len() - c.column, c.colspan);
-                let width: usize = widths[c.column..c.column + colspan].iter().sum();
-                let width = width + (colspan - 1) * 3;
+                let width: usize = widths[c.column..c.column + c.colspan].iter().sum();
+                let width = width + (c.colspan - 1) * 3;
                 write!(f, " ")?;
                 let p = width - c.width;
                 match c.align {
@@ -252,7 +250,7 @@ impl<'a> Iterator for Cursor<'a> {
                 s: &g.s[g.s_idx(self.idx)..g.s_idx(self.idx + 1)],
                 column: self.column,
             };
-            self.column += g.cells[self.idx].colspan;
+            self.column += r.colspan;
             self.idx += 1;
             Some(r)
         }
