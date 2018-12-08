@@ -5,6 +5,12 @@ use text_grid::TextGrid;
 fn main() -> Result {
     let mut g = TextGrid::new();
     g.push_row()
+        .push_empty()
+        .push("value group", Center)?
+        .push_merged(2);
+    g.push_separator();
+
+    g.push_row()
         .push("name", Right)?
         .push("value1", Right)?
         .push("value2", Right)?

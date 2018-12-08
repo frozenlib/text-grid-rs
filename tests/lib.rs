@@ -21,9 +21,10 @@ fn separator() -> Result {
     let mut g = TextGrid::new();
     g.push_row().push("aaa", Right)?;
     g.push_separator();
+    g.push_row().push("aaa", Right)?;
     print!("{}", g);
 
-    let e = " aaa |\n-----|\n";
+    let e = " aaa |\n-----|\n aaa |\n";
     let a = format!("{}", g);
     assert_eq!(a, e);
 
