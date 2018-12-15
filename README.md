@@ -9,7 +9,7 @@
 
 ## Example
 
-```rust:main.rs
+```rust :main.rs
 use text_grid::*;
 
 fn main() {
@@ -32,7 +32,7 @@ fn main() {
 }
 ```
 
-```txt:output.txt
+```txt :output
   a  |  b  |
 -----|-----|
  300 |   1 |
