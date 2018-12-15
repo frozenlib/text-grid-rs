@@ -51,6 +51,32 @@ fn column_u8_ref() {
 }
 
 #[test]
+fn column_str() {
+    struct Source<'a> {
+        s: &'a str,
+    }
+
+    impl<'a> RowSource for Source<'a> {
+        fn fmt_row<'s>(w: &mut impl RowWrite<'s, Self>)
+        where
+            'a: 's,
+        {
+            w.column("a", |x| x.s);
+        }
+    }
+
+    do_test(
+        vec![Source { s: "aaa" }, Source { s: "bbb" }],
+        r"
+  a  |
+-----|
+ aaa |
+ bbb |
+",
+    );
+}
+
+#[test]
 fn column_static_str() {
     struct Source {
         a: u8,

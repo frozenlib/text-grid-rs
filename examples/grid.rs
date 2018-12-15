@@ -1,23 +1,20 @@
-use std::fmt::*;
 use text_grid::*;
 
-fn main() -> Result {
-    struct MySource {
-        a: u8,
-        b: u8,
+fn main() {
+    struct RowData {
+        a: u32,
+        b: u32,
     }
-    impl RowSource for MySource {
+    impl RowSource for RowData {
         fn fmt_row<'a>(w: &mut impl RowWrite<'a, Self>) {
             w.column("a", |s| s.a);
-            w.column("b", |s| &s.b);
+            w.column("b", |s| s.b);
         }
     }
 
     let mut g = Grid::new();
-    g.push_row(&MySource { a: 100, b: 200 });
-    g.push_row(&MySource { a: 1, b: 2 });
+    g.push_row(&RowData { a: 300, b: 1 });
+    g.push_row(&RowData { a: 2, b: 200 });
 
-    print!("{}", g);
-
-    Ok(())
+    println!("{}", g);
 }

@@ -2,6 +2,13 @@
 name = "text-grid"
 version = "0.1.0"
 authors = ["frozenlib"]
+license = "MIT/Apache-2.0"
+readme = "README.md"
+repository = "https://github.com/frozenlib/text-grid-rs"
+documentation = "https://docs.frozenlib.net/text-grid/text-grid/"
+keywords = ["text", "pretty", "table", "grid"]
+categories = ["Command-line interface"]
+description = "A library to create formatted plain-text tables from struct."
 edition = "2018"
 
 [dependencies]
