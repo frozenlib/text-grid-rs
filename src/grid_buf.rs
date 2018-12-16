@@ -5,6 +5,41 @@ use std::fmt::*;
 use std::ops::Deref;
 use unicode_width::UnicodeWidthStr;
 
+/// A builder used to create plain-text table.
+///
+/// # Examples
+/// ```rust
+/// use text_grid::*;
+/// let mut g = GridBuf::new();
+/// {
+///     let mut row = g.push_row();
+///     row.push(cell("name").right());
+///     row.push("type");
+///     row.push("value");
+/// }
+/// g.push_separator();
+/// {
+///     let mut row = g.push_row();
+///     row.push(cell(String::from("X")).right());
+///     row.push("A");
+///     row.push(10);
+/// }
+/// {
+///     let mut row = g.push_row();
+///     row.push(cell("Y").right());
+///     row.push_with_colspan(cell("BBB").center(), 2);
+/// }
+///
+/// print!("{}", g);
+/// ```
+///
+/// ## Output
+/// ```text
+///  name | type | value |
+/// ------|------|-------|
+///     X | A    |    10 |
+///     Y |     BBB      |
+/// ```
 pub struct GridBuf {
     s: String,
     cells: Vec<CellEntry>,
@@ -12,7 +47,11 @@ pub struct GridBuf {
     columns: usize,
     column_separators: Vec<bool>,
 }
-pub struct RowGuard<'a> {
+
+/// A builder used to create row of [`GridBuf`].
+///
+/// This structure is created by [`GridBuf::push_row`].
+pub struct RowBuf<'a> {
     grid: &'a mut GridBuf,
     cells_idx: usize,
 }
@@ -29,6 +68,7 @@ struct RowEntry {
 }
 
 impl GridBuf {
+    /// Create a new `GridBuf`.
     pub fn new() -> Self {
         GridBuf {
             s: String::new(),
@@ -38,17 +78,61 @@ impl GridBuf {
             column_separators: Vec::new(),
         }
     }
+
+    /// Set column separator's visibility.
+    ///
+    /// `separators[0]` indicate visibility of the right side of the leftmost column.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use text_grid::*;
+    /// let mut g = GridBuf::new();
+    /// {
+    ///     let mut row = g.push_row();
+    ///     row.push("A");
+    ///     row.push("B");
+    ///     row.push("C");
+    /// }
+    /// {
+    ///     let mut row = g.push_row();
+    ///     row.push("AAA");
+    ///     row.push("BBB");
+    ///     row.push("CCC");
+    /// }
+    /// g.set_column_separators(vec![true, true]);
+    /// println!("{:?}", vec![true, true]);
+    /// println!("{}", g);
+    ///
+    /// g.set_column_separators(vec![false, true]);
+    /// println!("{:?}", vec![false, true]);
+    /// println!("{}", g);
+    ///
+    /// ```
+    /// ## Output
+    /// ```txt
+    /// [true, true]
+    ///  A   | B   | C   |
+    ///  AAA | BBB | CCC |
+    ///
+    /// [false, true]
+    ///  A  B   | C   |
+    ///  AAABBB | CCC |  
+    /// ```
     pub fn set_column_separators(&mut self, separators: Vec<bool>) {
         self.column_separators = separators;
     }
 
-    pub fn push_row(&mut self) -> RowGuard {
+    /// Append a row to the bottom of grid.
+    pub fn push_row(&mut self) -> RowBuf {
         let cells_idx = self.cells.len();
-        RowGuard {
+        RowBuf {
             grid: self,
             cells_idx,
         }
     }
+
+    /// Append a row separator to the bottom of grid.
     pub fn push_separator(&mut self) {
         if let Some(row) = self.rows.last_mut() {
             row.has_separator = true;
@@ -183,7 +267,7 @@ impl Display for GridBuf {
                     write!(f, " ")?;
                 }
                 let p = width - c.width;
-                match c.style.h_align.unwrap_or(Left) {
+                match c.style.align_h.unwrap_or(Left) {
                     Left => write!(f, "{0}{1:<p$}", c.s, "", p = p),
                     Right => write!(f, "{1:<p$}{0}", c.s, "", p = p),
                     Center => {
@@ -228,17 +312,25 @@ impl Display for GridBuf {
     }
 }
 
-impl RowGuard<'_> {
+impl RowBuf<'_> {
+    /// Append a cell to the right of row.
+    pub fn push(&mut self, cell: impl CellSource) {
+        self.grid.push_cell(cell, 1);
+    }
+
+    /// Append a multi-column cell to the right of row.
+    ///
+    /// - `cell` : Contents of cell to be appended.
+    /// - `colspan` : Number of columns used by the cell to be appended.
+    ///
+    /// if `colspan == 0`, this method will do nothing.
     pub fn push_with_colspan(&mut self, cell: impl CellSource, colspan: usize) {
         if colspan != 0 {
             self.grid.push_cell(cell, colspan);
         }
     }
-    pub fn push(&mut self, cell: impl CellSource) {
-        self.grid.push_cell(cell, 1);
-    }
 }
-impl Drop for RowGuard<'_> {
+impl Drop for RowBuf<'_> {
     fn drop(&mut self) {
         self.grid.columns = max(self.grid.columns, self.grid.cells.len() - self.cells_idx);
         self.grid.rows.push(RowEntry {

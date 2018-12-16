@@ -1,6 +1,5 @@
-use text_grid::*;
-
 fn main() {
+    use text_grid::*;
     struct RowData {
         a: u32,
         b: u32,
@@ -16,5 +15,5 @@ fn main() {
     g.push_row(&RowData { a: 300, b: 1 });
     g.push_row(&RowData { a: 2, b: 200 });
 
-    println!("{}", g);
+    print!("{}", g);
 }

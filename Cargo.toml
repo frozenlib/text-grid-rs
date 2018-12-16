@@ -8,7 +8,7 @@ repository = "https://github.com/frozenlib/text-grid-rs"
 documentation = "https://docs.frozenlib.net/text-grid/text-grid/"
 keywords = ["text", "pretty", "table", "grid"]
 categories = ["Command-line interface"]
-description = "A library to create formatted plain-text tables from struct."
+description = "A library to create formatted plain-text tables."
 edition = "2018"
 
 [dependencies]

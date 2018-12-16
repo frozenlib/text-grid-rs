@@ -1,42 +1,24 @@
-use std::fmt::*;
-use text_grid::*;
-
-fn main() -> Result {
+fn main() {
+    use text_grid::*;
     let mut g = GridBuf::new();
     {
         let mut row = g.push_row();
-        row.push(Cell::empty());
-        row.push_with_colspan(cell("value group").center(), 3);
-    }
-    g.push_separator();
-
-    {
-        let mut row = g.push_row();
         row.push(cell("name").right());
-        row.push(cell("value1").right());
-        row.push(cell("value2").right());
-        row.push(cell("value3").right());
+        row.push("type");
+        row.push("value");
     }
-
     g.push_separator();
-
     {
         let mut row = g.push_row();
-        row.push(cell("root").right());
+        row.push(cell(String::from("X")).right());
+        row.push("A");
         row.push(10);
-        row.push(5);
-        row.push("a");
     }
-
     {
         let mut row = g.push_row();
-        row.push(cell("p1"));
-        row.push(1);
-        row.push(20);
-        row.push("b");
+        row.push(cell("Y").right());
+        row.push_with_colspan(cell("BBB").center(), 2);
     }
 
     print!("{}", g);
-
-    Ok(())
 }

@@ -132,6 +132,46 @@ fn column_group() {
 }
 
 #[test]
+fn column_group_differing_level() {
+    struct Source {
+        a: u32,
+        b_1: u32,
+        b_2: u32,
+    }
+    impl RowSource for Source {
+        fn fmt_row<'a>(w: &mut impl RowWrite<'a, Self>) {
+            w.column("a", |s| s.a);
+            w.group("b", |w| {
+                w.column("1", |s| s.b_1);
+                w.column("2", |s| s.b_2);
+            });
+        }
+    }
+
+    do_test(
+        vec![
+            Source {
+                a: 300,
+                b_1: 10,
+                b_2: 20,
+            },
+            Source {
+                a: 300,
+                b_1: 1,
+                b_2: 500,
+            },
+        ],
+        r"
+  a  |    b     |
+-----|----------|
+     | 1  |  2  |
+-----|----|-----|
+ 300 | 10 |  20 |
+ 300 |  1 | 500 |",
+    );
+}
+
+#[test]
 fn column_multipart() {
     struct Source {
         a: u8,
@@ -154,6 +194,57 @@ fn column_multipart() {
 -------|
  10200 |
   1  2 |
+",
+    );
+}
+
+#[test]
+fn column_cell_by() {
+    struct Source {
+        a: f64,
+        b: f64,
+    }
+    use std::fmt::*;
+
+    impl RowSource for Source {
+        fn fmt_row<'a>(w: &mut impl RowWrite<'a, Self>) {
+            w.column("a", |x| cell_by(move |w| write!(w, "{:.2}", x.a)).right());
+            w.column("b", |x| x.b);
+        }
+    }
+
+    do_test(
+        vec![Source { a: 10.0, b: 10.1 }, Source { a: 1.22, b: 3.45 }],
+        r"
+   a   |  b   |
+-------|------|
+ 10.00 | 10.1 |
+  1.22 | 3.45 |
+",
+    );
+}
+
+#[test]
+fn column_cell_macro() {
+    struct Source {
+        a: f64,
+        b: f64,
+    }
+
+    impl RowSource for Source {
+        fn fmt_row<'a>(w: &mut impl RowWrite<'a, Self>) {
+            w.column("a", |x| cell!("{:.2}", x.a).right());
+            w.column("b", |x| x.b);
+        }
+    }
+
+    do_test(
+        vec![Source { a: 10.0, b: 10.1 }, Source { a: 1.22, b: 3.45 }],
+        r"
+   a   |  b   |
+-------|------|
+ 10.00 | 10.1 |
+  1.22 | 3.45 |
 ",
     );
 }

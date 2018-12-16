@@ -1,3 +1,7 @@
+//! A library to create formatted plain-text tables.
+//!
+//! See [`Grid`] (High Level API) or [`GridBuf`] (Low Level API) for details.
+
 mod cell;
 mod grid;
 mod grid_buf;

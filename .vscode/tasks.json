@@ -40,6 +40,30 @@
                 "panel": "dedicated",
                 "clear": true,
             }
+        },
+        {
+            "type": "shell",
+            "label": "cargo run exmaple",
+            "command": "cargo run --example ${fileBasenameNoExtension}",
+            "problemMatcher": [
+                "$rustc"
+            ],
+            "presentation": {
+                "panel": "dedicated",
+                "clear": true,
+            }
+        },
+        {
+            "type": "shell",
+            "label": "cargo doc open",
+            "command": "cargo doc --open",
+            "problemMatcher": [
+                "$rustc"
+            ],
+            "presentation": {
+                "panel": "dedicated",
+                "clear": true,
+            }
         }
     ]
 }
