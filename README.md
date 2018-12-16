@@ -4,8 +4,6 @@
 [![Docs.rs](https://docs.rs/text-grid/badge.svg)](https://docs.rs/crate/text-grid)
 [![Build Status](https://travis-ci.org/frozenlib/text-grid-rs.svg?branch=master)](https://travis-ci.org/frozenlib/text-grid-rs)
 
-[Documentation](https://docs.frozenlib.net/text-grid/text-grid/)
-
 
 ## Example
 
