@@ -4,6 +4,7 @@
 [![Docs.rs](https://docs.rs/text-grid/badge.svg)](https://docs.rs/crate/text-grid)
 [![Build Status](https://travis-ci.org/frozenlib/text-grid-rs.svg?branch=master)](https://travis-ci.org/frozenlib/text-grid-rs)
 
+A library to create formatted plain-text tables.
 
 ## Example
 
