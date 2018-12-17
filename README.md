@@ -30,7 +30,7 @@ fn main() {
     println!("{}", g);
 }
 ```
-Outout:
+Output:
 ```text
   a  |  b  |
 -----|-----|
