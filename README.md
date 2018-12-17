@@ -30,8 +30,8 @@ fn main() {
     println!("{}", g);
 }
 ```
-
-```txt :output
+Outout:
+```text
   a  |  b  |
 -----|-----|
  300 |   1 |

@@ -132,7 +132,8 @@ pub fn cell_by<F: Fn(&mut String) -> Result>(f: F) -> Cell<impl CellSource> {
 ///
 /// print!("{}", g);
 /// ```
-/// ## output
+///
+/// Output:
 /// ```text
 ///   a   |   b   |
 /// ------|-------|

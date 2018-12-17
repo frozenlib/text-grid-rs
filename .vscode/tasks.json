@@ -73,6 +73,21 @@
                 "panel": "dedicated",
                 "clear": true,
             }
-        }
+        },
+        {
+            "type": "shell",
+            "label": "cargo doc",
+            "command": "cargo",
+            "args": [
+                "doc",
+            ],
+            "problemMatcher": [
+                "$rustc"
+            ],
+            "presentation": {
+                "panel": "dedicated",
+                "clear": true,
+            }
+        },
     ]
 }

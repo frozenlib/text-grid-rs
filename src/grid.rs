@@ -37,6 +37,7 @@ pub trait RowWrite<'a, S: 'a + ?Sized> {
     /// print!("{}", g);
     /// ```
     ///
+    /// Output:
     /// ```text
     ///   a  |  b  |
     /// -----|-----|
@@ -86,6 +87,7 @@ pub trait RowWrite<'a, S: 'a + ?Sized> {
     /// print!("{}", g);
     /// ```
     ///
+    /// Output:
     /// ```text
     ///   a  |    b     |
     /// -----|----------|
@@ -135,6 +137,7 @@ pub trait RowWrite<'a, S: 'a + ?Sized> {
     /// print!("{}", g);
     /// ```
     ///
+    /// Output:
     /// ```text
     ///   a  |   b    |
     /// -----|--------|
@@ -177,6 +180,7 @@ pub trait RowSource {
 /// print!("{}", g);
 /// ```
 ///
+/// Output:
 /// ```text
 ///   a  |  b  |
 /// -----|-----|

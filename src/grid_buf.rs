@@ -33,7 +33,7 @@ use unicode_width::UnicodeWidthStr;
 /// print!("{}", g);
 /// ```
 ///
-/// ## Output
+/// Output:
 /// ```text
 ///  name | type | value |
 /// ------|------|-------|
@@ -109,7 +109,8 @@ impl GridBuf {
     /// println!("{}", g);
     ///
     /// ```
-    /// ## Output
+    ///
+    /// Output:
     /// ```txt
     /// [true, true]
     ///  A   | B   | C   |
