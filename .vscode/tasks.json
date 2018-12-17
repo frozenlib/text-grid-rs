@@ -65,6 +65,7 @@
             "args": [
                 "doc",
                 "--open",
+                "--no-deps",
             ],
             "problemMatcher": [
                 "$rustc"
@@ -80,6 +81,7 @@
             "command": "cargo",
             "args": [
                 "doc",
+                "--no-deps",
             ],
             "problemMatcher": [
                 "$rustc"

@@ -92,6 +92,27 @@ impl<T: Display> CellSource for DisplayCellSource<T> {
 }
 
 /// Create [`Cell`] from [`Display`].
+///
+/// The returned value owns the value passed in.
+/// Therefore, the returned value can not be move out of the lifetime of the passed value.
+///
+/// ```ignore
+/// use text_grid::*;
+///
+/// fn f_error() -> Cell<impl CellSource> {
+///     let s = String::from("ABC");
+///     cell(&s) // Error : returns a value referencing data owned by the current function
+/// }
+/// ```
+///
+/// ```
+/// use text_grid::*;
+///
+/// fn f_ok() -> Cell<impl CellSource> {
+///     let s = String::from("ABC");
+///     cell(s) // OK
+/// }
+/// ```
 pub fn cell(value: impl Display) -> Cell<impl CellSource> {
     Cell::new(DisplayCellSource(value))
 }
@@ -104,6 +125,17 @@ impl<F: Fn(&mut String) -> Result> CellSource for FmtFnCellSource<F> {
 }
 
 /// Create [`Cell`] from closure that call `std::write!` macro.
+///
+/// # Examples
+///
+/// ```
+/// use text_grid::*;
+/// use std::fmt::Write;
+///
+/// let s = String::from("ABC");
+/// let cell_a = cell_by(|w| write!(w, "{}", &s));
+/// let cell_b = cell_by(|w| write!(w, "{}", &s));
+/// ```
 pub fn cell_by<F: Fn(&mut String) -> Result>(f: F) -> Cell<impl CellSource> {
     Cell::new(FmtFnCellSource(f))
 }
@@ -139,6 +171,55 @@ pub fn cell_by<F: Fn(&mut String) -> Result>(f: F) -> Cell<impl CellSource> {
 /// ------|-------|
 ///  1.10 | 1.110 |
 ///  1.00 | 0.100 |
+/// ```
+///
+/// # Arguments ownership
+///
+/// This macro consumes the variable used in the argument.
+/// ```ignore
+/// use text_grid::*;
+///
+/// let s = String::from("ABC");
+/// let cell_a = cell!("{}", &s); // `s` moved into `cell_a` here
+/// let cell_b = cell!("{}", &s); // ERROR : `s` used here after move
+/// ```
+///
+/// To avoid consume variables, use only variables that implements `Copy` .
+///
+/// ```
+/// use text_grid::*;
+///
+/// let s = String::from("ABC");
+/// let s = &s; // immutable reference implements `Copy`.
+/// let cell_a = cell!("{}", s);
+/// let cell_b = cell!("{}", s); // OK
+/// // Return value owns the reference.
+/// // Therefore, the returned value can not be move out of the lifetime of the reference.
+/// ```
+///
+/// or use [`cell_by`] and `write!`.
+///
+/// ```
+/// use text_grid::*;
+/// use std::fmt::Write;
+///
+/// let s = String::from("ABC");
+/// let cell_a = cell_by(|w| write!(w, "{}", &s));
+/// let cell_b = cell_by(|w| write!(w, "{}", &s));
+/// // Return value owns the reference.
+/// // Therefore, the returned value can not be move out of the lifetime of the reference.
+/// ```
+///
+/// or use [`cell()`] and `format!`.
+///
+/// ```
+/// use text_grid::*;
+///
+/// let s = String::from("ABC");
+/// let cell_a = cell(format!("{}", &s));
+/// let cell_b = cell(format!("{}", &s));
+/// // Retrun value owns formatted string.
+/// // Therefore, the returned value can move anywhere.
 /// ```
 #[macro_export]
 macro_rules! cell {

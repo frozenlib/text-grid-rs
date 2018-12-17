@@ -212,7 +212,7 @@ impl<T: RowSource> Grid<T> {
         }
     }
 
-    /// Append a row to the bottom of grid.
+    /// Append a row to the bottom of the grid.
     pub fn push_row(&mut self, source: &T) {
         let mut writer = RowWriter {
             source,
@@ -221,7 +221,7 @@ impl<T: RowSource> Grid<T> {
         T::fmt_row(&mut writer);
     }
 
-    /// Append a row separator to the bottom of grid.
+    /// Append a row separator to the bottom of the grid.
     pub fn push_separator(&mut self) {
         self.buf.push_separator();
     }

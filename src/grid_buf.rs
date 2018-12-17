@@ -124,7 +124,7 @@ impl GridBuf {
         self.column_separators = separators;
     }
 
-    /// Append a row to the bottom of grid.
+    /// Append a row to the bottom of the grid.
     pub fn push_row(&mut self) -> RowBuf {
         let cells_idx = self.cells.len();
         RowBuf {
@@ -133,7 +133,7 @@ impl GridBuf {
         }
     }
 
-    /// Append a row separator to the bottom of grid.
+    /// Append a row separator to the bottom of the grid.
     pub fn push_separator(&mut self) {
         if let Some(row) = self.rows.last_mut() {
             row.has_separator = true;
