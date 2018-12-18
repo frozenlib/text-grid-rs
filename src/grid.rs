@@ -13,7 +13,7 @@ pub trait RowWrite<'a, S: 'a + ?Sized> {
     /// Define column.
     ///
     /// - header : Column header's cell. If horizontal alignment is not specified, it is set to the center.
-    /// - f : A function to obtain CellSource from RowSource.
+    /// - f : A function to obtain [`CellSource`] from [`RowSource`].
     ///
     /// # Examples
     ///
@@ -100,7 +100,7 @@ pub trait RowWrite<'a, S: 'a + ?Sized> {
 
     /// Define column content. Used to create shared header column.
     ///
-    /// - f : A function to obtain CellSource from RowSource.
+    /// - f : A function to obtain [`CellSource`] from [`RowSource`].
     ///
     /// # Examples
     ///
