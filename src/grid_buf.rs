@@ -312,6 +312,11 @@ impl Display for GridBuf {
         Ok(())
     }
 }
+impl Debug for GridBuf {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        Display::fmt(self, f)
+    }
+}
 
 impl RowBuf<'_> {
     /// Append a cell to the right of row.

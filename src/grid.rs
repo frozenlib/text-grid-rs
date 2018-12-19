@@ -228,7 +228,12 @@ impl<T: RowSource> Grid<T> {
 }
 impl<S> Display for Grid<S> {
     fn fmt(&self, f: &mut Formatter) -> Result {
-        self.buf.fmt(f)
+        Display::fmt(&self.buf, f)
+    }
+}
+impl<S> Debug for Grid<S> {
+    fn fmt(&self, f: &mut Formatter) -> Result {
+        Debug::fmt(&self.buf, f)
     }
 }
 

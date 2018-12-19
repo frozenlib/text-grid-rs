@@ -249,6 +249,34 @@ fn column_cell_macro() {
     );
 }
 
+#[test]
+fn impl_debug() {
+    struct Source {
+        a: u8,
+        b: u8,
+    }
+
+    impl RowSource for Source {
+        fn fmt_row<'a>(w: &mut impl RowWrite<'a, Self>) {
+            w.column("a", |x| x.a);
+            w.column("b", |x| x.b);
+        }
+    }
+
+    let mut g = Grid::new();
+    g.push_row(&Source { a: 100, b: 200 });
+    g.push_row(&Source { a: 1, b: 2 });
+
+    let d = format!("{:?}", g);
+    let e = r"
+  a  |  b  |
+-----|-----|
+ 100 | 200 |
+   1 |   2 |
+";
+    assert_eq!(d.trim(), e.trim());
+}
+
 fn do_test<T: RowSource>(s: Vec<T>, e: &str) {
     let mut g = Grid::new();
     for s in s {
