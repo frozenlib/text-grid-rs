@@ -7,7 +7,9 @@
 mod cell;
 mod grid;
 mod grid_buf;
+mod row_write;
 
 pub use self::cell::*;
 pub use self::grid::*;
 pub use self::grid_buf::*;
+pub use self::row_write::RowWrite;
