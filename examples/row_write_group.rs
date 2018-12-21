@@ -8,7 +8,7 @@ fn main() {
     impl RowSource for RowData {
         fn fmt_row<'a>(w: &mut impl RowWrite<Source=&'a Self>) {
             w.column("a", |s| s.a);
-            w.group("b", |w| {
+            w.group("b").with(|w| {
                 w.column("1", |s| s.b_1);
                 w.column("2", |s| s.b_2);
             });

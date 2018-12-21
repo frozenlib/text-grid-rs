@@ -6,9 +6,9 @@ fn main() {
         b_2: u32,
     }
     impl RowSource for RowData {
-        fn fmt_row<'a>(w: &mut impl RowWrite<Source=&'a Self>) {
+        fn fmt_row<'a>(w: &mut impl RowWrite<Source = &'a Self>) {
             w.column("a", |s| s.a);
-            w.group("b", |w| {
+            w.group("b").with(|w| {
                 w.content(|s| s.b_1);
                 w.content(|_| " ");
                 w.content(|s| s.b_2);

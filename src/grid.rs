@@ -38,7 +38,7 @@ pub trait RowWrite: RowWriteCore {
     /// impl RowSource for RowData {
     ///     fn fmt_row<'a>(w: &mut impl RowWrite<Source=&'a Self>) {
     ///         w.column("a", |s| s.a);
-    ///         w.group("b", |w| {
+    ///         w.group("b").with(|w| {
     ///             w.column("1", |s| s.b_1);
     ///             w.column("2", |s| s.b_2);
     ///         });
@@ -57,7 +57,6 @@ pub trait RowWrite: RowWriteCore {
     ///     b_2: 500,
     /// });
     ///
-    /// print!("{}", g);
     /// ```
     ///
     /// Output:
@@ -69,10 +68,12 @@ pub trait RowWrite: RowWriteCore {
     ///  300 | 10 |  20 |
     ///  300 |  1 | 500 |
     ///  ```
-    fn group(&mut self, header: impl CellSource, f: impl FnOnce(&mut Self)) {
+    fn group<'a, C: CellSource>(&'a mut self, header: C) -> GroupGuard<'a, Self, C> {
         self.group_start();
-        f(self);
-        self.group_end(header);
+        GroupGuard {
+            w: self,
+            header: Some(header),
+        }
     }
 
     /// Define column content. Used to create shared header column.
@@ -89,9 +90,9 @@ pub trait RowWrite: RowWriteCore {
     ///     b_2: u32,
     /// }
     /// impl RowSource for RowData {
-    ///     fn fmt_row<'a>(w: &mut impl RowWrite<Source=&'a Self>) {
+    ///     fn fmt_row<'a>(w: &mut impl RowWrite<Source = &'a Self>) {
     ///         w.column("a", |s| s.a);
-    ///         w.group("b", |w| {
+    ///         w.group("b").with(|w| {
     ///             w.content(|s| s.b_1);
     ///             w.content(|_| " ");
     ///             w.content(|s| s.b_2);
@@ -112,6 +113,7 @@ pub trait RowWrite: RowWriteCore {
     /// });
     ///
     /// print!("{}", g);
+    ///
     /// ```
     ///
     /// Output:
@@ -162,7 +164,7 @@ pub trait RowWrite: RowWriteCore {
         header: impl CellSource,
         f: impl FnOnce(Self::Source) -> T,
     ) {
-        self.group(header, |s| s.content(f));
+        self.group(header).content(f);
     }
 
     fn map<'a, F: Fn(Self::Source) -> R, R>(&'a mut self, f: F) -> Map<'a, Self, F> {
@@ -179,7 +181,7 @@ pub trait RowWrite: RowWriteCore {
     }
     fn with(&mut self, f: impl Fn(&mut Self)) {
         f(self);
-}
+    }
 }
 
 /// A data structure that can be formatted into row.
