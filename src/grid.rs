@@ -1,57 +1,25 @@
+use self::row_write::RowWriteCore;
 use crate::cell::*;
 use crate::grid_buf::*;
 use std::cmp::max;
 use std::fmt::*;
 use std::marker::PhantomData;
 
+mod row_write {
+    use crate::cell::*;
+    pub trait RowWriteCore {
+        fn group_start(&mut self);
+        fn group_end(&mut self, header: impl CellSource);
+    }
+}
+
 /// Used to define column information within [`RowSource::fmt_row`].
 ///
 /// - Use [`Self::column`] to create column.
 /// - Use [`Self::group`] to create multi level header.
 /// - Use [`Self::content`] to create shared header columns.
-pub trait RowWrite {
+pub trait RowWrite: RowWriteCore {
     type Source;
-    /// Define column.
-    ///
-    /// - header : Column header's cell. If horizontal alignment is not specified, it is set to the center.
-    /// - f : A function to obtain [`CellSource`] from [`RowSource`].
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use text_grid::*;
-    /// struct RowData {
-    ///     a: u32,
-    ///     b: u32,
-    /// }
-    /// impl RowSource for RowData {
-    ///     fn fmt_row<'a>(w: &mut impl RowWrite<Source=&'a Self>) {
-    ///         w.column("a", |s| s.a);
-    ///         w.column("b", |s| s.b);
-    ///     }
-    /// }
-    ///
-    /// let mut g = Grid::new();
-    /// g.push_row(&RowData { a: 300, b: 1 });
-    /// g.push_row(&RowData { a: 2, b: 200 });
-    ///
-    /// print!("{}", g);
-    /// ```
-    ///
-    /// Output:
-    /// ```text
-    ///   a  |  b  |
-    /// -----|-----|
-    ///  300 |   1 |
-    ///    2 | 200 |
-    /// ```
-    fn column<T: CellSource>(
-        &mut self,
-        header: impl CellSource,
-        f: impl FnOnce(Self::Source) -> T,
-    ) {
-        self.group(header, |s| s.content(f));
-    }
 
     /// Define column group. Used to create multi row header.
     ///
@@ -101,7 +69,11 @@ pub trait RowWrite {
     ///  300 | 10 |  20 |
     ///  300 |  1 | 500 |
     ///  ```
-    fn group(&mut self, header: impl CellSource, f: impl FnOnce(&mut Self));
+    fn group(&mut self, header: impl CellSource, f: impl FnOnce(&mut Self)) {
+        self.group_start();
+        f(self);
+        self.group_end(header);
+    }
 
     /// Define column content. Used to create shared header column.
     ///
@@ -150,6 +122,52 @@ pub trait RowWrite {
     ///  300 |  1 500 |
     /// ```
     fn content<T: CellSource>(&mut self, f: impl FnOnce(Self::Source) -> T);
+
+    /// Define column.
+    ///
+    /// - header : Column header's cell. If horizontal alignment is not specified, it is set to the center.
+    /// - f : A function to obtain [`CellSource`] from [`RowSource`].
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use text_grid::*;
+    /// struct RowData {
+    ///     a: u32,
+    ///     b: u32,
+    /// }
+    /// impl RowSource for RowData {
+    ///     fn fmt_row<'a>(w: &mut impl RowWrite<Source=&'a Self>) {
+    ///         w.column("a", |s| s.a);
+    ///         w.column("b", |s| s.b);
+    ///     }
+    /// }
+    ///
+    /// let mut g = Grid::new();
+    /// g.push_row(&RowData { a: 300, b: 1 });
+    /// g.push_row(&RowData { a: 2, b: 200 });
+    ///
+    /// print!("{}", g);
+    /// ```
+    ///
+    /// Output:
+    /// ```text
+    ///   a  |  b  |
+    /// -----|-----|
+    ///  300 |   1 |
+    ///    2 | 200 |
+    /// ```
+    fn column<T: CellSource>(
+        &mut self,
+        header: impl CellSource,
+        f: impl FnOnce(Self::Source) -> T,
+    ) {
+        self.group(header, |s| s.content(f));
+    }
+
+    fn map<'a, F: Fn(Self::Source) -> R, R>(&'a mut self, f: F) -> Map<'a, Self, F> {
+        Map { w: self, f }
+    }
 }
 
 /// A data structure that can be formatted into row.
@@ -265,17 +283,20 @@ impl<S> LayoutWriter<S> {
 }
 impl<S> RowWrite for LayoutWriter<S> {
     type Source = S;
-    fn group(&mut self, _header: impl CellSource, f: impl FnOnce(&mut Self)) {
-        self.set_separator();
-        self.depth += 1;
-        self.depth_max = max(self.depth_max, self.depth);
-        f(self);
-        self.depth -= 1;
-        self.set_separator()
-    }
     fn content<T: CellSource>(&mut self, _f: impl FnOnce(S) -> T) {
         assert!(self.depth != 0);
         self.separators.push(false);
+    }
+}
+impl<S> RowWriteCore for LayoutWriter<S> {
+    fn group_start(&mut self) {
+        self.set_separator();
+        self.depth += 1;
+        self.depth_max = max(self.depth_max, self.depth);
+    }
+    fn group_end(&mut self, _header: impl CellSource) {
+        self.depth -= 1;
+        self.set_separator()
     }
 }
 
@@ -306,14 +327,20 @@ impl<'a, S> HeaderWriter<'a, S> {
 }
 impl<'a, S: 'a> RowWrite for HeaderWriter<'a, S> {
     type Source = &'a S;
-    fn group(&mut self, header: impl CellSource, f: impl FnOnce(&mut Self)) {
+    fn content<T: CellSource>(&mut self, _f: impl FnOnce(Self::Source) -> T) {
+        assert!(self.depth != 0);
+        self.column += 1;
+    }
+}
+impl<'a, S: 'a> RowWriteCore for HeaderWriter<'a, S> {
+    fn group_start(&mut self) {
         if self.depth <= self.target {
             self.push_cell(Cell::empty());
         }
         self.depth += 1;
-        f(self);
+    }
+    fn group_end(&mut self, header: impl CellSource) {
         self.depth -= 1;
-
         if self.depth == self.target {
             let mut style = CellStyle::default();
             style.align_h = Some(HorizontalAlignment::Center);
@@ -321,10 +348,6 @@ impl<'a, S: 'a> RowWrite for HeaderWriter<'a, S> {
             let header = Cell::new(header).with_base_style(style);
             self.push_cell(header);
         }
-    }
-    fn content<T: CellSource>(&mut self, _f: impl FnOnce(Self::Source) -> T) {
-        assert!(self.depth != 0);
-        self.column += 1;
     }
 }
 
@@ -334,10 +357,41 @@ struct RowWriter<'a, S> {
 }
 impl<'a, S> RowWrite for RowWriter<'a, S> {
     type Source = &'a S;
-    fn group(&mut self, _header: impl CellSource, f: impl FnOnce(&mut Self)) {
-        f(self);
-    }
     fn content<T: CellSource>(&mut self, f: impl FnOnce(Self::Source) -> T) {
         self.row.push(f(self.source));
+    }
+}
+impl<'a, S> RowWriteCore for RowWriter<'a, S> {
+    fn group_start(&mut self) {}
+    fn group_end(&mut self, _header: impl CellSource) {}
+}
+
+pub struct Map<'a, W: ?Sized, F> {
+    w: &'a mut W,
+    f: F,
+}
+
+impl<'a, R, W, F> RowWrite for Map<'a, W, F>
+where
+    W: RowWrite,
+    F: Fn(W::Source) -> R,
+{
+    type Source = R;
+
+    fn content<T: CellSource>(&mut self, f: impl FnOnce(Self::Source) -> T) {
+        let f0 = &self.f;
+        self.w.content(|s| f(f0(s)))
+    }
+}
+
+impl<'a, W, F> RowWriteCore for Map<'a, W, F>
+where
+    W: RowWriteCore,
+{
+    fn group_start(&mut self) {
+        self.w.group_start();
+    }
+    fn group_end(&mut self, header: impl CellSource) {
+        self.w.group_end(header);
     }
 }
