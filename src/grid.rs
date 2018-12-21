@@ -168,6 +168,9 @@ pub trait RowWrite: RowWriteCore {
     fn map<'a, F: Fn(Self::Source) -> R, R>(&'a mut self, f: F) -> Map<'a, Self, F> {
         Map { w: self, f }
     }
+    fn filter<'a, F: Fn(&Self::Source) -> bool>(&'a mut self, f: F) -> Filter<'a, Self, F> {
+        Filter { w: self, f }
+    }
 }
 
 /// A data structure that can be formatted into row.
@@ -371,11 +374,7 @@ pub struct Map<'a, W: ?Sized, F> {
     f: F,
 }
 
-impl<'a, R, W, F> RowWrite for Map<'a, W, F>
-where
-    W: RowWrite,
-    F: Fn(W::Source) -> R,
-{
+impl<'a, R, W: RowWrite, F: Fn(W::Source) -> R> RowWrite for Map<'a, W, F> {
     type Source = R;
 
     fn content<T: CellSource>(&mut self, f: impl FnOnce(Self::Source) -> T) {
@@ -384,14 +383,38 @@ where
     }
 }
 
-impl<'a, W, F> RowWriteCore for Map<'a, W, F>
-where
-    W: RowWriteCore,
-{
+impl<'a, W: RowWriteCore, F> RowWriteCore for Map<'a, W, F> {
     fn group_start(&mut self) {
         self.w.group_start();
     }
     fn group_end(&mut self, header: impl CellSource) {
         self.w.group_end(header);
     }
+}
+
+pub struct Filter<'a, W: ?Sized, F> {
+    w: &'a mut W,
+    f: F,
+}
+impl<'a, W: RowWrite, F: Fn(&W::Source) -> bool> RowWrite for Filter<'a, W, F> {
+    type Source = W::Source;
+
+    fn content<T: CellSource>(&mut self, f: impl FnOnce(Self::Source) -> T) {
+        let f0 = &self.f;
+        self.w.content(|s| if f0(&s) { Some(f(s)) } else { None })
+    }
+}
+
+impl<'a, W: RowWriteCore, F> RowWriteCore for Filter<'a, W, F> {
+    fn group_start(&mut self) {
+        self.w.group_start();
+    }
+    fn group_end(&mut self, header: impl CellSource) {
+        self.w.group_end(header);
+    }
+}
+
+pub struct FilterMap<'a, W: ?Sized, F> {
+    w: &'a mut W,
+    f: F,
 }
