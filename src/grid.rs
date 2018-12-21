@@ -171,6 +171,15 @@ pub trait RowWrite: RowWriteCore {
     fn filter<'a, F: Fn(&Self::Source) -> bool>(&'a mut self, f: F) -> Filter<'a, Self, F> {
         Filter { w: self, f }
     }
+    fn filter_map<'a, F: Fn(Self::Source) -> Option<R>, R>(
+        &'a mut self,
+        f: F,
+    ) -> FilterMap<'a, Self, F> {
+        FilterMap { w: self, f }
+    }
+    fn with(&mut self, f: impl Fn(&mut Self)) {
+        f(self);
+}
 }
 
 /// A data structure that can be formatted into row.
@@ -418,3 +427,21 @@ pub struct FilterMap<'a, W: ?Sized, F> {
     w: &'a mut W,
     f: F,
 }
+impl<'a, R, W: RowWrite, F: Fn(W::Source) -> Option<R>> RowWrite for FilterMap<'a, W, F> {
+    type Source = R;
+
+    fn content<T: CellSource>(&mut self, f: impl FnOnce(Self::Source) -> T) {
+        let f0 = &self.f;
+        self.w.content(|s| f0(s).map(f))
+    }
+}
+
+impl<'a, W: RowWriteCore, F> RowWriteCore for FilterMap<'a, W, F> {
+    fn group_start(&mut self) {
+        self.w.group_start();
+    }
+    fn group_end(&mut self, header: impl CellSource) {
+        self.w.group_end(header);
+    }
+}
+
