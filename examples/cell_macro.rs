@@ -5,7 +5,7 @@ fn main() {
         b: f64,
     }
     impl RowSource for RowData {
-        fn fmt_row<'a>(w: &mut impl RowWrite<'a, Self>) {
+        fn fmt_row<'a>(w: &mut impl RowWrite<Source = &'a Self>) {
             w.column("a", |s| cell!("{:.2}", s.a).right());
             w.column("b", |s| cell!("{:.3}", s.b).right());
         }

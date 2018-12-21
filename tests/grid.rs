@@ -8,7 +8,7 @@ fn column_u8() {
     }
 
     impl RowSource for Source {
-        fn fmt_row<'a>(w: &mut impl RowWrite<'a, Self>) {
+        fn fmt_row<'a>(w: &mut impl RowWrite<Source = &'a Self>) {
             w.column("a", |x| x.a);
             w.column("b", |x| x.b);
         }
@@ -33,7 +33,7 @@ fn column_u8_ref() {
     }
 
     impl RowSource for Source {
-        fn fmt_row<'a>(w: &mut impl RowWrite<'a, Self>) {
+        fn fmt_row<'a>(w: &mut impl RowWrite<Source = &'a Self>) {
             w.column("a", |x| x.a);
             w.column("b", |x| &x.b);
         }
@@ -52,14 +52,14 @@ fn column_u8_ref() {
 
 #[test]
 fn column_str() {
-    struct Source<'a> {
-        s: &'a str,
+    struct Source<'s> {
+        s: &'s str,
     }
 
-    impl<'a> RowSource for Source<'a> {
-        fn fmt_row<'s>(w: &mut impl RowWrite<'s, Self>)
+    impl<'s> RowSource for Source<'s> {
+        fn fmt_row<'a>(w: &mut impl RowWrite<Source = &'a Self>)
         where
-            'a: 's,
+            's: 'a,
         {
             w.column("a", |x| x.s);
         }
@@ -84,7 +84,7 @@ fn column_static_str() {
     }
 
     impl RowSource for Source {
-        fn fmt_row<'a>(w: &mut impl RowWrite<'a, Self>) {
+        fn fmt_row<'a>(w: &mut impl RowWrite<Source = &'a Self>) {
             w.column("a", |x| x.a);
             w.column("p", |_| "xxx");
             w.column("b", |x| x.b);
@@ -110,7 +110,7 @@ fn column_group() {
     }
 
     impl RowSource for Source {
-        fn fmt_row<'a>(w: &mut impl RowWrite<'a, Self>) {
+        fn fmt_row<'a>(w: &mut impl RowWrite<Source = &'a Self>) {
             w.group("g", |w| {
                 w.column("a", |x| x.a);
                 w.column("b", |x| x.b);
@@ -139,7 +139,7 @@ fn column_group_differing_level() {
         b_2: u32,
     }
     impl RowSource for Source {
-        fn fmt_row<'a>(w: &mut impl RowWrite<'a, Self>) {
+        fn fmt_row<'a>(w: &mut impl RowWrite<Source = &'a Self>) {
             w.column("a", |s| s.a);
             w.group("b", |w| {
                 w.column("1", |s| s.b_1);
@@ -179,7 +179,7 @@ fn column_multipart() {
     }
 
     impl RowSource for Source {
-        fn fmt_row<'a>(w: &mut impl RowWrite<'a, Self>) {
+        fn fmt_row<'a>(w: &mut impl RowWrite<Source = &'a Self>) {
             w.group("g", |w| {
                 w.content(|x| x.a);
                 w.content(|x| x.b);
@@ -207,7 +207,7 @@ fn column_cell_by() {
     use std::fmt::*;
 
     impl RowSource for Source {
-        fn fmt_row<'a>(w: &mut impl RowWrite<'a, Self>) {
+        fn fmt_row<'a>(w: &mut impl RowWrite<Source = &'a Self>) {
             w.column("a", |x| cell_by(move |w| write!(w, "{:.2}", x.a)).right());
             w.column("b", |x| x.b);
         }
@@ -232,7 +232,7 @@ fn column_cell_macro() {
     }
 
     impl RowSource for Source {
-        fn fmt_row<'a>(w: &mut impl RowWrite<'a, Self>) {
+        fn fmt_row<'a>(w: &mut impl RowWrite<Source = &'a Self>) {
             w.column("a", |x| cell!("{:.2}", x.a).right());
             w.column("b", |x| x.b);
         }
@@ -257,7 +257,7 @@ fn impl_debug() {
     }
 
     impl RowSource for Source {
-        fn fmt_row<'a>(w: &mut impl RowWrite<'a, Self>) {
+        fn fmt_row<'a>(w: &mut impl RowWrite<Source = &'a Self>) {
             w.column("a", |x| x.a);
             w.column("b", |x| x.b);
         }
