@@ -250,6 +250,56 @@ fn column_cell_macro() {
 }
 
 #[test]
+fn map() {
+    struct Source {
+        a: u8,
+        b: u8,
+    }
+
+    impl RowSource for Source {
+        fn fmt_row<'a>(w: &mut impl RowWrite<Source = &'a Self>) {
+            w.map(|x| x.a).column("a", |x| x);
+            w.map(|x| x.b).column("b", |x| x);
+        }
+    }
+
+    do_test(
+        vec![Source { a: 100, b: 200 }, Source { a: 1, b: 2 }],
+        r"
+  a  |  b  |
+-----|-----|
+ 100 | 200 |
+   1 |   2 |
+",
+    );
+}
+
+#[test]
+fn map_ref() {
+    struct Source {
+        a: u8,
+        b: u8,
+    }
+
+    impl RowSource for Source {
+        fn fmt_row<'a>(w: &mut impl RowWrite<Source = &'a Self>) {
+            w.map(|x| &x.a).column("a", |x| x);
+            w.map(|x| &x.b).column("b", |x| x);
+        }
+    }
+
+    do_test(
+        vec![Source { a: 100, b: 200 }, Source { a: 1, b: 2 }],
+        r"
+  a  |  b  |
+-----|-----|
+ 100 | 200 |
+   1 |   2 |
+",
+    );
+}
+
+#[test]
 fn impl_debug() {
     struct Source {
         a: u8,
