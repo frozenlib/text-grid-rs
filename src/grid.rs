@@ -405,7 +405,7 @@ pub struct Filter<'a, W: ?Sized, F> {
     w: &'a mut W,
     f: F,
 }
-impl<'a, W: RowWrite, F: Fn(&W::Source) -> bool> RowWrite for Filter<'a, W, F> {
+impl<'a, W: RowWrite + ?Sized, F: Fn(&W::Source) -> bool> RowWrite for Filter<'a, W, F> {
     type Source = W::Source;
 
     fn content<T: CellSource>(&mut self, f: impl FnOnce(Self::Source) -> T) {
@@ -414,7 +414,7 @@ impl<'a, W: RowWrite, F: Fn(&W::Source) -> bool> RowWrite for Filter<'a, W, F> {
     }
 }
 
-impl<'a, W: RowWriteCore, F> RowWriteCore for Filter<'a, W, F> {
+impl<'a, W: RowWriteCore + ?Sized, F> RowWriteCore for Filter<'a, W, F> {
     fn group_start(&mut self) {
         self.w.group_start();
     }
@@ -427,7 +427,7 @@ pub struct FilterMap<'a, W: ?Sized, F> {
     w: &'a mut W,
     f: F,
 }
-impl<'a, R, W: RowWrite, F: Fn(W::Source) -> Option<R>> RowWrite for FilterMap<'a, W, F> {
+impl<'a, R, W: RowWrite + ?Sized, F: Fn(W::Source) -> Option<R>> RowWrite for FilterMap<'a, W, F> {
     type Source = R;
 
     fn content<T: CellSource>(&mut self, f: impl FnOnce(Self::Source) -> T) {
@@ -436,7 +436,7 @@ impl<'a, R, W: RowWrite, F: Fn(W::Source) -> Option<R>> RowWrite for FilterMap<'
     }
 }
 
-impl<'a, W: RowWriteCore, F> RowWriteCore for FilterMap<'a, W, F> {
+impl<'a, W: RowWriteCore + ?Sized, F> RowWriteCore for FilterMap<'a, W, F> {
     fn group_start(&mut self) {
         self.w.group_start();
     }
@@ -445,3 +445,28 @@ impl<'a, W: RowWriteCore, F> RowWriteCore for FilterMap<'a, W, F> {
     }
 }
 
+pub struct GroupGuard<'a, W: RowWriteCore + ?Sized, C: CellSource> {
+    w: &'a mut W,
+    header: Option<C>,
+}
+impl<'a, W: RowWrite + ?Sized, C: CellSource> RowWrite for GroupGuard<'a, W, C> {
+    type Source = W::Source;
+
+    fn content<T: CellSource>(&mut self, f: impl FnOnce(Self::Source) -> T) {
+        self.w.content(f)
+    }
+}
+
+impl<'a, W: RowWriteCore + ?Sized, C: CellSource> RowWriteCore for GroupGuard<'a, W, C> {
+    fn group_start(&mut self) {
+        self.w.group_start();
+    }
+    fn group_end(&mut self, header: impl CellSource) {
+        self.w.group_end(header);
+    }
+}
+impl<W: RowWriteCore + ?Sized, C: CellSource> Drop for GroupGuard<'_, W, C> {
+    fn drop(&mut self) {
+        self.w.group_end(self.header.take().unwrap())
+    }
+}
