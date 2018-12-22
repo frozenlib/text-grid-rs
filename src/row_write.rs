@@ -16,7 +16,6 @@ pub trait RowWrite: RowWriteCore {
     /// Define column group. Used to create multi row header.
     ///
     /// - header : Column group header's cell. If horizontal alignment is not specified, it is set to the center.
-    /// - f : A function to define group contents.
     ///
     /// # Examples
     ///
@@ -163,15 +162,22 @@ pub trait RowWrite: RowWriteCore {
         self.group(header).content(f);
     }
 
+    /// Takes a closure and creates [`RowWrite`] whose source value was converted.
     fn map<F: Fn(Self::Source) -> R, R>(&mut self, f: F) -> Map<Self, F> {
         Map { w: self, f }
     }
+
+    /// Creates [`RowWrite`] which uses a closure to determine if an content should be outputed.
     fn filter<F: Fn(&Self::Source) -> bool>(&mut self, f: F) -> Filter<Self, F> {
         Filter { w: self, f }
     }
+
+    /// Creates [`RowWrite`] that both filters and maps.
     fn filter_map<F: Fn(Self::Source) -> Option<R>, R>(&mut self, f: F) -> FilterMap<Self, F> {
         FilterMap { w: self, f }
     }
+
+    /// Apply `f` to self.
     fn with(&mut self, f: impl Fn(&mut Self)) {
         f(self);
     }
