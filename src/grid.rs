@@ -160,6 +160,12 @@ impl<'a, S> HeaderWriter<'a, S> {
         self.column_last = self.column;
     }
 }
+impl<'a, S> Drop for HeaderWriter<'a, S> {
+    fn drop(&mut self) {
+        self.push_cell("");
+    }
+}
+
 impl<'a, S: 'a> RowWrite for HeaderWriter<'a, S> {
     type Source = &'a S;
     fn content<T: CellSource>(&mut self, _f: impl FnOnce(Self::Source) -> T) {
