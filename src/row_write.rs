@@ -60,7 +60,7 @@ pub trait RowWrite: RowWriteCore {
     ///  300 | 10 |  20 |
     ///  300 |  1 | 500 |
     ///  ```    
-    fn group<'a, C: CellSource>(&'a mut self, header: C) -> GroupGuard<'a, Self, C> {
+    fn group<C: CellSource>(&mut self, header: C) -> GroupGuard<Self, C> {
         self.group_start();
         GroupGuard {
             w: self,
@@ -163,16 +163,13 @@ pub trait RowWrite: RowWriteCore {
         self.group(header).content(f);
     }
 
-    fn map<'a, F: Fn(Self::Source) -> R, R>(&'a mut self, f: F) -> Map<'a, Self, F> {
+    fn map<F: Fn(Self::Source) -> R, R>(&mut self, f: F) -> Map<Self, F> {
         Map { w: self, f }
     }
-    fn filter<'a, F: Fn(&Self::Source) -> bool>(&'a mut self, f: F) -> Filter<'a, Self, F> {
+    fn filter<F: Fn(&Self::Source) -> bool>(&mut self, f: F) -> Filter<Self, F> {
         Filter { w: self, f }
     }
-    fn filter_map<'a, F: Fn(Self::Source) -> Option<R>, R>(
-        &'a mut self,
-        f: F,
-    ) -> FilterMap<'a, Self, F> {
+    fn filter_map<F: Fn(Self::Source) -> Option<R>, R>(&mut self, f: F) -> FilterMap<Self, F> {
         FilterMap { w: self, f }
     }
     fn with(&mut self, f: impl Fn(&mut Self)) {

@@ -23,6 +23,6 @@ pub fn f_write() {
 
 pub fn f_format() {
     let s = String::from("ABC");
-    let _cell_a = cell(format!("{}", &s));
-    let _cell_b = cell(format!("{}", &s));
+    let _cell_a = cell(format!("--{}--", &s));
+    let _cell_b = cell(format!("--{}--", &s));
 }

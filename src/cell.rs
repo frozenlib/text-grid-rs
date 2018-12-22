@@ -67,9 +67,7 @@ impl<T: CellSource> CellSource for &mut T {
 impl<T: CellSource> CellSource for Option<T> {
     fn fmt(&self, s: &mut String) {
         if let Some(value) = self {
-            value.fmt(s)
-        } else {
-            ()
+            value.fmt(s);
         }
     }
     fn style(&self) -> CellStyle {
@@ -280,7 +278,6 @@ impl<T: CellSource> Cell<T> {
             source: self.source,
             style: CellStyle {
                 align_h: Some(align_h),
-                ..self.style
             },
         }
     }

@@ -50,18 +50,18 @@ pub struct Grid<S> {
     _phantom: PhantomData<Fn(&S)>,
 }
 
-impl<T: RowSource> Grid<T> {
+impl<S: RowSource> Grid<S> {
     /// Create a new `Grid` and prepare header rows.
     pub fn new() -> Self {
         let mut layout = LayoutWriter::new();
-        T::fmt_row(&mut layout);
+        S::fmt_row(&mut layout);
         layout.separators.pop();
 
         let mut buf = GridBuf::new();
         buf.set_column_separators(layout.separators);
 
         for target in 0..layout.depth_max {
-            T::fmt_row(&mut HeaderWriter::new(buf.push_row(), target));
+            S::fmt_row(&mut HeaderWriter::new(buf.push_row(), target));
             buf.push_separator();
         }
         Grid {
@@ -71,17 +71,22 @@ impl<T: RowSource> Grid<T> {
     }
 
     /// Append a row to the bottom of the grid.
-    pub fn push_row(&mut self, source: &T) {
+    pub fn push_row(&mut self, source: &S) {
         let mut writer = RowWriter {
             source,
             row: self.buf.push_row(),
         };
-        T::fmt_row(&mut writer);
+        S::fmt_row(&mut writer);
     }
 
     /// Append a row separator to the bottom of the grid.
     pub fn push_separator(&mut self) {
         self.buf.push_separator();
+    }
+}
+impl<S: RowSource> Default for Grid<S> {
+    fn default() -> Self {
+        Self::new()
     }
 }
 impl<S> Display for Grid<S> {

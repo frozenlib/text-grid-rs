@@ -40,6 +40,7 @@ use unicode_width::UnicodeWidthStr;
 ///     X | A    |    10 |
 ///     Y |     BBB      |
 /// ```
+#[derive(Default)]
 pub struct GridBuf {
     s: String,
     cells: Vec<CellEntry>,
@@ -284,10 +285,10 @@ impl Display for GridBuf {
                     write!(f, "|")?;
                 }
             }
-            writeln!(f, "")?;
+            writeln!(f)?;
             if self.rows[row].has_separator {
                 let mut cs = [self.row(row), self.row(row + 1)];
-                for column in 0..widths.len() {
+                for (column, _) in widths.iter().enumerate() {
                     if self.has_left_padding(column) {
                         write!(f, "-")?;
                     }
@@ -306,7 +307,7 @@ impl Display for GridBuf {
                         }
                     }
                 }
-                writeln!(f, "")?;
+                writeln!(f)?;
             }
         }
         Ok(())
