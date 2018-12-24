@@ -8,10 +8,25 @@ use std::marker::PhantomData;
 /// A data structure that can be formatted into row.
 pub trait RowSource {
     /// Define column informations. see [`RowWrite`] for details.
-    ///
     fn fmt_row<'a>(w: &mut impl RowWrite<Source = &'a Self>)
     where
         Self: 'a;
+}
+
+pub trait GridSchema<R> {
+    fn fmt_row<'a>(&self, w: &mut impl RowWrite<Source = &'a R>)
+    where
+        R: 'a;
+}
+
+pub struct RowSourceGridSchema;
+impl<R: RowSource> GridSchema<R> for RowSourceGridSchema {
+    fn fmt_row<'a>(&self, w: &mut impl RowWrite<Source = &'a R>)
+    where
+        R: 'a,
+    {
+        R::fmt_row(w);
+    }
 }
 
 /// A builder used to create plain-text table from struct that implement [`RowSource`].
@@ -45,38 +60,47 @@ pub trait RowSource {
 ///  300 |   1 |
 ///    2 | 200 |
 /// ```
-pub struct Grid<S> {
+pub struct Grid<R, S> {
     buf: GridBuf,
-    _phantom: PhantomData<Fn(&S)>,
+    schema: S,
+    _phantom: PhantomData<Fn(&R)>,
 }
 
-impl<S: RowSource> Grid<S> {
+impl<R: RowSource> Grid<R, RowSourceGridSchema> {
     /// Create a new `Grid` and prepare header rows.
     pub fn new() -> Self {
+        Self::new_with_schema(RowSourceGridSchema)
+    }
+}
+
+impl<R, S: GridSchema<R>> Grid<R, S> {
+    pub fn new_with_schema(schema: S) -> Self {
         let mut layout = LayoutWriter::new();
-        S::fmt_row(&mut layout);
+        schema.fmt_row(&mut layout);
         layout.separators.pop();
 
         let mut buf = GridBuf::new();
         buf.set_column_separators(layout.separators);
 
         for target in 0..layout.depth_max {
-            S::fmt_row(&mut HeaderWriter::new(buf.push_row(), target));
+            schema.fmt_row(&mut HeaderWriter::new(buf.push_row(), target));
             buf.push_separator();
         }
         Grid {
             buf,
+            schema,
             _phantom: PhantomData::default(),
         }
     }
-
+}
+impl<R, S: GridSchema<R>> Grid<R, S> {
     /// Append a row to the bottom of the grid.
-    pub fn push_row(&mut self, source: &S) {
+    pub fn push_row(&mut self, source: &R) {
         let mut writer = RowWriter {
             source,
             row: self.buf.push_row(),
         };
-        S::fmt_row(&mut writer);
+        self.schema.fmt_row(&mut writer);
     }
 
     /// Append a row separator to the bottom of the grid.
@@ -84,17 +108,12 @@ impl<S: RowSource> Grid<S> {
         self.buf.push_separator();
     }
 }
-impl<S: RowSource> Default for Grid<S> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-impl<S> Display for Grid<S> {
+impl<R, S> Display for Grid<R, S> {
     fn fmt(&self, f: &mut Formatter) -> Result {
         Display::fmt(&self.buf, f)
     }
 }
-impl<S> Debug for Grid<S> {
+impl<R, S> Debug for Grid<R, S> {
     fn fmt(&self, f: &mut Formatter) -> Result {
         Debug::fmt(&self.buf, f)
     }
