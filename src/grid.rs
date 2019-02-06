@@ -13,12 +13,15 @@ pub trait RowSource {
         Self: 'a;
 }
 
+/// A function to generate row from value.
 pub trait GridSchema<R> {
+    /// Define column informations. see [`RowWrite`] for details.
     fn fmt_row<'a>(&self, w: &mut impl RowWrite<Source = &'a R>)
     where
         R: 'a;
 }
 
+/// [`GridSchema`] implementation that use [`RowSource`].
 pub struct RowSourceGridSchema;
 impl<R: RowSource> GridSchema<R> for RowSourceGridSchema {
     fn fmt_row<'a>(&self, w: &mut impl RowWrite<Source = &'a R>)
@@ -29,7 +32,7 @@ impl<R: RowSource> GridSchema<R> for RowSourceGridSchema {
     }
 }
 
-/// A builder used to create plain-text table from struct that implement [`RowSource`].
+/// A builder used to create plain-text table from values.
 ///
 /// # Examples
 ///
@@ -67,13 +70,14 @@ pub struct Grid<R, S> {
 }
 
 impl<R: RowSource> Grid<R, RowSourceGridSchema> {
-    /// Create a new `Grid` and prepare header rows.
+    /// Create a new `Grid` with [`RowSourceGridSchema`] and prepare header rows.
     pub fn new() -> Self {
         Self::new_with_schema(RowSourceGridSchema)
     }
 }
 
 impl<R, S: GridSchema<R>> Grid<R, S> {
+    /// Create a new `Grid` with specified schema and prepare header rows.
     pub fn new_with_schema(schema: S) -> Self {
         let mut layout = LayoutWriter::new();
         schema.fmt_row(&mut layout);
