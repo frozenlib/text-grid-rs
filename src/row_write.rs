@@ -5,7 +5,7 @@ pub trait RowWriteCore {
     fn group_end(&mut self, header: impl CellSource);
 }
 
-/// Used to define column information within [`RowSource::fmt_row`](crate::RowSource::fmt_row).
+/// Used to define column information.
 ///
 /// - Use [`column`](Self::column) to create column.
 /// - Use [`group`](Self::group) to create multi level header.
