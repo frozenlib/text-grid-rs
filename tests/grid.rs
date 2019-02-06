@@ -377,6 +377,34 @@ fn impl_debug() {
     assert_eq!(d.trim(), e.trim());
 }
 
+#[test]
+fn with_schema() {
+    struct MyGridSchema {
+        len: usize,
+    }
+
+    impl GridSchema<[u32]> for MyGridSchema {
+        fn fmt_row<'a>(&self, w: &mut impl RowWrite<Source = &'a [u32]>) {
+            for i in 0..self.len {
+                w.column(i, |s| s[i]);
+            }
+        }
+    }
+
+    let mut g = Grid::new_with_schema(MyGridSchema { len: 3 });;
+    g.push_row(&[1, 2, 3]);
+    g.push_row(&[4, 5, 6]);
+
+    let d = format!("{:?}", g);
+    let e = r"
+ 0 | 1 | 2 |
+---|---|---|
+ 1 | 2 | 3 |
+ 4 | 5 | 6 |
+";
+    assert_eq!(d.trim(), e.trim());
+}
+
 fn do_test<T: RowSource>(s: Vec<T>, e: &str) {
     let mut g = Grid::new();
     for s in s {
