@@ -13,8 +13,38 @@ pub trait RowSource {
         Self: 'a;
 }
 
-/// A function to generate row from value.
-pub trait GridSchema<R> {
+/// Columns definition.
+///
+/// # Examples
+/// ```
+/// use text_grid::*;
+///
+/// struct MyGridSchema {
+///     len: usize,
+/// }
+///
+/// impl GridSchema<[u32]> for MyGridSchema {
+///     fn fmt_row<'a>(&self, w: &mut impl RowWrite<Source = &'a [u32]>) {
+///         for i in 0..self.len {
+///             w.column(format!("{}", i), |s| s[i]);
+///         }
+///     }
+/// }
+///
+/// let mut g = Grid::new_with_schema(MyGridSchema { len: 3 });;
+/// g.push_row(&[1, 2, 3]);
+/// g.push_row(&[4, 5, 6]);
+///
+/// print!("{}", g);
+/// ```
+/// Output:
+/// ```text
+///  0 | 1 | 2 |
+/// ---|---|---|
+///  1 | 2 | 3 |
+///  4 | 5 | 6 |
+/// ```
+pub trait GridSchema<R: ?Sized> {
     /// Define column informations. see [`RowWrite`] for details.
     fn fmt_row<'a>(&self, w: &mut impl RowWrite<Source = &'a R>)
     where
@@ -23,7 +53,7 @@ pub trait GridSchema<R> {
 
 /// [`GridSchema`] implementation that use [`RowSource`].
 pub struct RowSourceGridSchema;
-impl<R: RowSource> GridSchema<R> for RowSourceGridSchema {
+impl<R: RowSource + ?Sized> GridSchema<R> for RowSourceGridSchema {
     fn fmt_row<'a>(&self, w: &mut impl RowWrite<Source = &'a R>)
     where
         R: 'a,
@@ -63,20 +93,20 @@ impl<R: RowSource> GridSchema<R> for RowSourceGridSchema {
 ///  300 |   1 |
 ///    2 | 200 |
 /// ```
-pub struct Grid<R, S> {
+pub struct Grid<R: ?Sized, S> {
     buf: GridBuf,
     schema: S,
     _phantom: PhantomData<Fn(&R)>,
 }
 
-impl<R: RowSource> Grid<R, RowSourceGridSchema> {
+impl<R: RowSource + ?Sized> Grid<R, RowSourceGridSchema> {
     /// Create a new `Grid` with [`RowSourceGridSchema`] and prepare header rows.
     pub fn new() -> Self {
         Self::new_with_schema(RowSourceGridSchema)
     }
 }
 
-impl<R, S: GridSchema<R>> Grid<R, S> {
+impl<R: ?Sized, S: GridSchema<R>> Grid<R, S> {
     /// Create a new `Grid` with specified schema and prepare header rows.
     pub fn new_with_schema(schema: S) -> Self {
         let mut layout = LayoutWriter::new();
@@ -97,7 +127,7 @@ impl<R, S: GridSchema<R>> Grid<R, S> {
         }
     }
 }
-impl<R, S: GridSchema<R>> Grid<R, S> {
+impl<R: ?Sized, S: GridSchema<R>> Grid<R, S> {
     /// Append a row to the bottom of the grid.
     pub fn push_row(&mut self, source: &R) {
         let mut writer = RowWriter {
@@ -112,12 +142,12 @@ impl<R, S: GridSchema<R>> Grid<R, S> {
         self.buf.push_separator();
     }
 }
-impl<R, S> Display for Grid<R, S> {
+impl<R: ?Sized, S> Display for Grid<R, S> {
     fn fmt(&self, f: &mut Formatter) -> Result {
         Display::fmt(&self.buf, f)
     }
 }
-impl<R, S> Debug for Grid<R, S> {
+impl<R: ?Sized, S> Debug for Grid<R, S> {
     fn fmt(&self, f: &mut Formatter) -> Result {
         Debug::fmt(&self.buf, f)
     }
@@ -163,7 +193,7 @@ impl<S> RowWriteCore for LayoutWriter<S> {
     }
 }
 
-struct HeaderWriter<'a, S> {
+struct HeaderWriter<'a, S: ?Sized> {
     row: RowBuf<'a>,
     depth: usize,
     target: usize,
@@ -171,7 +201,7 @@ struct HeaderWriter<'a, S> {
     column_last: usize,
     _phantom: PhantomData<Fn(S)>,
 }
-impl<'a, S> HeaderWriter<'a, S> {
+impl<'a, S: ?Sized> HeaderWriter<'a, S> {
     fn new(row: RowBuf<'a>, target: usize) -> Self {
         HeaderWriter {
             row,
@@ -188,20 +218,20 @@ impl<'a, S> HeaderWriter<'a, S> {
         self.column_last = self.column;
     }
 }
-impl<'a, S> Drop for HeaderWriter<'a, S> {
+impl<'a, S: ?Sized> Drop for HeaderWriter<'a, S> {
     fn drop(&mut self) {
         self.push_cell("");
     }
 }
 
-impl<'a, S: 'a> RowWrite for HeaderWriter<'a, S> {
+impl<'a, S: 'a + ?Sized> RowWrite for HeaderWriter<'a, S> {
     type Source = &'a S;
     fn content<T: CellSource>(&mut self, _f: impl FnOnce(Self::Source) -> T) {
         assert!(self.depth != 0);
         self.column += 1;
     }
 }
-impl<'a, S: 'a> RowWriteCore for HeaderWriter<'a, S> {
+impl<'a, S: 'a + ?Sized> RowWriteCore for HeaderWriter<'a, S> {
     fn group_start(&mut self) {
         if self.depth <= self.target {
             self.push_cell(Cell::empty());
@@ -220,17 +250,17 @@ impl<'a, S: 'a> RowWriteCore for HeaderWriter<'a, S> {
     }
 }
 
-struct RowWriter<'a, S> {
-    source: &'a S,
+struct RowWriter<'a, R: ?Sized> {
+    source: &'a R,
     row: RowBuf<'a>,
 }
-impl<'a, S> RowWrite for RowWriter<'a, S> {
-    type Source = &'a S;
+impl<'a, R: ?Sized> RowWrite for RowWriter<'a, R> {
+    type Source = &'a R;
     fn content<T: CellSource>(&mut self, f: impl FnOnce(Self::Source) -> T) {
         self.row.push(f(self.source));
     }
 }
-impl<'a, S> RowWriteCore for RowWriter<'a, S> {
+impl<'a, R: ?Sized> RowWriteCore for RowWriter<'a, R> {
     fn group_start(&mut self) {}
     fn group_end(&mut self, _header: impl CellSource) {}
 }
