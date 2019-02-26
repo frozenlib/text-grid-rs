@@ -69,7 +69,7 @@ pub trait RowWrite: RowWriteCore {
 
     /// Define column content. Used to create shared header column.
     ///
-    /// - f : A function to obtain [`CellSource`] from [`RowSource`].
+    /// - f : A function to obtain cell.
     ///
     /// # Examples
     ///
@@ -114,14 +114,12 @@ pub trait RowWrite: RowWriteCore {
     ///  300 | 10  20 |
     ///  300 |  1 500 |
     /// ```
-    ///
-    /// [`RowSource`]: #crate::RowSource
     fn content<T: CellSource>(&mut self, f: impl FnOnce(Self::Source) -> T);
 
     /// Define column.
     ///
     /// - header : Column header's cell. If horizontal alignment is not specified, it is set to the center.
-    /// - f : A function to obtain [`CellSource`] from [`RowSource`].
+    /// - f : A function to obtain cell.
     ///
     /// # Examples
     ///
@@ -152,8 +150,6 @@ pub trait RowWrite: RowWriteCore {
     ///  300 |   1 |
     ///    2 | 200 |
     /// ```
-    ///
-    /// [`RowSource`]: #crate::RowSource
     fn column<T: CellSource>(
         &mut self,
         header: impl CellSource,
