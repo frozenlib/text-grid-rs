@@ -5,7 +5,7 @@ use std::cmp::max;
 use std::fmt::*;
 use std::marker::PhantomData;
 
-/// A data structure that can be formatted into row.
+/// A data structure that can be formatted into a row.
 pub trait RowSource {
     /// Define column informations. see [`RowWrite`] for details.
     fn fmt_row<'a>(w: &mut impl RowWrite<Source = &'a Self>)
@@ -45,7 +45,7 @@ pub trait RowSource {
 ///  4 | 5 | 6 |
 /// ```
 pub trait GridSchema<R: ?Sized> {
-    /// Define column informations. see [`RowWrite`] for details.
+    /// Define column information. see [`RowWrite`] for details.
     fn fmt_row<'a>(&self, w: &mut impl RowWrite<Source = &'a R>)
     where
         R: 'a;
