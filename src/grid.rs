@@ -96,7 +96,7 @@ impl<R: RowSource + ?Sized> GridSchema<R> for RowSourceGridSchema {
 pub struct Grid<R: ?Sized, S> {
     buf: GridBuf,
     schema: S,
-    _phantom: PhantomData<Fn(&R)>,
+    _phantom: PhantomData<fn(&R)>,
 }
 
 impl<R: RowSource + ?Sized> Grid<R, RowSourceGridSchema> {
@@ -157,7 +157,7 @@ struct LayoutWriter<S> {
     depth: usize,
     depth_max: usize,
     separators: Vec<bool>,
-    _phantom: PhantomData<Fn(S)>,
+    _phantom: PhantomData<fn(S)>,
 }
 impl<S> LayoutWriter<S> {
     fn new() -> Self {
@@ -199,7 +199,7 @@ struct HeaderWriter<'a, S: ?Sized> {
     target: usize,
     column: usize,
     column_last: usize,
-    _phantom: PhantomData<Fn(S)>,
+    _phantom: PhantomData<fn(S)>,
 }
 impl<'a, S: ?Sized> HeaderWriter<'a, S> {
     fn new(row: RowBuf<'a>, target: usize) -> Self {
