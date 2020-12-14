@@ -12,8 +12,5 @@ description = "A library to create formatted plain-text tables."
 exclude = [".vscode/*"]
 edition = "2018"
 
-[badges]
-travis-ci = { repository = "frozenlib/text-grid-rs" }
-
 [dependencies]
 unicode-width = "0.1.5"
