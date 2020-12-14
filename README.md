@@ -1,7 +1,7 @@
 # text-grid-rs
 
 [![Crates.io](https://img.shields.io/crates/v/text-grid.svg)](https://crates.io/crates/text-grid)
-[![Docs.rs](https://docs.rs/text-grid/badge.svg)](https://docs.rs/crate/text-grid)
+[![Docs.rs](https://docs.rs/text-grid/badge.svg)](https://docs.rs/text-grid)
 
 A library to create formatted plain-text tables.
 
