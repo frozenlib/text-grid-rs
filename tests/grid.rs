@@ -435,6 +435,29 @@ fn baseline() {
     );
 }
 
+#[test]
+fn root_content() {
+    struct Source {
+        a: u32,
+        b: u32,
+    }
+
+    impl RowSource for Source {
+        fn fmt_row(w: &mut RowWriter<&Self>) {
+            w.content(|x| x.a);
+            w.content(|_| " ");
+            w.content(|x| x.b);
+        }
+    }
+
+    do_test(
+        vec![Source { a: 10, b: 1 }, Source { a: 30, b: 100 }],
+        r"
+ 10   1 |
+ 30 100 |",
+    );
+}
+
 fn do_test<T: RowSource>(s: Vec<T>, e: &str) {
     let mut g = Grid::new();
     for s in s {
