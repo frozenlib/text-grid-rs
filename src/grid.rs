@@ -99,6 +99,12 @@ pub struct Grid<R: ?Sized, S> {
     _phantom: PhantomData<fn(&R)>,
 }
 
+impl<R: RowSource + ?Sized> Default for Grid<R, RowSourceGridSchema> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<R: RowSource + ?Sized> Grid<R, RowSourceGridSchema> {
     /// Create a new `Grid` with [`RowSourceGridSchema`] and prepare header rows.
     pub fn new() -> Self {
@@ -241,9 +247,9 @@ impl<'a, S: 'a + ?Sized> RowWriteCore for HeaderWriter<'a, S> {
     fn group_end(&mut self, header: impl CellSource) {
         self.depth -= 1;
         if self.depth == self.target {
-            let mut style = CellStyle::default();
-            style.align_h = Some(HorizontalAlignment::Center);
-
+            let style = CellStyle {
+                align_h: Some(HorizontalAlignment::Center),
+            };
             let header = Cell::new(header).with_base_style(style);
             self.push_cell(header);
         }

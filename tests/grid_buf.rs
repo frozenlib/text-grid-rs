@@ -24,7 +24,7 @@ fn cell_option_u8() {
 #[test]
 fn cell_option_ref_u8() {
     let mut g = GridBuf::new();
-    g.push_row().push(&10u8);
+    g.push_row().push(10u8);
 }
 
 #[test]
