@@ -327,13 +327,24 @@ impl<'a, 'b, T> RowWriter<'a, 'b, T> {
     }
 
     /// Takes a closure and creates [`RowWriter`] whose source value was converted.
-    pub fn map<'a0, U: 'a0>(&'a0 mut self, f: impl FnOnce(&T) -> U) -> RowWriter<'a0, 'b, U> {
+    pub fn map<'x, U: 'x>(&'x mut self, f: impl FnOnce(&T) -> U) -> RowWriter<'x, 'b, U> {
         RowWriter(match &mut self.0 {
             RowWriterData::Layout(w) => RowWriterData::Layout(w),
             RowWriterData::Header(w) => RowWriterData::Header(w),
             RowWriterData::Body(w) => RowWriterData::Body(BodyWriter {
                 buf: w.buf,
                 data: w.data.as_ref().map(f),
+            }),
+        })
+    }
+
+    pub fn as_ref<'x>(&'x mut self) -> RowWriter<'x, 'b, &'x T> {
+        RowWriter(match &mut self.0 {
+            RowWriterData::Layout(w) => RowWriterData::Layout(w),
+            RowWriterData::Header(w) => RowWriterData::Header(w),
+            RowWriterData::Body(w) => RowWriterData::Body(BodyWriter {
+                buf: w.buf,
+                data: w.data.as_ref(),
             }),
         })
     }
