@@ -275,13 +275,6 @@ impl<'a, 'b, T> RowWriter<'a, 'b, T> {
             RowWriterData::Body(w) => w.content(f),
         }
     }
-    pub fn content_with_baseline<U: Display>(&mut self, baseline: &str, f: impl FnOnce(&T) -> U) {
-        match &mut self.0 {
-            RowWriterData::Layout(w) => w.content_with_baseline(),
-            RowWriterData::Header(w) => w.content_with_baseline(),
-            RowWriterData::Body(w) => w.content_with_baseline(baseline, f),
-        }
-    }
 
     /// Define column.
     ///
@@ -319,15 +312,6 @@ impl<'a, 'b, T> RowWriter<'a, 'b, T> {
     /// ```
     pub fn column<U: RowSource>(&mut self, header: impl CellSource, f: impl FnOnce(&T) -> U) {
         self.group(header).content(f);
-    }
-
-    pub fn column_with_baseline<U: Display>(
-        &mut self,
-        header: impl CellSource,
-        baseline: &str,
-        f: impl FnOnce(&T) -> U,
-    ) {
-        self.group(header).content_with_baseline(baseline, f);
     }
 
     /// Takes a closure and creates [`RowWriter`] whose source value was converted.
@@ -423,10 +407,6 @@ impl LayoutWriter {
     fn content(&mut self) {
         self.separators.push(false);
     }
-    fn content_with_baseline(&mut self) {
-        self.separators.push(false);
-        self.separators.push(false);
-    }
     fn group_start(&mut self) {
         self.set_separator();
         self.depth += 1;
@@ -469,9 +449,6 @@ impl<'b> HeaderWriter<'b> {
     fn content(&mut self) {
         self.column += 1;
     }
-    fn content_with_baseline(&mut self) {
-        self.column += 2;
-    }
     fn group_start(&mut self) {
         if self.depth <= self.target {
             self.push_cell(Cell::empty());
@@ -508,18 +485,6 @@ impl<T> BodyWriter<'_, '_, T> {
         }
     }
 
-    fn content_with_baseline<U: Display>(&mut self, baseline: &str, f: impl FnOnce(&T) -> U) {
-        if let Some(data) = &self.data {
-            let s = f(data).to_string();
-            let b = s.find(baseline).unwrap_or(s.len());
-            let (left, right) = s.split_at(b);
-            self.buf.push(cell(left).right());
-            self.buf.push(cell(right).left());
-        } else {
-            self.buf.push("");
-            self.buf.push("");
-        }
-    }
     fn group_start(&mut self) {}
     fn group_end(&mut self) {}
 }
