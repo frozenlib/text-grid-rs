@@ -179,7 +179,7 @@ impl<'a, 'b, T> RowWriter<'a, 'b, T> {
     /// impl RowSource for RowData {
     ///     fn fmt_row(w: &mut RowWriter<&Self>) {
     ///         w.column("a", |s| s.a);
-    ///         w.group("b").with(|w| {
+    ///         w.group("b", |w| {
     ///             w.column("1", |s| s.b_1);
     ///             w.column("2", |s| s.b_2);
     ///         });
@@ -209,12 +209,10 @@ impl<'a, 'b, T> RowWriter<'a, 'b, T> {
     ///  300 | 10 |  20 |
     ///  300 |  1 | 500 |
     ///  ```    
-    pub fn group<'a0, C: CellSource>(&'a0 mut self, header: C) -> GroupGuard<'a0, 'a, 'b, T, C> {
+    pub fn group(&mut self, header: impl CellSource, f: impl FnOnce(&mut RowWriter<'_, 'b, T>)) {
         self.group_start();
-        GroupGuard {
-            w: self,
-            header: Some(header),
-        }
+        f(self);
+        self.group_end(header);
     }
 
     /// Define column content. Used to create shared header column.
@@ -233,7 +231,7 @@ impl<'a, 'b, T> RowWriter<'a, 'b, T> {
     /// impl RowSource for RowData {
     ///     fn fmt_row(w: &mut RowWriter<&Self>) {
     ///         w.column("a", |s| s.a);
-    ///         w.group("b").with(|w| {
+    ///         w.group("b", |w| {
     ///             w.content(|s| s.b_1);
     ///             w.content(|_| " ");
     ///             w.content(|s| s.b_2);
@@ -311,7 +309,7 @@ impl<'a, 'b, T> RowWriter<'a, 'b, T> {
     ///    2 | 200 |
     /// ```
     pub fn column<U: RowSource>(&mut self, header: impl CellSource, f: impl FnOnce(&T) -> U) {
-        self.group(header).content(f);
+        self.group(header, |w| w.content(f));
     }
 
     /// Takes a closure and creates [`RowWriter`] whose source value was converted.
@@ -487,30 +485,6 @@ impl<T> BodyWriter<'_, '_, T> {
 
     fn group_start(&mut self) {}
     fn group_end(&mut self) {}
-}
-
-pub struct GroupGuard<'a, 'b, 'c, T, C: CellSource> {
-    w: &'a mut RowWriter<'b, 'c, T>,
-    header: Option<C>,
-}
-
-impl<'a, 'b, 'c, T, C: CellSource> Deref for GroupGuard<'a, 'b, 'c, T, C> {
-    type Target = RowWriter<'b, 'c, T>;
-    fn deref(&self) -> &Self::Target {
-        self.w
-    }
-}
-
-impl<'a, 'b, 'c, T, C: CellSource> DerefMut for GroupGuard<'a, 'b, 'c, T, C> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        self.w
-    }
-}
-
-impl<T, C: CellSource> Drop for GroupGuard<'_, '_, '_, T, C> {
-    fn drop(&mut self) {
-        self.w.group_end(self.header.take());
-    }
 }
 
 impl<T: CellSource> RowSource for T {

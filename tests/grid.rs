@@ -108,7 +108,7 @@ fn column_group() {
 
     impl RowSource for Source {
         fn fmt_row(w: &mut RowWriter<&Self>) {
-            w.group("g").with(|w| {
+            w.group("g", |w| {
                 w.column("a", |x| x.a);
                 w.column("b", |x| x.b);
             })
@@ -138,7 +138,7 @@ fn column_group_differing_level() {
     impl RowSource for Source {
         fn fmt_row(w: &mut RowWriter<&Self>) {
             w.column("a", |s| s.a);
-            w.group("b").with(|w| {
+            w.group("b", |w| {
                 w.column("1", |s| s.b_1);
                 w.column("2", |s| s.b_2);
             });
@@ -180,11 +180,11 @@ fn column_group_differing_level_2() {
     impl RowSource for Source {
         fn fmt_row(w: &mut RowWriter<&Self>) {
             w.column("a", |s| s.a);
-            w.group("b").with(|w| {
+            w.group("b", |w| {
                 w.column("1", |s| s.b_1);
                 w.column("2", |s| s.b_2);
             });
-            w.group("c").with(|w| {
+            w.group("c", |w| {
                 w.content(|s| s.c_1);
                 w.content(|s| s.c_2);
             });
@@ -227,7 +227,7 @@ fn column_multipart() {
 
     impl RowSource for Source {
         fn fmt_row(w: &mut RowWriter<&Self>) {
-            w.group("g").with(|w| {
+            w.group("g", |w| {
                 w.content(|x| x.a);
                 w.content(|x| x.b);
             })
