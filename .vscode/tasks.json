@@ -1,44 +1,19 @@
 {
-    // tasks.json 形式の詳細についての資料は、
-    // https://go.microsoft.com/fwlink/?LinkId=733558 をご覧ください
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
     "version": "2.0.0",
+    "options": {
+        "env": {
+            // "RUST_BACKTRACE": "1",
+            // "RUSTFLAGS": "--cfg procmacro2_semver_exempt",
+            // "CARGO_TARGET_DIR": "Z:/temporary/target_dirs/${workspaceFolderBasename}/target/",
+        },
+    },
+    "presentation": {
+        "panel": "dedicated",
+        "clear": true,
+    },
     "tasks": [
-        {
-            "type": "shell",
-            "label": "cargo build",
-            "command": "cargo",
-            "args": [
-                "build"
-            ],
-            "problemMatcher": [
-                "$rustc"
-            ],
-            "presentation": {
-                "panel": "dedicated",
-                "clear": true
-            }
-            // "options": {
-            //     "env": {
-            //         "RUST_BACKTRACE": "1",
-            //     }
-            // }
-        },
-        {
-            "type": "shell",
-            "label": "cargo build release",
-            "command": "cargo",
-            "args": [
-                "build",
-                "--release"
-            ],
-            "problemMatcher": [
-                "$rustc"
-            ],
-            "presentation": {
-                "panel": "dedicated",
-                "clear": true
-            }
-        },
         {
             "type": "shell",
             "label": "cargo test",
@@ -53,10 +28,35 @@
                 "kind": "build",
                 "isDefault": true
             },
-            "presentation": {
-                "panel": "dedicated",
-                "clear": true
-            }
+            "dependsOn": [
+                "include doc"
+            ],
+        },
+        {
+            "type": "shell",
+            "label": "cargo watch test",
+            "command": "wt",
+            "args": [
+                "new-tab",
+                "cargo-watch",
+                "-c",
+                "-x",
+                "test"
+            ],
+            "problemMatcher": [],
+        },
+        {
+            "type": "shell",
+            "label": "cargo watch run",
+            "command": "wt",
+            "args": [
+                "new-tab",
+                "cargo-watch",
+                "-c",
+                "-x",
+                "run",
+            ],
+            "problemMatcher": [],
         },
         {
             "type": "shell",
@@ -70,10 +70,6 @@
             "problemMatcher": [
                 "$rustc"
             ],
-            "presentation": {
-                "panel": "dedicated",
-                "clear": true
-            }
         },
         {
             "type": "shell",
@@ -88,10 +84,9 @@
             "problemMatcher": [
                 "$rustc"
             ],
-            "presentation": {
-                "panel": "dedicated",
-                "clear": true
-            }
+            "dependsOn": [
+                "include doc"
+            ],
         },
         {
             "type": "shell",
@@ -100,8 +95,8 @@
             "args": [
                 "clippy",
                 "--all-features",
-                "--target-dir",
-                "target/clippy",
+                "--tests",
+                "--lib",
                 "--",
                 "-W",
                 "clippy::all"
@@ -109,10 +104,28 @@
             "problemMatcher": [
                 "$rustc"
             ],
-            "presentation": {
-                "panel": "dedicated",
-                "clear": true
-            }
+        },
+        {
+            "type": "shell",
+            "label": "cargo fix & fmt",
+            "command": "cargo fix && cargo clippy --fix --allow-dirty && cargo fmt",
+            "problemMatcher": [
+                "$rustc"
+            ],
+        },
+        {
+            "type": "shell",
+            "label": "cargo bench",
+            "command": "cargo",
+            "args": [
+                "bench"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/benchmarks"
+            },
+            "problemMatcher": [
+                "$rustc"
+            ],
         },
         {
             "type": "shell",
@@ -127,10 +140,56 @@
             "problemMatcher": [
                 "$rustc"
             ],
-            "presentation": {
-                "panel": "dedicated",
-                "clear": true
+        },
+        {
+            "type": "shell",
+            "label": "update compile error",
+            "command": "cargo",
+            "args": [
+                "test",
+                "--test",
+                "compile_fail",
+                "--",
+                "--ignored"
+            ],
+            "problemMatcher": [
+                "$rustc"
+            ],
+            "options": {
+                "env": {
+                    "TRYBUILD": "overwrite",
+                }
             }
         },
-    ]
+        {
+            "type": "shell",
+            "label": "include doc",
+            "command": "include-doc",
+            "args": [
+                "${workspaceFolder}"
+            ],
+            "problemMatcher": [
+                {
+                    "owner": "include-doc",
+                    "fileLocation": [
+                        "relative",
+                        "${workspaceFolder}"
+                    ],
+                    "pattern": [
+                        {
+                            "regexp": "^(error): (.*)$",
+                            "severity": 1,
+                            "message": 2,
+                        },
+                        {
+                            "regexp": "^--> (.*):(\\d+)\\s*$",
+                            "file": 1,
+                            "line": 2,
+                            "loop": true,
+                        },
+                    ]
+                },
+            ],
+        },
+    ],
 }
