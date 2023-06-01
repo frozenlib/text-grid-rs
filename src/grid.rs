@@ -52,7 +52,9 @@ impl<R: ColumnSource + ?Sized> GridSchema<R> for GridSchemaByColumnSource {
     }
 }
 
-/// A builder used to create plain-text table from values.
+/// A builder used to create plain-text table from row values.
+///
+/// Generate a table using the columns defined by [`ColumnFormatter`].
 ///
 /// # Examples
 ///

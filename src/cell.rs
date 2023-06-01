@@ -263,6 +263,7 @@ impl<T: CellSource> Cell<T> {
         self.with_align_h(Center)
     }
 
+    /// Return the cell with aligned baseline.
     pub fn baseline(self, baseline: &str) -> BaselineAlignedCell {
         let mut value = String::new();
         self.fmt(&mut value);
@@ -326,6 +327,7 @@ impl_cell_source!(&str, Left);
 impl_cell_source!(char, Center);
 impl_cell_source!(bool, Center);
 
+/// A cell with aligned baseline.
 pub struct BaselineAlignedCell {
     value: String,
     baseline_offset: usize,
