@@ -405,6 +405,28 @@ fn with_schema() {
     assert_eq!(d.trim(), e.trim());
 }
 
+#[test]
+fn baseline() {
+    struct Source {
+        a: f64,
+    }
+
+    impl RowSource for Source {
+        fn fmt_row<'a>(w: &mut impl RowWrite<Source = &'a Self>) {
+            w.column_with_baseline("a", ".", |x| x.a)
+        }
+    }
+
+    do_test(
+        vec![Source { a: 100.1 }, Source { a: 10.12 }],
+        r"
+   a    |
+--------|
+ 100.1  |
+  10.12 |",
+    );
+}
+
 fn do_test<T: RowSource>(s: Vec<T>, e: &str) {
     let mut g = Grid::new();
     for s in s {

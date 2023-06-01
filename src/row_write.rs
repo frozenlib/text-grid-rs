@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use crate::cell::*;
 
 pub trait RowWriteCore {
@@ -116,6 +118,12 @@ pub trait RowWrite: RowWriteCore {
     /// ```
     fn content<T: CellSource>(&mut self, f: impl FnOnce(Self::Source) -> T);
 
+    fn content_with_baseline<T: Display>(
+        &mut self,
+        baseline: &str,
+        f: impl FnOnce(Self::Source) -> T,
+    );
+
     /// Define column.
     ///
     /// - header : Column header's cell. If horizontal alignment is not specified, it is set to the center.
@@ -158,6 +166,15 @@ pub trait RowWrite: RowWriteCore {
         self.group(header).content(f);
     }
 
+    fn column_with_baseline<T: Display>(
+        &mut self,
+        header: impl CellSource,
+        baseline: &str,
+        f: impl FnOnce(Self::Source) -> T,
+    ) {
+        self.group(header).content_with_baseline(baseline, f);
+    }
+
     /// Takes a closure and creates [`RowWrite`] whose source value was converted.
     fn map<F: Fn(Self::Source) -> R, R>(&mut self, f: F) -> Map<Self, F> {
         Map { w: self, f }
@@ -191,6 +208,15 @@ impl<'a, R, W: RowWrite, F: Fn(W::Source) -> R> RowWrite for Map<'a, W, F> {
         let f0 = &self.f;
         self.w.content(|s| f(f0(s)))
     }
+
+    fn content_with_baseline<T: Display>(
+        &mut self,
+        baseline: &str,
+        f: impl FnOnce(Self::Source) -> T,
+    ) {
+        let f0 = &self.f;
+        self.w.content_with_baseline(baseline, |s| f(f0(s)))
+    }
 }
 
 impl<'a, W: RowWriteCore, F> RowWriteCore for Map<'a, W, F> {
@@ -212,6 +238,17 @@ impl<'a, W: RowWrite + ?Sized, F: Fn(&W::Source) -> bool> RowWrite for Filter<'a
     fn content<T: CellSource>(&mut self, f: impl FnOnce(Self::Source) -> T) {
         let f0 = &self.f;
         self.w.content(|s| if f0(&s) { Some(f(s)) } else { None })
+    }
+
+    fn content_with_baseline<T: Display>(
+        &mut self,
+        baseline: &str,
+        f: impl FnOnce(Self::Source) -> T,
+    ) {
+        let f0 = &self.f;
+        self.w.content_with_baseline(baseline, |s| {
+            OptionDisplay(if f0(&s) { Some(f(s)) } else { None })
+        })
     }
 }
 
@@ -235,6 +272,16 @@ impl<'a, R, W: RowWrite + ?Sized, F: Fn(W::Source) -> Option<R>> RowWrite for Fi
         let f0 = &self.f;
         self.w.content(|s| f0(s).map(f))
     }
+
+    fn content_with_baseline<T: Display>(
+        &mut self,
+        baseline: &str,
+        f: impl FnOnce(Self::Source) -> T,
+    ) {
+        let f0 = &self.f;
+        self.w
+            .content_with_baseline(baseline, |s| OptionDisplay(f0(s).map(f)))
+    }
 }
 
 impl<'a, W: RowWriteCore + ?Sized, F> RowWriteCore for FilterMap<'a, W, F> {
@@ -256,6 +303,13 @@ impl<'a, W: RowWrite + ?Sized, C: CellSource> RowWrite for GroupGuard<'a, W, C> 
     fn content<T: CellSource>(&mut self, f: impl FnOnce(Self::Source) -> T) {
         self.w.content(f)
     }
+    fn content_with_baseline<T: Display>(
+        &mut self,
+        baseline: &str,
+        f: impl FnOnce(Self::Source) -> T,
+    ) {
+        self.w.content_with_baseline(baseline, f)
+    }
 }
 
 impl<'a, W: RowWriteCore + ?Sized, C: CellSource> RowWriteCore for GroupGuard<'a, W, C> {
@@ -269,5 +323,16 @@ impl<'a, W: RowWriteCore + ?Sized, C: CellSource> RowWriteCore for GroupGuard<'a
 impl<W: RowWriteCore + ?Sized, C: CellSource> Drop for GroupGuard<'_, W, C> {
     fn drop(&mut self) {
         self.w.group_end(self.header.take().unwrap())
+    }
+}
+
+struct OptionDisplay<T>(Option<T>);
+impl<T: Display> Display for OptionDisplay<T> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Some(value) = &self.0 {
+            value.fmt(f)
+        } else {
+            Ok(())
+        }
     }
 }

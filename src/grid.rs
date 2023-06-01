@@ -186,6 +186,15 @@ impl<S> RowWrite for LayoutWriter<S> {
         assert!(self.depth != 0);
         self.separators.push(false);
     }
+    fn content_with_baseline<T: Display>(
+        &mut self,
+        _baseline: &str,
+        _f: impl FnOnce(Self::Source) -> T,
+    ) {
+        assert!(self.depth != 0);
+        self.separators.push(false);
+        self.separators.push(false);
+    }
 }
 impl<S> RowWriteCore for LayoutWriter<S> {
     fn group_start(&mut self) {
@@ -236,6 +245,14 @@ impl<'a, S: 'a + ?Sized> RowWrite for HeaderWriter<'a, S> {
         assert!(self.depth != 0);
         self.column += 1;
     }
+    fn content_with_baseline<T: Display>(
+        &mut self,
+        _baseline: &str,
+        _f: impl FnOnce(Self::Source) -> T,
+    ) {
+        assert!(self.depth != 0);
+        self.column += 2;
+    }
 }
 impl<'a, S: 'a + ?Sized> RowWriteCore for HeaderWriter<'a, S> {
     fn group_start(&mut self) {
@@ -264,6 +281,18 @@ impl<'a, R: ?Sized> RowWrite for RowWriter<'a, R> {
     type Source = &'a R;
     fn content<T: CellSource>(&mut self, f: impl FnOnce(Self::Source) -> T) {
         self.row.push(f(self.source));
+    }
+
+    fn content_with_baseline<T: Display>(
+        &mut self,
+        baseline: &str,
+        f: impl FnOnce(Self::Source) -> T,
+    ) {
+        let s = f(self.source).to_string();
+        let b = s.find(baseline).unwrap_or(s.len());
+        let (left, right) = s.split_at(b);
+        self.row.push(cell(left).right());
+        self.row.push(cell(right).left());
     }
 }
 impl<'a, R: ?Sized> RowWriteCore for RowWriter<'a, R> {
