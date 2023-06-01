@@ -249,7 +249,7 @@ fn column_multipart() {
 fn column_cell_by() {
     struct Source {
         a: f64,
-        b: f64,
+        b: u32,
     }
     use std::fmt::*;
 
@@ -261,12 +261,12 @@ fn column_cell_by() {
     }
 
     do_test(
-        vec![Source { a: 10.0, b: 10.1 }, Source { a: 1.22, b: 3.45 }],
+        vec![Source { a: 10.0, b: 30 }, Source { a: 1.22, b: 40 }],
         r"
-   a   |  b   |
--------|------|
- 10.00 | 10.1 |
-  1.22 | 3.45 |
+   a   | b  |
+-------|----|
+ 10.00 | 30 |
+  1.22 | 40 |
 ",
     );
 }
@@ -275,7 +275,7 @@ fn column_cell_by() {
 fn column_cell_macro() {
     struct Source {
         a: f64,
-        b: f64,
+        b: u32,
     }
 
     impl RowSource for Source {
@@ -286,12 +286,12 @@ fn column_cell_macro() {
     }
 
     do_test(
-        vec![Source { a: 10.0, b: 10.1 }, Source { a: 1.22, b: 3.45 }],
+        vec![Source { a: 10.0, b: 30 }, Source { a: 1.22, b: 40 }],
         r"
-   a   |  b   |
--------|------|
- 10.00 | 10.1 |
-  1.22 | 3.45 |
+   a   | b  |
+-------|----|
+ 10.00 | 30 |
+  1.22 | 40 |
 ",
     );
 }
@@ -406,21 +406,32 @@ fn with_schema() {
 fn baseline() {
     struct Source {
         a: f64,
+        b: String,
     }
 
     impl RowSource for Source {
         fn fmt_row(w: &mut RowWriter<&Self>) {
-            w.column_with_baseline("a", ".", |x| x.a)
+            w.column("a", |x| x.a);
+            w.column("b", |x| cell(&x.b).baseline("-"));
         }
     }
 
     do_test(
-        vec![Source { a: 100.1 }, Source { a: 10.123 }],
+        vec![
+            Source {
+                a: 100.1,
+                b: "1-2345".into(),
+            },
+            Source {
+                a: 10.123,
+                b: "1234-5".into(),
+            },
+        ],
         r"
-    a    |
----------|
- 100.1   |
-  10.123 |",
+    a    |     b     |
+---------|-----------|
+ 100.1   |    1-2345 |
+  10.123 | 1234-5    |",
     );
 }
 

@@ -1,3 +1,5 @@
+use crate::RowSource;
+
 use self::HorizontalAlignment::*;
 use std::fmt::*;
 
@@ -264,6 +266,12 @@ impl<T: CellSource> Cell<T> {
         self.with_align_h(Center)
     }
 
+    pub fn baseline(self, baseline: &str) -> BaselineAlignedCell {
+        let mut value = String::new();
+        self.fmt(&mut value);
+        BaselineAlignedCell::new(value, baseline)
+    }
+
     /// Return the cell with an empty style replaced by the specified style.
     ///
     /// Judgment as to whether the style is empty or not is done for each individual element.
@@ -316,9 +324,45 @@ impl_cell_source!(u128, Right);
 impl_cell_source!(i128, Right);
 impl_cell_source!(isize, Right);
 impl_cell_source!(usize, Right);
-impl_cell_source!(f32, Right);
-impl_cell_source!(f64, Right);
 impl_cell_source!(String, Left);
 impl_cell_source!(&str, Left);
 impl_cell_source!(char, Center);
 impl_cell_source!(bool, Center);
+
+pub struct BaselineAlignedCell {
+    value: String,
+    baseline_offset: usize,
+}
+impl BaselineAlignedCell {
+    pub fn new(value: String, baseline: &str) -> Self {
+        let baseline_offset = value.find(baseline).unwrap_or(value.len());
+        Self {
+            value,
+            baseline_offset,
+        }
+    }
+    fn left(&self) -> &str {
+        &self.value[..self.baseline_offset]
+    }
+    fn right(&self) -> &str {
+        &self.value[self.baseline_offset..]
+    }
+}
+
+impl RowSource for BaselineAlignedCell {
+    fn fmt_row(w: &mut crate::RowWriter<&Self>) {
+        w.content(|&this| cell(this.left()).right());
+        w.content(|&this| cell(this.right()).left());
+    }
+}
+
+impl RowSource for f32 {
+    fn fmt_row(w: &mut crate::RowWriter<&Self>) {
+        w.content(|&this| cell(this).baseline("."))
+    }
+}
+impl RowSource for f64 {
+    fn fmt_row(w: &mut crate::RowWriter<&Self>) {
+        w.content(|&this| cell(this).baseline("."))
+    }
+}
