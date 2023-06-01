@@ -5,9 +5,9 @@ use std::fmt::*;
 use std::marker::PhantomData;
 
 /// A data structure that can be formatted into a row.
-pub trait RowSource {
-    /// Define column informations. see [`RowWriter`] for details.
-    fn fmt_row(w: &mut RowWriter<&Self>);
+pub trait ColumnSource {
+    /// Define column informations. see [`ColumnFormatter`] for details.
+    fn fmt(w: &mut ColumnFormatter<&Self>);
 }
 
 /// Columns definition.
@@ -21,7 +21,7 @@ pub trait RowSource {
 /// }
 ///
 /// impl GridSchema<[u32]> for MyGridSchema {
-///     fn fmt_row(&self, w: &mut RowWriter<&[u32]>) {
+///     fn fmt(&self, w: &mut ColumnFormatter<&[u32]>) {
 ///         for i in 0..self.len {
 ///             w.column(i, |s| s[i]);
 ///         }
@@ -40,15 +40,15 @@ pub trait RowSource {
 /// "#);
 /// ```
 pub trait GridSchema<R: ?Sized> {
-    /// Define column information. see [`RowWriter`] for details.
-    fn fmt_row(&self, w: &mut RowWriter<&R>);
+    /// Define column information. see [`ColumnFormatter`] for details.
+    fn fmt(&self, w: &mut ColumnFormatter<&R>);
 }
 
-/// [`GridSchema`] implementation that use [`RowSource`].
-pub struct RowSourceGridSchema;
-impl<R: RowSource + ?Sized> GridSchema<R> for RowSourceGridSchema {
-    fn fmt_row(&self, w: &mut RowWriter<&R>) {
-        R::fmt_row(w);
+/// [`GridSchema`] implementation that use [`ColumnSource`].
+pub struct GridSchemaByColumnSource;
+impl<R: ColumnSource + ?Sized> GridSchema<R> for GridSchemaByColumnSource {
+    fn fmt(&self, w: &mut ColumnFormatter<&R>) {
+        R::fmt(w);
     }
 }
 
@@ -62,8 +62,8 @@ impl<R: RowSource + ?Sized> GridSchema<R> for RowSourceGridSchema {
 ///     a: u32,
 ///     b: u32,
 /// }
-/// impl RowSource for RowData {
-///     fn fmt_row(w: &mut RowWriter<&Self>) {
+/// impl ColumnSource for RowData {
+///     fn fmt(w: &mut ColumnFormatter<&Self>) {
 ///         w.column("a", |s| s.a);
 ///         w.column("b", |s| s.b);
 ///     }
@@ -86,16 +86,16 @@ pub struct Grid<R: ?Sized, S> {
     _phantom: PhantomData<fn(&R)>,
 }
 
-impl<R: RowSource + ?Sized> Default for Grid<R, RowSourceGridSchema> {
+impl<R: ColumnSource + ?Sized> Default for Grid<R, GridSchemaByColumnSource> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<R: RowSource + ?Sized> Grid<R, RowSourceGridSchema> {
-    /// Create a new `Grid` with [`RowSourceGridSchema`] and prepare header rows.
+impl<R: ColumnSource + ?Sized> Grid<R, GridSchemaByColumnSource> {
+    /// Create a new `Grid` with [`GridSchemaByColumnSource`] and prepare header rows.
     pub fn new() -> Self {
-        Self::new_with_schema(RowSourceGridSchema)
+        Self::new_with_schema(GridSchemaByColumnSource)
     }
 }
 
@@ -103,14 +103,16 @@ impl<R: ?Sized, S: GridSchema<R>> Grid<R, S> {
     /// Create a new `Grid` with specified schema and prepare header rows.
     pub fn new_with_schema(schema: S) -> Self {
         let mut layout = LayoutWriter::new();
-        schema.fmt_row(&mut RowWriter(RowWriterData::Layout(&mut layout)));
+        schema.fmt(&mut ColumnFormatter(ColumnFormatterData::Layout(
+            &mut layout,
+        )));
         layout.separators.pop();
 
         let mut buf = GridBuf::new();
         buf.set_column_separators(layout.separators);
 
         for target in 0..layout.depth_max {
-            schema.fmt_row(&mut RowWriter(RowWriterData::Header(
+            schema.fmt(&mut ColumnFormatter(ColumnFormatterData::Header(
                 &mut HeaderWriter::new(buf.push_row(), target),
             )));
             buf.push_separator();
@@ -126,10 +128,12 @@ impl<R: ?Sized, S: GridSchema<R>> Grid<R, S> {
     /// Append a row to the bottom of the grid.
     pub fn push_row(&mut self, source: &R) {
         self.schema
-            .fmt_row(&mut RowWriter(RowWriterData::Body(BodyWriter {
-                buf: &mut self.buf.push_row(),
-                data: Some(source),
-            })));
+            .fmt(&mut ColumnFormatter(ColumnFormatterData::Body(
+                BodyWriter {
+                    buf: &mut self.buf.push_row(),
+                    data: Some(source),
+                },
+            )));
     }
 
     /// Append a row separator to the bottom of the grid.
@@ -153,9 +157,9 @@ impl<R: ?Sized, S> Debug for Grid<R, S> {
 /// - Use [`column`](Self::column) to create column.
 /// - Use [`group`](Self::group) to create multi level header.
 /// - Use [`content`](Self::content) to create shared header columns.
-pub struct RowWriter<'a, 'b, T>(RowWriterData<'a, 'b, T>);
+pub struct ColumnFormatter<'a, 'b, T>(ColumnFormatterData<'a, 'b, T>);
 
-impl<'a, 'b, T> RowWriter<'a, 'b, T> {
+impl<'a, 'b, T> ColumnFormatter<'a, 'b, T> {
     /// Define column group. Used to create multi row header.
     ///
     /// - header : Column group header's cell. If horizontal alignment is not specified, it is set to the center.
@@ -169,8 +173,8 @@ impl<'a, 'b, T> RowWriter<'a, 'b, T> {
     ///     b_1: u32,
     ///     b_2: u32,
     /// }
-    /// impl RowSource for RowData {
-    ///     fn fmt_row(w: &mut RowWriter<&Self>) {
+    /// impl ColumnSource for RowData {
+    ///     fn fmt(w: &mut ColumnFormatter<&Self>) {
     ///         w.column("a", |s| s.a);
     ///         w.group("b", |w| {
     ///             w.column("1", |s| s.b_1);
@@ -199,7 +203,11 @@ impl<'a, 'b, T> RowWriter<'a, 'b, T> {
     ///  300 |  1 | 500 |
     /// "#);
     /// ```
-    pub fn group(&mut self, header: impl CellSource, f: impl FnOnce(&mut RowWriter<'_, 'b, T>)) {
+    pub fn group(
+        &mut self,
+        header: impl CellSource,
+        f: impl FnOnce(&mut ColumnFormatter<'_, 'b, T>),
+    ) {
         self.group_start();
         f(self);
         self.group_end(header);
@@ -218,8 +226,8 @@ impl<'a, 'b, T> RowWriter<'a, 'b, T> {
     ///     b_1: u32,
     ///     b_2: u32,
     /// }
-    /// impl RowSource for RowData {
-    ///     fn fmt_row(w: &mut RowWriter<&Self>) {
+    /// impl ColumnSource for RowData {
+    ///     fn fmt(w: &mut ColumnFormatter<&Self>) {
     ///         w.column("a", |s| s.a);
     ///         w.group("b", |w| {
     ///             w.content(|s| s.b_1);
@@ -247,15 +255,15 @@ impl<'a, 'b, T> RowWriter<'a, 'b, T> {
     ///  300 |  1 500 |
     /// "#);
     /// ```
-    pub fn content<U: RowSource>(&mut self, f: impl FnOnce(&T) -> U) {
-        U::fmt_row(&mut self.map(f).as_ref())
+    pub fn content<U: ColumnSource>(&mut self, f: impl FnOnce(&T) -> U) {
+        U::fmt(&mut self.map(f).as_ref())
     }
 
     fn content_raw<U: CellSource>(&mut self, f: impl FnOnce(&T) -> U) {
         match &mut self.0 {
-            RowWriterData::Layout(w) => w.content(),
-            RowWriterData::Header(w) => w.content(),
-            RowWriterData::Body(w) => w.content(f),
+            ColumnFormatterData::Layout(w) => w.content(),
+            ColumnFormatterData::Header(w) => w.content(),
+            ColumnFormatterData::Body(w) => w.content(f),
         }
     }
 
@@ -272,8 +280,8 @@ impl<'a, 'b, T> RowWriter<'a, 'b, T> {
     ///     a: u32,
     ///     b: u32,
     /// }
-    /// impl RowSource for RowData {
-    ///     fn fmt_row(w: &mut RowWriter<&Self>) {
+    /// impl ColumnSource for RowData {
+    ///     fn fmt(w: &mut ColumnFormatter<&Self>) {
     ///         w.column("a", |s| s.a);
     ///         w.column("b", |s| s.b);
     ///     }
@@ -289,54 +297,54 @@ impl<'a, 'b, T> RowWriter<'a, 'b, T> {
     ///    2 | 200 |
     /// "#);
     /// ```
-    pub fn column<U: RowSource>(&mut self, header: impl CellSource, f: impl FnOnce(&T) -> U) {
+    pub fn column<U: ColumnSource>(&mut self, header: impl CellSource, f: impl FnOnce(&T) -> U) {
         self.group(header, |w| w.content(f));
     }
 
-    /// Takes a closure and creates [`RowWriter`] whose source value was converted.
-    pub fn map<'x, U: 'x>(&'x mut self, f: impl FnOnce(&T) -> U) -> RowWriter<'x, 'b, U> {
-        RowWriter(match &mut self.0 {
-            RowWriterData::Layout(w) => RowWriterData::Layout(w),
-            RowWriterData::Header(w) => RowWriterData::Header(w),
-            RowWriterData::Body(w) => RowWriterData::Body(BodyWriter {
+    /// Takes a closure and creates [`ColumnFormatter`] whose source value was converted.
+    pub fn map<'x, U: 'x>(&'x mut self, f: impl FnOnce(&T) -> U) -> ColumnFormatter<'x, 'b, U> {
+        ColumnFormatter(match &mut self.0 {
+            ColumnFormatterData::Layout(w) => ColumnFormatterData::Layout(w),
+            ColumnFormatterData::Header(w) => ColumnFormatterData::Header(w),
+            ColumnFormatterData::Body(w) => ColumnFormatterData::Body(BodyWriter {
                 buf: w.buf,
                 data: w.data.as_ref().map(f),
             }),
         })
     }
 
-    pub fn as_ref<'x>(&'x mut self) -> RowWriter<'x, 'b, &'x T> {
-        RowWriter(match &mut self.0 {
-            RowWriterData::Layout(w) => RowWriterData::Layout(w),
-            RowWriterData::Header(w) => RowWriterData::Header(w),
-            RowWriterData::Body(w) => RowWriterData::Body(BodyWriter {
+    pub fn as_ref<'x>(&'x mut self) -> ColumnFormatter<'x, 'b, &'x T> {
+        ColumnFormatter(match &mut self.0 {
+            ColumnFormatterData::Layout(w) => ColumnFormatterData::Layout(w),
+            ColumnFormatterData::Header(w) => ColumnFormatterData::Header(w),
+            ColumnFormatterData::Body(w) => ColumnFormatterData::Body(BodyWriter {
                 buf: w.buf,
                 data: w.data.as_ref(),
             }),
         })
     }
 
-    /// Creates [`RowWriter`] which uses a closure to determine if an content should be outputed.
-    pub fn filter(&mut self, f: impl FnOnce(&T) -> bool) -> RowWriter<'_, 'b, &T> {
-        RowWriter(match &mut self.0 {
-            RowWriterData::Layout(w) => RowWriterData::Layout(w),
-            RowWriterData::Header(w) => RowWriterData::Header(w),
-            RowWriterData::Body(w) => RowWriterData::Body(BodyWriter {
+    /// Creates [`ColumnFormatter`] which uses a closure to determine if an content should be outputed.
+    pub fn filter(&mut self, f: impl FnOnce(&T) -> bool) -> ColumnFormatter<'_, 'b, &T> {
+        ColumnFormatter(match &mut self.0 {
+            ColumnFormatterData::Layout(w) => ColumnFormatterData::Layout(w),
+            ColumnFormatterData::Header(w) => ColumnFormatterData::Header(w),
+            ColumnFormatterData::Body(w) => ColumnFormatterData::Body(BodyWriter {
                 buf: w.buf,
                 data: w.data.as_ref().filter(|data| f(data)),
             }),
         })
     }
 
-    /// Creates [`RowWriter`] that both filters and maps.
+    /// Creates [`ColumnFormatter`] that both filters and maps.
     pub fn filter_map<'a0, U: 'a0>(
         &'a0 mut self,
         f: impl FnOnce(&T) -> Option<U>,
-    ) -> RowWriter<'a0, 'b, U> {
-        RowWriter(match &mut self.0 {
-            RowWriterData::Layout(w) => RowWriterData::Layout(w),
-            RowWriterData::Header(w) => RowWriterData::Header(w),
-            RowWriterData::Body(w) => RowWriterData::Body(BodyWriter {
+    ) -> ColumnFormatter<'a0, 'b, U> {
+        ColumnFormatter(match &mut self.0 {
+            ColumnFormatterData::Layout(w) => ColumnFormatterData::Layout(w),
+            ColumnFormatterData::Header(w) => ColumnFormatterData::Header(w),
+            ColumnFormatterData::Body(w) => ColumnFormatterData::Body(BodyWriter {
                 buf: w.buf,
                 data: w.data.as_ref().and_then(f),
             }),
@@ -350,21 +358,21 @@ impl<'a, 'b, T> RowWriter<'a, 'b, T> {
 
     fn group_start(&mut self) {
         match &mut self.0 {
-            RowWriterData::Layout(w) => w.group_start(),
-            RowWriterData::Header(w) => w.group_start(),
-            RowWriterData::Body(w) => w.group_start(),
+            ColumnFormatterData::Layout(w) => w.group_start(),
+            ColumnFormatterData::Header(w) => w.group_start(),
+            ColumnFormatterData::Body(w) => w.group_start(),
         }
     }
     fn group_end(&mut self, header: impl CellSource) {
         match &mut self.0 {
-            RowWriterData::Layout(w) => w.group_end(),
-            RowWriterData::Header(w) => w.group_end(header),
-            RowWriterData::Body(w) => w.group_end(),
+            ColumnFormatterData::Layout(w) => w.group_end(),
+            ColumnFormatterData::Header(w) => w.group_end(header),
+            ColumnFormatterData::Body(w) => w.group_end(),
         }
     }
 }
 
-enum RowWriterData<'a, 'b, T> {
+enum ColumnFormatterData<'a, 'b, T> {
     Layout(&'a mut LayoutWriter),
     Header(&'a mut HeaderWriter<'b>),
     Body(BodyWriter<'a, 'b, T>),
@@ -468,8 +476,8 @@ impl<T> BodyWriter<'_, '_, T> {
     fn group_end(&mut self) {}
 }
 
-impl<T: CellSource> RowSource for T {
-    fn fmt_row(w: &mut RowWriter<&Self>) {
+impl<T: CellSource> ColumnSource for T {
+    fn fmt(w: &mut ColumnFormatter<&Self>) {
         w.content_raw(|&x| x);
     }
 }

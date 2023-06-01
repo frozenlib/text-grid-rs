@@ -4,8 +4,8 @@ fn main() {
         a: f64,
         b: f64,
     }
-    impl RowSource for RowData {
-        fn fmt_row(w: &mut RowWriter<&Self>) {
+    impl ColumnSource for RowData {
+        fn fmt(w: &mut ColumnFormatter<&Self>) {
             w.column("a", |&s| cell!("{:.2}", s.a).right());
             w.column("b", |&s| cell!("{:.3}", s.b).right());
         }

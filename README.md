@@ -16,8 +16,8 @@ fn main() {
         a: u32,
         b: u32,
     }
-    impl RowSource for RowData {
-        fn fmt_row(w: &mut RowWriter<&Self>) {
+    impl ColumnSource for RowData {
+        fn fmt(w: &mut ColumnFormatter<&Self>) {
             w.column("a", |s| s.a);
             w.column("b", |s| s.b);
         }

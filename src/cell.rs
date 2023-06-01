@@ -1,4 +1,4 @@
-use crate::RowSource;
+use crate::ColumnSource;
 
 use self::HorizontalAlignment::*;
 use std::fmt::*;
@@ -19,7 +19,7 @@ impl CellStyle {
     }
 }
 
-/// Possible horizontal alignments for cell's content.
+/// Horizontal alignments for cell's content.
 #[derive(Clone, Copy)]
 pub enum HorizontalAlignment {
     Left,
@@ -151,8 +151,8 @@ pub fn cell_by<F: Fn(&mut String) -> Result>(f: F) -> Cell<impl CellSource> {
 ///     a: f64,
 ///     b: f64,
 /// }
-/// impl RowSource for RowData {
-///     fn fmt_row(w: &mut RowWriter<&Self>) {
+/// impl ColumnSource for RowData {
+///     fn fmt(w: &mut ColumnFormatter<&Self>) {
 ///         w.column("a", |&s| cell!("{:.2}", s.a).right());
 ///         w.column("b", |&s| cell!("{:.3}", s.b).right());
 ///     }
@@ -346,20 +346,20 @@ impl BaselineAlignedCell {
     }
 }
 
-impl RowSource for BaselineAlignedCell {
-    fn fmt_row(w: &mut crate::RowWriter<&Self>) {
+impl ColumnSource for BaselineAlignedCell {
+    fn fmt(w: &mut crate::ColumnFormatter<&Self>) {
         w.content(|&this| cell(this.left()).right());
         w.content(|&this| cell(this.right()).left());
     }
 }
 
-impl RowSource for f32 {
-    fn fmt_row(w: &mut crate::RowWriter<&Self>) {
+impl ColumnSource for f32 {
+    fn fmt(w: &mut crate::ColumnFormatter<&Self>) {
         w.content(|&this| cell(this).baseline("."))
     }
 }
-impl RowSource for f64 {
-    fn fmt_row(w: &mut crate::RowWriter<&Self>) {
+impl ColumnSource for f64 {
+    fn fmt(w: &mut crate::ColumnFormatter<&Self>) {
         w.content(|&this| cell(this).baseline("."))
     }
 }

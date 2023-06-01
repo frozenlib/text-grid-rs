@@ -5,8 +5,8 @@ fn main() {
         b_1: u32,
         b_2: u32,
     }
-    impl RowSource for RowData {
-        fn fmt_row(w: &mut RowWriter<&Self>) {
+    impl ColumnSource for RowData {
+        fn fmt(w: &mut ColumnFormatter<&Self>) {
             w.column("a", |s| s.a);
             w.group("b", |w| {
                 w.content(|s| s.b_1);

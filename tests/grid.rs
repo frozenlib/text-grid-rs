@@ -7,8 +7,8 @@ fn column_u8() {
         b: u8,
     }
 
-    impl RowSource for Source {
-        fn fmt_row(w: &mut RowWriter<&Self>) {
+    impl ColumnSource for Source {
+        fn fmt(w: &mut ColumnFormatter<&Self>) {
             w.column("a", |x| x.a);
             w.column("b", |x| x.b);
         }
@@ -32,8 +32,8 @@ fn column_u8_ref() {
         b: u8,
     }
 
-    impl RowSource for Source {
-        fn fmt_row(w: &mut RowWriter<&Self>) {
+    impl ColumnSource for Source {
+        fn fmt(w: &mut ColumnFormatter<&Self>) {
             w.column("a", |x| x.a);
             w.column("b", |x| &x.b);
         }
@@ -56,8 +56,8 @@ fn column_str() {
         s: &'s str,
     }
 
-    impl<'s> RowSource for Source<'s> {
-        fn fmt_row(w: &mut RowWriter<&Self>) {
+    impl<'s> ColumnSource for Source<'s> {
+        fn fmt(w: &mut ColumnFormatter<&Self>) {
             w.column("a", |x| x.s);
         }
     }
@@ -80,8 +80,8 @@ fn column_static_str() {
         b: u8,
     }
 
-    impl RowSource for Source {
-        fn fmt_row(w: &mut RowWriter<&Self>) {
+    impl ColumnSource for Source {
+        fn fmt(w: &mut ColumnFormatter<&Self>) {
             w.column("a", |x| x.a);
             w.column("p", |_| "xxx");
             w.column("b", |x| x.b);
@@ -106,8 +106,8 @@ fn column_group() {
         b: u8,
     }
 
-    impl RowSource for Source {
-        fn fmt_row(w: &mut RowWriter<&Self>) {
+    impl ColumnSource for Source {
+        fn fmt(w: &mut ColumnFormatter<&Self>) {
             w.group("g", |w| {
                 w.column("a", |x| x.a);
                 w.column("b", |x| x.b);
@@ -135,8 +135,8 @@ fn column_group_differing_level() {
         b_1: u32,
         b_2: u32,
     }
-    impl RowSource for Source {
-        fn fmt_row(w: &mut RowWriter<&Self>) {
+    impl ColumnSource for Source {
+        fn fmt(w: &mut ColumnFormatter<&Self>) {
             w.column("a", |s| s.a);
             w.group("b", |w| {
                 w.column("1", |s| s.b_1);
@@ -177,8 +177,8 @@ fn column_group_differing_level_2() {
         c_1: u32,
         c_2: u32,
     }
-    impl RowSource for Source {
-        fn fmt_row(w: &mut RowWriter<&Self>) {
+    impl ColumnSource for Source {
+        fn fmt(w: &mut ColumnFormatter<&Self>) {
             w.column("a", |s| s.a);
             w.group("b", |w| {
                 w.column("1", |s| s.b_1);
@@ -225,8 +225,8 @@ fn column_multipart() {
         b: u8,
     }
 
-    impl RowSource for Source {
-        fn fmt_row(w: &mut RowWriter<&Self>) {
+    impl ColumnSource for Source {
+        fn fmt(w: &mut ColumnFormatter<&Self>) {
             w.group("g", |w| {
                 w.content(|x| x.a);
                 w.content(|x| x.b);
@@ -253,8 +253,8 @@ fn column_cell_by() {
     }
     use std::fmt::*;
 
-    impl RowSource for Source {
-        fn fmt_row(w: &mut RowWriter<&Self>) {
+    impl ColumnSource for Source {
+        fn fmt(w: &mut ColumnFormatter<&Self>) {
             w.column("a", |&x| cell_by(move |w| write!(w, "{:.2}", x.a)).right());
             w.column("b", |&x| x.b);
         }
@@ -278,8 +278,8 @@ fn column_cell_macro() {
         b: u32,
     }
 
-    impl RowSource for Source {
-        fn fmt_row(w: &mut RowWriter<&Self>) {
+    impl ColumnSource for Source {
+        fn fmt(w: &mut ColumnFormatter<&Self>) {
             w.column("a", |&x| cell!("{:.2}", x.a).right());
             w.column("b", |&x| x.b);
         }
@@ -303,8 +303,8 @@ fn map() {
         b: u8,
     }
 
-    impl RowSource for Source {
-        fn fmt_row(w: &mut RowWriter<&Self>) {
+    impl ColumnSource for Source {
+        fn fmt(w: &mut ColumnFormatter<&Self>) {
             w.map(|x| x.a).column("a", |&x| x);
             w.map(|x| x.b).column("b", |&x| x);
         }
@@ -328,8 +328,8 @@ fn map_ref() {
         b: u8,
     }
 
-    impl RowSource for Source {
-        fn fmt_row(w: &mut RowWriter<&Self>) {
+    impl ColumnSource for Source {
+        fn fmt(w: &mut ColumnFormatter<&Self>) {
             w.map(|x| &x.a).column("a", |&x| x);
             w.map(|x| &x.b).column("b", |&x| x);
         }
@@ -353,8 +353,8 @@ fn impl_debug() {
         b: u8,
     }
 
-    impl RowSource for Source {
-        fn fmt_row(w: &mut RowWriter<&Self>) {
+    impl ColumnSource for Source {
+        fn fmt(w: &mut ColumnFormatter<&Self>) {
             w.column("a", |x| x.a);
             w.column("b", |x| x.b);
         }
@@ -381,7 +381,7 @@ fn with_schema() {
     }
 
     impl GridSchema<[u32]> for MyGridSchema {
-        fn fmt_row(&self, w: &mut RowWriter<&[u32]>) {
+        fn fmt(&self, w: &mut ColumnFormatter<&[u32]>) {
             for i in 0..self.len {
                 w.column(i, |s| s[i]);
             }
@@ -409,8 +409,8 @@ fn baseline() {
         b: String,
     }
 
-    impl RowSource for Source {
-        fn fmt_row(w: &mut RowWriter<&Self>) {
+    impl ColumnSource for Source {
+        fn fmt(w: &mut ColumnFormatter<&Self>) {
             w.column("a", |x| x.a);
             w.column("b", |x| cell(&x.b).baseline("-"));
         }
@@ -442,8 +442,8 @@ fn root_content() {
         b: u32,
     }
 
-    impl RowSource for Source {
-        fn fmt_row(w: &mut RowWriter<&Self>) {
+    impl ColumnSource for Source {
+        fn fmt(w: &mut ColumnFormatter<&Self>) {
             w.content(|x| x.a);
             w.content(|_| " ");
             w.content(|x| x.b);
@@ -458,7 +458,7 @@ fn root_content() {
     );
 }
 
-fn do_test<T: RowSource>(s: Vec<T>, e: &str) {
+fn do_test<T: ColumnSource>(s: Vec<T>, e: &str) {
     let mut g = Grid::new();
     for s in s {
         g.push_row(&s);
