@@ -27,7 +27,7 @@ pub enum HorizontalAlignment {
 
 /// A data structure that can be formatted into cell.
 ///
-/// Normally, [`cell()`] or [`macro@cell`] is used to create a value that implements `CellSource`.
+/// Normally, [`cell()`] or [`cell!`](crate::cell!) is used to create a value that implements `CellSource`.
 pub trait CellSource {
     /// Output the cell text to given buffer.
     fn fmt(&self, s: &mut String);
