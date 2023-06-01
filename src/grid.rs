@@ -1,16 +1,15 @@
 use crate::cell::*;
 use crate::grid_buf::*;
-use crate::row_write::*;
 use std::cmp::max;
 use std::fmt::*;
 use std::marker::PhantomData;
+use std::ops::Deref;
+use std::ops::DerefMut;
 
 /// A data structure that can be formatted into a row.
 pub trait RowSource {
-    /// Define column informations. see [`RowWrite`] for details.
-    fn fmt_row<'a>(w: &mut impl RowWrite<Source = &'a Self>)
-    where
-        Self: 'a;
+    /// Define column informations. see [`RowWriter`] for details.
+    fn fmt_row(w: &mut RowWriter<&Self>);
 }
 
 /// Columns definition.
@@ -24,7 +23,7 @@ pub trait RowSource {
 /// }
 ///
 /// impl GridSchema<[u32]> for MyGridSchema {
-///     fn fmt_row<'a>(&self, w: &mut impl RowWrite<Source = &'a [u32]>) {
+///     fn fmt_row(&self, w: &mut RowWriter<&[u32]>) {
 ///         for i in 0..self.len {
 ///             w.column(i, |s| s[i]);
 ///         }
@@ -45,19 +44,14 @@ pub trait RowSource {
 ///  4 | 5 | 6 |
 /// ```
 pub trait GridSchema<R: ?Sized> {
-    /// Define column information. see [`RowWrite`] for details.
-    fn fmt_row<'a>(&self, w: &mut impl RowWrite<Source = &'a R>)
-    where
-        R: 'a;
+    /// Define column information. see [`RowWriter`] for details.
+    fn fmt_row(&self, w: &mut RowWriter<&R>);
 }
 
 /// [`GridSchema`] implementation that use [`RowSource`].
 pub struct RowSourceGridSchema;
 impl<R: RowSource + ?Sized> GridSchema<R> for RowSourceGridSchema {
-    fn fmt_row<'a>(&self, w: &mut impl RowWrite<Source = &'a R>)
-    where
-        R: 'a,
-    {
+    fn fmt_row(&self, w: &mut RowWriter<&R>) {
         R::fmt_row(w);
     }
 }
@@ -73,7 +67,7 @@ impl<R: RowSource + ?Sized> GridSchema<R> for RowSourceGridSchema {
 ///     b: u32,
 /// }
 /// impl RowSource for RowData {
-///     fn fmt_row<'a>(w: &mut impl RowWrite<Source=&'a Self>) {
+///     fn fmt_row(w: &mut RowWriter<&Self>) {
 ///         w.column("a", |s| s.a);
 ///         w.column("b", |s| s.b);
 ///     }
@@ -116,14 +110,16 @@ impl<R: ?Sized, S: GridSchema<R>> Grid<R, S> {
     /// Create a new `Grid` with specified schema and prepare header rows.
     pub fn new_with_schema(schema: S) -> Self {
         let mut layout = LayoutWriter::new();
-        schema.fmt_row(&mut layout);
+        schema.fmt_row(&mut RowWriter(RowWriterData::Layout(&mut layout)));
         layout.separators.pop();
 
         let mut buf = GridBuf::new();
         buf.set_column_separators(layout.separators);
 
         for target in 0..layout.depth_max {
-            schema.fmt_row(&mut HeaderWriter::new(buf.push_row(), target));
+            schema.fmt_row(&mut RowWriter(RowWriterData::Header(
+                &mut HeaderWriter::new(buf.push_row(), target),
+            )));
             buf.push_separator();
         }
         Grid {
@@ -136,11 +132,11 @@ impl<R: ?Sized, S: GridSchema<R>> Grid<R, S> {
 impl<R: ?Sized, S: GridSchema<R>> Grid<R, S> {
     /// Append a row to the bottom of the grid.
     pub fn push_row(&mut self, source: &R) {
-        let mut writer = RowWriter {
-            source,
-            row: self.buf.push_row(),
-        };
-        self.schema.fmt_row(&mut writer);
+        self.schema
+            .fmt_row(&mut RowWriter(RowWriterData::Body(BodyWriter {
+                buf: &mut self.buf.push_row(),
+                data: Some(source),
+            })));
     }
 
     /// Append a row separator to the bottom of the grid.
@@ -159,20 +155,271 @@ impl<R: ?Sized, S> Debug for Grid<R, S> {
     }
 }
 
-struct LayoutWriter<S> {
+/// Used to define column information.
+///
+/// - Use [`column`](Self::column) to create column.
+/// - Use [`group`](Self::group) to create multi level header.
+/// - Use [`content`](Self::content) to create shared header columns.
+pub struct RowWriter<'a, 'b, T>(RowWriterData<'a, 'b, T>);
+
+impl<'a, 'b, T> RowWriter<'a, 'b, T> {
+    /// Define column group. Used to create multi row header.
+    ///
+    /// - header : Column group header's cell. If horizontal alignment is not specified, it is set to the center.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use text_grid::*;
+    /// struct RowData {
+    ///     a: u32,
+    ///     b_1: u32,
+    ///     b_2: u32,
+    /// }
+    /// impl RowSource for RowData {
+    ///     fn fmt_row(w: &mut RowWriter<&Self>) {
+    ///         w.column("a", |s| s.a);
+    ///         w.group("b").with(|w| {
+    ///             w.column("1", |s| s.b_1);
+    ///             w.column("2", |s| s.b_2);
+    ///         });
+    ///     }
+    /// }
+    ///
+    /// let mut g = Grid::new();
+    /// g.push_row(&RowData {
+    ///     a: 300,
+    ///     b_1: 10,
+    ///     b_2: 20,
+    /// });
+    /// g.push_row(&RowData {
+    ///     a: 300,
+    ///     b_1: 1,
+    ///     b_2: 500,
+    /// });
+    ///
+    /// ```
+    ///
+    /// Output:
+    /// ```text
+    ///   a  |    b     |
+    /// -----|----------|
+    ///      | 1  |  2  |
+    /// -----|----|-----|
+    ///  300 | 10 |  20 |
+    ///  300 |  1 | 500 |
+    ///  ```    
+    pub fn group<'a0, C: CellSource>(&'a0 mut self, header: C) -> GroupGuard<'a0, 'a, 'b, T, C> {
+        self.group_start();
+        GroupGuard {
+            w: self,
+            header: Some(header),
+        }
+    }
+
+    /// Define column content. Used to create shared header column.
+    ///
+    /// - f : A function to obtain cell.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use text_grid::*;
+    /// struct RowData {
+    ///     a: u32,
+    ///     b_1: u32,
+    ///     b_2: u32,
+    /// }
+    /// impl RowSource for RowData {
+    ///     fn fmt_row(w: &mut RowWriter<&Self>) {
+    ///         w.column("a", |s| s.a);
+    ///         w.group("b").with(|w| {
+    ///             w.content(|s| s.b_1);
+    ///             w.content(|_| " ");
+    ///             w.content(|s| s.b_2);
+    ///         });
+    ///     }
+    /// }
+    ///
+    /// let mut g = Grid::new();
+    /// g.push_row(&RowData {
+    ///     a: 300,
+    ///     b_1: 10,
+    ///     b_2: 20,
+    /// });
+    /// g.push_row(&RowData {
+    ///     a: 300,
+    ///     b_1: 1,
+    ///     b_2: 500,
+    /// });
+    ///
+    /// print!("{}", g);
+    ///
+    /// ```
+    ///
+    /// Output:
+    /// ```text
+    ///   a  |   b    |
+    /// -----|--------|
+    ///  300 | 10  20 |
+    ///  300 |  1 500 |
+    /// ```
+    pub fn content<U: CellSource>(&mut self, f: impl FnOnce(&T) -> U) {
+        match &mut self.0 {
+            RowWriterData::Layout(w) => w.content(),
+            RowWriterData::Header(w) => w.content(),
+            RowWriterData::Body(w) => w.content(f),
+        }
+    }
+    pub fn content_with_baseline<U: Display>(&mut self, baseline: &str, f: impl FnOnce(&T) -> U) {
+        match &mut self.0 {
+            RowWriterData::Layout(w) => w.content_with_baseline(),
+            RowWriterData::Header(w) => w.content_with_baseline(),
+            RowWriterData::Body(w) => w.content_with_baseline(baseline, f),
+        }
+    }
+
+    /// Define column.
+    ///
+    /// - header : Column header's cell. If horizontal alignment is not specified, it is set to the center.
+    /// - f : A function to obtain cell.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use text_grid::*;
+    /// struct RowData {
+    ///     a: u32,
+    ///     b: u32,
+    /// }
+    /// impl RowSource for RowData {
+    ///     fn fmt_row(w: &mut RowWriter<&Self>) {
+    ///         w.column("a", |s| s.a);
+    ///         w.column("b", |s| s.b);
+    ///     }
+    /// }
+    ///
+    /// let mut g = Grid::new();
+    /// g.push_row(&RowData { a: 300, b: 1 });
+    /// g.push_row(&RowData { a: 2, b: 200 });
+    ///
+    /// print!("{}", g);
+    /// ```
+    ///
+    /// Output:
+    /// ```text
+    ///   a  |  b  |
+    /// -----|-----|
+    ///  300 |   1 |
+    ///    2 | 200 |
+    /// ```
+    pub fn column<U: CellSource>(&mut self, header: impl CellSource, f: impl FnOnce(&T) -> U) {
+        self.group(header).content(f);
+    }
+
+    pub fn column_with_baseline<U: Display>(
+        &mut self,
+        header: impl CellSource,
+        baseline: &str,
+        f: impl FnOnce(&T) -> U,
+    ) {
+        self.group(header).content_with_baseline(baseline, f);
+    }
+
+    /// Takes a closure and creates [`RowWriter`] whose source value was converted.
+    pub fn map<'a0, U: 'a0>(&'a0 mut self, f: impl FnOnce(&T) -> U) -> RowWriter<'a0, 'b, U> {
+        RowWriter(match &mut self.0 {
+            RowWriterData::Layout(w) => RowWriterData::Layout(w),
+            RowWriterData::Header(w) => RowWriterData::Header(w),
+            RowWriterData::Body(w) => RowWriterData::Body(BodyWriter {
+                buf: w.buf,
+                data: w.data.as_ref().map(f),
+            }),
+        })
+    }
+
+    /// Creates [`RowWriter`] which uses a closure to determine if an content should be outputed.
+    pub fn filter(&mut self, f: impl FnOnce(&T) -> bool) -> RowWriter<'_, 'b, &T> {
+        RowWriter(match &mut self.0 {
+            RowWriterData::Layout(w) => RowWriterData::Layout(w),
+            RowWriterData::Header(w) => RowWriterData::Header(w),
+            RowWriterData::Body(w) => RowWriterData::Body(BodyWriter {
+                buf: w.buf,
+                data: w.data.as_ref().filter(|data| f(data)),
+            }),
+        })
+    }
+
+    /// Creates [`RowWriter`] that both filters and maps.
+    pub fn filter_map<'a0, U: 'a0>(
+        &'a0 mut self,
+        f: impl FnOnce(&T) -> Option<U>,
+    ) -> RowWriter<'a0, 'b, U> {
+        RowWriter(match &mut self.0 {
+            RowWriterData::Layout(w) => RowWriterData::Layout(w),
+            RowWriterData::Header(w) => RowWriterData::Header(w),
+            RowWriterData::Body(w) => RowWriterData::Body(BodyWriter {
+                buf: w.buf,
+                data: w.data.as_ref().and_then(f),
+            }),
+        })
+    }
+
+    /// Apply `f` to self.
+    pub fn with(&mut self, f: impl Fn(&mut Self)) {
+        f(self);
+    }
+
+    fn group_start(&mut self) {
+        match &mut self.0 {
+            RowWriterData::Layout(w) => w.group_start(),
+            RowWriterData::Header(w) => w.group_start(),
+            RowWriterData::Body(w) => w.group_start(),
+        }
+    }
+    fn group_end(&mut self, header: impl CellSource) {
+        match &mut self.0 {
+            RowWriterData::Layout(w) => w.group_end(),
+            RowWriterData::Header(w) => w.group_end(header),
+            RowWriterData::Body(w) => w.group_end(),
+        }
+    }
+}
+
+enum RowWriterData<'a, 'b, T> {
+    Layout(&'a mut LayoutWriter),
+    Header(&'a mut HeaderWriter<'b>),
+    Body(BodyWriter<'a, 'b, T>),
+}
+
+struct LayoutWriter {
     depth: usize,
     depth_max: usize,
     separators: Vec<bool>,
-    _phantom: PhantomData<fn(S)>,
 }
-impl<S> LayoutWriter<S> {
+impl LayoutWriter {
     fn new() -> Self {
-        LayoutWriter {
+        Self {
             depth: 0,
             depth_max: 0,
             separators: Vec::new(),
-            _phantom: PhantomData::default(),
         }
+    }
+    fn content(&mut self) {
+        self.separators.push(false);
+    }
+    fn content_with_baseline(&mut self) {
+        self.separators.push(false);
+        self.separators.push(false);
+    }
+    fn group_start(&mut self) {
+        self.set_separator();
+        self.depth += 1;
+        self.depth_max = max(self.depth_max, self.depth);
+    }
+    fn group_end(&mut self) {
+        self.depth -= 1;
+        self.set_separator()
     }
     fn set_separator(&mut self) {
         if let Some(last) = self.separators.last_mut() {
@@ -180,81 +427,36 @@ impl<S> LayoutWriter<S> {
         }
     }
 }
-impl<S> RowWrite for LayoutWriter<S> {
-    type Source = S;
-    fn content<T: CellSource>(&mut self, _f: impl FnOnce(S) -> T) {
-        assert!(self.depth != 0);
-        self.separators.push(false);
-    }
-    fn content_with_baseline<T: Display>(
-        &mut self,
-        _baseline: &str,
-        _f: impl FnOnce(Self::Source) -> T,
-    ) {
-        assert!(self.depth != 0);
-        self.separators.push(false);
-        self.separators.push(false);
-    }
-}
-impl<S> RowWriteCore for LayoutWriter<S> {
-    fn group_start(&mut self) {
-        self.set_separator();
-        self.depth += 1;
-        self.depth_max = max(self.depth_max, self.depth);
-    }
-    fn group_end(&mut self, _header: impl CellSource) {
-        self.depth -= 1;
-        self.set_separator()
-    }
-}
 
-struct HeaderWriter<'a, S: ?Sized> {
-    row: RowBuf<'a>,
+struct HeaderWriter<'b> {
+    buf: RowBuf<'b>,
     depth: usize,
     target: usize,
     column: usize,
     column_last: usize,
-    _phantom: PhantomData<fn(S)>,
 }
-impl<'a, S: ?Sized> HeaderWriter<'a, S> {
-    fn new(row: RowBuf<'a>, target: usize) -> Self {
-        HeaderWriter {
-            row,
+impl<'b> HeaderWriter<'b> {
+    fn new(buf: RowBuf<'b>, target: usize) -> Self {
+        Self {
+            buf,
             depth: 0,
             target,
             column: 0,
             column_last: 0,
-            _phantom: PhantomData::default(),
         }
     }
+
     fn push_cell(&mut self, cell: impl CellSource) {
         let colspan = self.column - self.column_last;
-        self.row.push_with_colspan(cell, colspan);
+        self.buf.push_with_colspan(cell, colspan);
         self.column_last = self.column;
     }
-}
-impl<'a, S: ?Sized> Drop for HeaderWriter<'a, S> {
-    fn drop(&mut self) {
-        self.push_cell("");
-    }
-}
-
-impl<'a, S: 'a + ?Sized> RowWrite for HeaderWriter<'a, S> {
-    type Source = &'a S;
-    fn content<T: CellSource>(&mut self, _f: impl FnOnce(Self::Source) -> T) {
-        assert!(self.depth != 0);
+    fn content(&mut self) {
         self.column += 1;
     }
-    fn content_with_baseline<T: Display>(
-        &mut self,
-        _baseline: &str,
-        _f: impl FnOnce(Self::Source) -> T,
-    ) {
-        assert!(self.depth != 0);
+    fn content_with_baseline(&mut self) {
         self.column += 2;
     }
-}
-impl<'a, S: 'a + ?Sized> RowWriteCore for HeaderWriter<'a, S> {
     fn group_start(&mut self) {
         if self.depth <= self.target {
             self.push_cell(Cell::empty());
@@ -272,30 +474,61 @@ impl<'a, S: 'a + ?Sized> RowWriteCore for HeaderWriter<'a, S> {
         }
     }
 }
-
-struct RowWriter<'a, R: ?Sized> {
-    source: &'a R,
-    row: RowBuf<'a>,
-}
-impl<'a, R: ?Sized> RowWrite for RowWriter<'a, R> {
-    type Source = &'a R;
-    fn content<T: CellSource>(&mut self, f: impl FnOnce(Self::Source) -> T) {
-        self.row.push(f(self.source));
-    }
-
-    fn content_with_baseline<T: Display>(
-        &mut self,
-        baseline: &str,
-        f: impl FnOnce(Self::Source) -> T,
-    ) {
-        let s = f(self.source).to_string();
-        let b = s.find(baseline).unwrap_or(s.len());
-        let (left, right) = s.split_at(b);
-        self.row.push(cell(left).right());
-        self.row.push(cell(right).left());
+impl Drop for HeaderWriter<'_> {
+    fn drop(&mut self) {
+        self.push_cell("");
     }
 }
-impl<'a, R: ?Sized> RowWriteCore for RowWriter<'a, R> {
+
+struct BodyWriter<'a, 'b, T> {
+    buf: &'a mut RowBuf<'b>,
+    data: Option<T>,
+}
+impl<T> BodyWriter<'_, '_, T> {
+    fn content<U: CellSource>(&mut self, f: impl FnOnce(&T) -> U) {
+        if let Some(data) = &self.data {
+            self.buf.push(f(data));
+        } else {
+            self.buf.push("");
+        }
+    }
+
+    fn content_with_baseline<U: Display>(&mut self, baseline: &str, f: impl FnOnce(&T) -> U) {
+        if let Some(data) = &self.data {
+            let s = f(data).to_string();
+            let b = s.find(baseline).unwrap_or(s.len());
+            let (left, right) = s.split_at(b);
+            self.buf.push(cell(left).right());
+            self.buf.push(cell(right).left());
+        } else {
+            self.buf.push("");
+            self.buf.push("");
+        }
+    }
     fn group_start(&mut self) {}
-    fn group_end(&mut self, _header: impl CellSource) {}
+    fn group_end(&mut self) {}
+}
+
+pub struct GroupGuard<'a, 'b, 'c, T, C: CellSource> {
+    w: &'a mut RowWriter<'b, 'c, T>,
+    header: Option<C>,
+}
+
+impl<'a, 'b, 'c, T, C: CellSource> Deref for GroupGuard<'a, 'b, 'c, T, C> {
+    type Target = RowWriter<'b, 'c, T>;
+    fn deref(&self) -> &Self::Target {
+        self.w
+    }
+}
+
+impl<'a, 'b, 'c, T, C: CellSource> DerefMut for GroupGuard<'a, 'b, 'c, T, C> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        self.w
+    }
+}
+
+impl<T, C: CellSource> Drop for GroupGuard<'_, '_, '_, T, C> {
+    fn drop(&mut self) {
+        self.w.group_end(self.header.take());
+    }
 }

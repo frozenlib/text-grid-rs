@@ -17,7 +17,7 @@ fn main() {
         b: u32,
     }
     impl RowSource for RowData {
-        fn fmt_row<'a>(w: &mut impl RowWrite<Source=&'a Self>) {
+        fn fmt_row(w: &mut RowWriter<&Self>) {
             w.column("a", |s| s.a);
             w.column("b", |s| s.b);
         }

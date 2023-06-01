@@ -6,7 +6,7 @@ fn main() {
     }
 
     impl GridSchema<[u32]> for MyGridSchema {
-        fn fmt_row<'a>(&self, w: &mut impl RowWrite<Source = &'a [u32]>) {
+        fn fmt_row(&self, w: &mut RowWriter<&[u32]>) {
             for i in 0..self.len {
                 w.column(i, |s| s[i]);
             }

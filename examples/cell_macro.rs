@@ -5,9 +5,9 @@ fn main() {
         b: f64,
     }
     impl RowSource for RowData {
-        fn fmt_row<'a>(w: &mut impl RowWrite<Source = &'a Self>) {
-            w.column("a", |s| cell!("{:.2}", s.a).right());
-            w.column("b", |s| cell!("{:.3}", s.b).right());
+        fn fmt_row(w: &mut RowWriter<&Self>) {
+            w.column("a", |&s| cell!("{:.2}", s.a).right());
+            w.column("b", |&s| cell!("{:.3}", s.b).right());
         }
     }
 
@@ -16,4 +16,6 @@ fn main() {
     g.push_row(&RowData { a: 1.00, b: 0.10 });
 
     print!("{}", g);
+
+    panic!("failed");
 }
