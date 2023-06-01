@@ -2,6 +2,7 @@
 
 [![Crates.io](https://img.shields.io/crates/v/text-grid.svg)](https://crates.io/crates/text-grid)
 [![Docs.rs](https://docs.rs/text-grid/badge.svg)](https://docs.rs/text-grid)
+[![CI](https://github.com/frozenlib/text-grid-rs/actions/workflows/ci.yml/badge.svg)](https://github.com/frozenlib/text-grid-rs/actions/workflows/ci.yml)
 
 A library to create formatted plain-text tables.
 
@@ -33,10 +34,10 @@ fn main() {
 Output:
 
 ```text
-  a  |  b  |
------|-----|
- 300 |   1 |
-   2 | 200 |
+  | a   | b   |
+  | --- | --- |
+  | 300 | 1   |
+  | 2   | 200 |
 ```
 
 ## License
