@@ -264,7 +264,11 @@ impl<'a, 'b, T> RowWriter<'a, 'b, T> {
     ///  300 | 10  20 |
     ///  300 |  1 500 |
     /// ```
-    pub fn content<U: CellSource>(&mut self, f: impl FnOnce(&T) -> U) {
+    pub fn content<U: RowSource>(&mut self, f: impl FnOnce(&T) -> U) {
+        U::fmt_row(&mut self.map(f).as_ref())
+    }
+
+    fn content_raw<U: CellSource>(&mut self, f: impl FnOnce(&T) -> U) {
         match &mut self.0 {
             RowWriterData::Layout(w) => w.content(),
             RowWriterData::Header(w) => w.content(),
@@ -313,7 +317,7 @@ impl<'a, 'b, T> RowWriter<'a, 'b, T> {
     ///  300 |   1 |
     ///    2 | 200 |
     /// ```
-    pub fn column<U: CellSource>(&mut self, header: impl CellSource, f: impl FnOnce(&T) -> U) {
+    pub fn column<U: RowSource>(&mut self, header: impl CellSource, f: impl FnOnce(&T) -> U) {
         self.group(header).content(f);
     }
 
@@ -541,5 +545,11 @@ impl<'a, 'b, 'c, T, C: CellSource> DerefMut for GroupGuard<'a, 'b, 'c, T, C> {
 impl<T, C: CellSource> Drop for GroupGuard<'_, '_, '_, T, C> {
     fn drop(&mut self) {
         self.w.group_end(self.header.take());
+    }
+}
+
+impl<T: CellSource> RowSource for T {
+    fn fmt_row(w: &mut RowWriter<&Self>) {
+        w.content_raw(|&x| x);
     }
 }
