@@ -162,15 +162,12 @@ pub fn cell_by<F: Fn(&mut String) -> Result>(f: F) -> Cell<impl CellSource> {
 /// g.push_row(&RowData { a: 1.10, b: 1.11 });
 /// g.push_row(&RowData { a: 1.00, b: 0.10 });
 ///
-/// print!("{}", g);
-/// ```
-///
-/// Output:
-/// ```text
+/// assert_eq!(format!("\n{g}"), r#"
 ///   a   |   b   |
 /// ------|-------|
 ///  1.10 | 1.110 |
 ///  1.00 | 0.100 |
+/// "#);
 /// ```
 ///
 /// # Arguments ownership

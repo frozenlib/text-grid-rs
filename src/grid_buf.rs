@@ -29,16 +29,12 @@ use unicode_width::UnicodeWidthStr;
 ///     row.push(cell("Y").right());
 ///     row.push_with_colspan(cell("BBB").center(), 2);
 /// }
-///
-/// print!("{}", g);
-/// ```
-///
-/// Output:
-/// ```text
+/// assert_eq!(format!("\n{g}"), r#"
 ///  name | type | value |
 /// ------|------|-------|
 ///     X | A    |    10 |
 ///     Y |     BBB      |
+/// "#);
 /// ```
 #[derive(Default)]
 pub struct GridBuf {
@@ -102,24 +98,16 @@ impl GridBuf {
     ///     row.push("CCC");
     /// }
     /// g.set_column_separators(vec![true, true]);
-    /// println!("{:?}", vec![true, true]);
-    /// println!("{}", g);
-    ///
-    /// g.set_column_separators(vec![false, true]);
-    /// println!("{:?}", vec![false, true]);
-    /// println!("{}", g);
-    ///
-    /// ```
-    ///
-    /// Output:
-    /// ```txt
-    /// [true, true]
+    /// assert_eq!(format!("\n{g}"), r#"
     ///  A   | B   | C   |
     ///  AAA | BBB | CCC |
+    /// "#);
     ///
-    /// [false, true]
+    /// g.set_column_separators(vec![false, true]);
+    /// assert_eq!(format!("\n{g}"), r#"
     ///  A  B   | C   |
-    ///  AAABBB | CCC |  
+    ///  AAABBB | CCC |
+    /// "#);
     /// ```
     pub fn set_column_separators(&mut self, separators: Vec<bool>) {
         self.column_separators = separators;

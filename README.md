@@ -27,17 +27,14 @@ fn main() {
     g.push_row(&RowData { a: 300, b: 1 });
     g.push_row(&RowData { a: 2, b: 200 });
 
-    println!("{}", g);
+    assert_eq!(format!("\n{g}"), OUTPUT);
 }
-```
-
-Output:
-
-```text
+const OUTPUT: &str = r#"
   a  |  b  |
 -----|-----|
  300 |   1 |
    2 | 200 |
+"#;
 ```
 
 ## License

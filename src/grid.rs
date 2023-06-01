@@ -3,8 +3,6 @@ use crate::grid_buf::*;
 use std::cmp::max;
 use std::fmt::*;
 use std::marker::PhantomData;
-use std::ops::Deref;
-use std::ops::DerefMut;
 
 /// A data structure that can be formatted into a row.
 pub trait RowSource {
@@ -34,14 +32,12 @@ pub trait RowSource {
 /// g.push_row(&[1, 2, 3]);
 /// g.push_row(&[4, 5, 6]);
 ///
-/// print!("{}", g);
-/// ```
-/// Output:
-/// ```text
+/// assert_eq!(format!("\n{g}"), r#"
 ///  0 | 1 | 2 |
 /// ---|---|---|
 ///  1 | 2 | 3 |
 ///  4 | 5 | 6 |
+/// "#);
 /// ```
 pub trait GridSchema<R: ?Sized> {
     /// Define column information. see [`RowWriter`] for details.
@@ -77,15 +73,12 @@ impl<R: RowSource + ?Sized> GridSchema<R> for RowSourceGridSchema {
 /// g.push_row(&RowData { a: 300, b: 1 });
 /// g.push_row(&RowData { a: 2, b: 200 });
 ///
-/// print!("{}", g);
-/// ```
-///
-/// Output:
-/// ```text
+/// assert_eq!(format!("\n{g}"), r#"
 ///   a  |  b  |
 /// -----|-----|
 ///  300 |   1 |
 ///    2 | 200 |
+/// "#);
 /// ```
 pub struct Grid<R: ?Sized, S> {
     buf: GridBuf,
@@ -197,18 +190,15 @@ impl<'a, 'b, T> RowWriter<'a, 'b, T> {
     ///     b_1: 1,
     ///     b_2: 500,
     /// });
-    ///
-    /// ```
-    ///
-    /// Output:
-    /// ```text
+    /// assert_eq!(format!("\n{g}"), r#"
     ///   a  |    b     |
     /// -----|----------|
     ///      | 1  |  2  |
     /// -----|----|-----|
     ///  300 | 10 |  20 |
     ///  300 |  1 | 500 |
-    ///  ```    
+    /// "#);
+    /// ```
     pub fn group(&mut self, header: impl CellSource, f: impl FnOnce(&mut RowWriter<'_, 'b, T>)) {
         self.group_start();
         f(self);
@@ -250,17 +240,12 @@ impl<'a, 'b, T> RowWriter<'a, 'b, T> {
     ///     b_1: 1,
     ///     b_2: 500,
     /// });
-    ///
-    /// print!("{}", g);
-    ///
-    /// ```
-    ///
-    /// Output:
-    /// ```text
+    /// assert_eq!(format!("\n{g}"), r#"
     ///   a  |   b    |
     /// -----|--------|
     ///  300 | 10  20 |
     ///  300 |  1 500 |
+    /// "#);
     /// ```
     pub fn content<U: RowSource>(&mut self, f: impl FnOnce(&T) -> U) {
         U::fmt_row(&mut self.map(f).as_ref())
@@ -297,16 +282,12 @@ impl<'a, 'b, T> RowWriter<'a, 'b, T> {
     /// let mut g = Grid::new();
     /// g.push_row(&RowData { a: 300, b: 1 });
     /// g.push_row(&RowData { a: 2, b: 200 });
-    ///
-    /// print!("{}", g);
-    /// ```
-    ///
-    /// Output:
-    /// ```text
+    /// assert_eq!(format!("\n{g}"), r#"
     ///   a  |  b  |
     /// -----|-----|
     ///  300 |   1 |
     ///    2 | 200 |
+    /// "#);
     /// ```
     pub fn column<U: RowSource>(&mut self, header: impl CellSource, f: impl FnOnce(&T) -> U) {
         self.group(header, |w| w.content(f));
