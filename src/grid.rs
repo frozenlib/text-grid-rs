@@ -4,9 +4,9 @@ use std::cmp::max;
 use std::fmt::*;
 use std::marker::PhantomData;
 
-/// A data structure that can be formatted into a row.
+/// A data structure that can be formatted into cells.
 pub trait ColumnSource {
-    /// Define column informations. see [`ColumnFormatter`] for details.
+    /// Define columns. see [`ColumnFormatter`] for details.
     fn fmt(w: &mut ColumnFormatter<&Self>);
 }
 
