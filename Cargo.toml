@@ -13,4 +13,4 @@ exclude = [".vscode/*"]
 edition = "2021"
 
 [dependencies]
-unicode-width = "0.1.5"
+unicode-width = "0.1.10"
