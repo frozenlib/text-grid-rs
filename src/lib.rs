@@ -5,11 +5,11 @@
 
 mod cell;
 mod grid;
-mod grid_buf;
+mod grid_builder;
 
 pub use self::cell::*;
 pub use self::grid::*;
-pub use self::grid_buf::*;
+pub use self::grid_builder::*;
 
 #[cfg(doctest)]
 mod tests {

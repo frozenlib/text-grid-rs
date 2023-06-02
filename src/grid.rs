@@ -1,5 +1,5 @@
 use crate::cell::*;
-use crate::grid_buf::*;
+use crate::grid_builder::*;
 use std::cmp::max;
 use std::fmt::*;
 use std::marker::PhantomData;
