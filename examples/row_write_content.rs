@@ -6,12 +6,12 @@ fn main() {
         b_2: u32,
     }
     impl ColumnSource for RowData {
-        fn fmt(w: &mut ColumnFormatter<&Self>) {
-            w.column("a", |s| s.a);
-            w.group("b", |w| {
-                w.content(|s| s.b_1);
-                w.content(|_| " ");
-                w.content(|s| s.b_2);
+        fn fmt(f: &mut ColumnFormatter<&Self>) {
+            f.column("a", |s| s.a);
+            f.group("b", |f| {
+                f.content(|s| s.b_1);
+                f.content(|_| " ");
+                f.content(|s| s.b_2);
             });
         }
     }

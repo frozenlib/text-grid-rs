@@ -8,9 +8,9 @@ fn column_u8() {
     }
 
     impl ColumnSource for Source {
-        fn fmt(w: &mut ColumnFormatter<&Self>) {
-            w.column("a", |x| x.a);
-            w.column("b", |x| x.b);
+        fn fmt(f: &mut ColumnFormatter<&Self>) {
+            f.column("a", |x| x.a);
+            f.column("b", |x| x.b);
         }
     }
 
@@ -33,9 +33,9 @@ fn column_u8_ref() {
     }
 
     impl ColumnSource for Source {
-        fn fmt(w: &mut ColumnFormatter<&Self>) {
-            w.column("a", |x| x.a);
-            w.column("b", |x| &x.b);
+        fn fmt(f: &mut ColumnFormatter<&Self>) {
+            f.column("a", |x| x.a);
+            f.column("b", |x| &x.b);
         }
     }
 
@@ -57,8 +57,8 @@ fn column_str() {
     }
 
     impl<'s> ColumnSource for Source<'s> {
-        fn fmt(w: &mut ColumnFormatter<&Self>) {
-            w.column("a", |x| x.s);
+        fn fmt(f: &mut ColumnFormatter<&Self>) {
+            f.column("a", |x| x.s);
         }
     }
 
@@ -81,10 +81,10 @@ fn column_static_str() {
     }
 
     impl ColumnSource for Source {
-        fn fmt(w: &mut ColumnFormatter<&Self>) {
-            w.column("a", |x| x.a);
-            w.column("p", |_| "xxx");
-            w.column("b", |x| x.b);
+        fn fmt(f: &mut ColumnFormatter<&Self>) {
+            f.column("a", |x| x.a);
+            f.column("p", |_| "xxx");
+            f.column("b", |x| x.b);
         }
     }
 
@@ -107,10 +107,10 @@ fn column_group() {
     }
 
     impl ColumnSource for Source {
-        fn fmt(w: &mut ColumnFormatter<&Self>) {
-            w.group("g", |w| {
-                w.column("a", |x| x.a);
-                w.column("b", |x| x.b);
+        fn fmt(f: &mut ColumnFormatter<&Self>) {
+            f.group("g", |f| {
+                f.column("a", |x| x.a);
+                f.column("b", |x| x.b);
             })
         }
     }
@@ -136,11 +136,11 @@ fn column_group_differing_level() {
         b_2: u32,
     }
     impl ColumnSource for Source {
-        fn fmt(w: &mut ColumnFormatter<&Self>) {
-            w.column("a", |s| s.a);
-            w.group("b", |w| {
-                w.column("1", |s| s.b_1);
-                w.column("2", |s| s.b_2);
+        fn fmt(f: &mut ColumnFormatter<&Self>) {
+            f.column("a", |s| s.a);
+            f.group("b", |f| {
+                f.column("1", |s| s.b_1);
+                f.column("2", |s| s.b_2);
             });
         }
     }
@@ -178,15 +178,15 @@ fn column_group_differing_level_2() {
         c_2: u32,
     }
     impl ColumnSource for Source {
-        fn fmt(w: &mut ColumnFormatter<&Self>) {
-            w.column("a", |s| s.a);
-            w.group("b", |w| {
-                w.column("1", |s| s.b_1);
-                w.column("2", |s| s.b_2);
+        fn fmt(f: &mut ColumnFormatter<&Self>) {
+            f.column("a", |s| s.a);
+            f.group("b", |f| {
+                f.column("1", |s| s.b_1);
+                f.column("2", |s| s.b_2);
             });
-            w.group("c", |w| {
-                w.content(|s| s.c_1);
-                w.content(|s| s.c_2);
+            f.group("c", |f| {
+                f.content(|s| s.c_1);
+                f.content(|s| s.c_2);
             });
         }
     }
@@ -226,10 +226,10 @@ fn column_multipart() {
     }
 
     impl ColumnSource for Source {
-        fn fmt(w: &mut ColumnFormatter<&Self>) {
-            w.group("g", |w| {
-                w.content(|x| x.a);
-                w.content(|x| x.b);
+        fn fmt(f: &mut ColumnFormatter<&Self>) {
+            f.group("g", |f| {
+                f.content(|x| x.a);
+                f.content(|x| x.b);
             })
         }
     }
@@ -254,9 +254,9 @@ fn column_cell_by() {
     use std::fmt::*;
 
     impl ColumnSource for Source {
-        fn fmt(w: &mut ColumnFormatter<&Self>) {
-            w.column("a", |&x| cell_by(move |w| write!(w, "{:.2}", x.a)).right());
-            w.column("b", |&x| x.b);
+        fn fmt(f: &mut ColumnFormatter<&Self>) {
+            f.column("a", |&x| cell_by(move |f| write!(f, "{:.2}", x.a)).right());
+            f.column("b", |&x| x.b);
         }
     }
 
@@ -279,9 +279,9 @@ fn column_cell_macro() {
     }
 
     impl ColumnSource for Source {
-        fn fmt(w: &mut ColumnFormatter<&Self>) {
-            w.column("a", |&x| cell!("{:.2}", x.a).right());
-            w.column("b", |&x| x.b);
+        fn fmt(f: &mut ColumnFormatter<&Self>) {
+            f.column("a", |&x| cell!("{:.2}", x.a).right());
+            f.column("b", |&x| x.b);
         }
     }
 
@@ -304,9 +304,9 @@ fn map() {
     }
 
     impl ColumnSource for Source {
-        fn fmt(w: &mut ColumnFormatter<&Self>) {
-            w.map(|x| x.a).column("a", |&x| x);
-            w.map(|x| x.b).column("b", |&x| x);
+        fn fmt(f: &mut ColumnFormatter<&Self>) {
+            f.map(|x| x.a).column("a", |&x| x);
+            f.map(|x| x.b).column("b", |&x| x);
         }
     }
 
@@ -329,9 +329,9 @@ fn map_ref() {
     }
 
     impl ColumnSource for Source {
-        fn fmt(w: &mut ColumnFormatter<&Self>) {
-            w.map(|x| &x.a).column("a", |&x| x);
-            w.map(|x| &x.b).column("b", |&x| x);
+        fn fmt(f: &mut ColumnFormatter<&Self>) {
+            f.map(|x| &x.a).column("a", |&x| x);
+            f.map(|x| &x.b).column("b", |&x| x);
         }
     }
 
@@ -354,9 +354,9 @@ fn impl_debug() {
     }
 
     impl ColumnSource for Source {
-        fn fmt(w: &mut ColumnFormatter<&Self>) {
-            w.column("a", |x| x.a);
-            w.column("b", |x| x.b);
+        fn fmt(f: &mut ColumnFormatter<&Self>) {
+            f.column("a", |x| x.a);
+            f.column("b", |x| x.b);
         }
     }
 
@@ -381,9 +381,9 @@ fn with_schema() {
     }
 
     impl GridSchema<[u32]> for MyGridSchema {
-        fn fmt(&self, w: &mut ColumnFormatter<&[u32]>) {
+        fn fmt(&self, f: &mut ColumnFormatter<&[u32]>) {
             for i in 0..self.len {
-                w.column(i, |s| s[i]);
+                f.column(i, |s| s[i]);
             }
         }
     }
@@ -410,9 +410,9 @@ fn baseline() {
     }
 
     impl ColumnSource for Source {
-        fn fmt(w: &mut ColumnFormatter<&Self>) {
-            w.column("a", |x| x.a);
-            w.column("b", |x| cell(&x.b).baseline("-"));
+        fn fmt(f: &mut ColumnFormatter<&Self>) {
+            f.column("a", |x| x.a);
+            f.column("b", |x| cell(&x.b).baseline("-"));
         }
     }
 
@@ -443,10 +443,10 @@ fn root_content() {
     }
 
     impl ColumnSource for Source {
-        fn fmt(w: &mut ColumnFormatter<&Self>) {
-            w.content(|x| x.a);
-            w.content(|_| " ");
-            w.content(|x| x.b);
+        fn fmt(f: &mut ColumnFormatter<&Self>) {
+            f.content(|x| x.a);
+            f.content(|_| " ");
+            f.content(|x| x.b);
         }
     }
 

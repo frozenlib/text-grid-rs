@@ -7,7 +7,7 @@ use std::marker::PhantomData;
 /// A data structure that can be formatted into cells.
 pub trait ColumnSource {
     /// Define columns. see [`ColumnFormatter`] for details.
-    fn fmt(w: &mut ColumnFormatter<&Self>);
+    fn fmt(f: &mut ColumnFormatter<&Self>);
 }
 
 /// Columns definition.
@@ -21,9 +21,9 @@ pub trait ColumnSource {
 /// }
 ///
 /// impl GridSchema<[u32]> for MyGridSchema {
-///     fn fmt(&self, w: &mut ColumnFormatter<&[u32]>) {
+///     fn fmt(&self, f: &mut ColumnFormatter<&[u32]>) {
 ///         for i in 0..self.len {
-///             w.column(i, |s| s[i]);
+///             f.column(i, |s| s[i]);
 ///         }
 ///     }
 /// }
@@ -41,14 +41,14 @@ pub trait ColumnSource {
 /// ```
 pub trait GridSchema<R: ?Sized> {
     /// Define column information. see [`ColumnFormatter`] for details.
-    fn fmt(&self, w: &mut ColumnFormatter<&R>);
+    fn fmt(&self, f: &mut ColumnFormatter<&R>);
 }
 
 /// [`GridSchema`] implementation that use [`ColumnSource`].
 pub struct GridSchemaByColumnSource;
 impl<R: ColumnSource + ?Sized> GridSchema<R> for GridSchemaByColumnSource {
-    fn fmt(&self, w: &mut ColumnFormatter<&R>) {
-        R::fmt(w);
+    fn fmt(&self, f: &mut ColumnFormatter<&R>) {
+        R::fmt(f);
     }
 }
 
@@ -65,9 +65,9 @@ impl<R: ColumnSource + ?Sized> GridSchema<R> for GridSchemaByColumnSource {
 ///     b: u32,
 /// }
 /// impl ColumnSource for RowData {
-///     fn fmt(w: &mut ColumnFormatter<&Self>) {
-///         w.column("a", |s| s.a);
-///         w.column("b", |s| s.b);
+///     fn fmt(f: &mut ColumnFormatter<&Self>) {
+///         f.column("a", |s| s.a);
+///         f.column("b", |s| s.b);
 ///     }
 /// }
 ///
@@ -177,11 +177,11 @@ impl<'a, 'b, T> ColumnFormatter<'a, 'b, T> {
     ///     b_2: u32,
     /// }
     /// impl ColumnSource for RowData {
-    ///     fn fmt(w: &mut ColumnFormatter<&Self>) {
-    ///         w.column("a", |s| s.a);
-    ///         w.group("b", |w| {
-    ///             w.column("1", |s| s.b_1);
-    ///             w.column("2", |s| s.b_2);
+    ///     fn fmt(f: &mut ColumnFormatter<&Self>) {
+    ///         f.column("a", |s| s.a);
+    ///         f.group("b", |f| {
+    ///             f.column("1", |s| s.b_1);
+    ///             f.column("2", |s| s.b_2);
     ///         });
     ///     }
     /// }
@@ -230,12 +230,12 @@ impl<'a, 'b, T> ColumnFormatter<'a, 'b, T> {
     ///     b_2: u32,
     /// }
     /// impl ColumnSource for RowData {
-    ///     fn fmt(w: &mut ColumnFormatter<&Self>) {
-    ///         w.column("a", |s| s.a);
-    ///         w.group("b", |w| {
-    ///             w.content(|s| s.b_1);
-    ///             w.content(|_| " ");
-    ///             w.content(|s| s.b_2);
+    ///     fn fmt(f: &mut ColumnFormatter<&Self>) {
+    ///         f.column("a", |s| s.a);
+    ///         f.group("b", |f| {
+    ///             f.content(|s| s.b_1);
+    ///             f.content(|_| " ");
+    ///             f.content(|s| s.b_2);
     ///         });
     ///     }
     /// }
@@ -284,9 +284,9 @@ impl<'a, 'b, T> ColumnFormatter<'a, 'b, T> {
     ///     b: u32,
     /// }
     /// impl ColumnSource for RowData {
-    ///     fn fmt(w: &mut ColumnFormatter<&Self>) {
-    ///         w.column("a", |s| s.a);
-    ///         w.column("b", |s| s.b);
+    ///     fn fmt(f: &mut ColumnFormatter<&Self>) {
+    ///         f.column("a", |s| s.a);
+    ///         f.column("b", |s| s.b);
     ///     }
     /// }
     ///
@@ -301,7 +301,7 @@ impl<'a, 'b, T> ColumnFormatter<'a, 'b, T> {
     /// "#);
     /// ```
     pub fn column<U: ColumnSource>(&mut self, header: impl CellSource, f: impl FnOnce(&T) -> U) {
-        self.group(header, |w| w.content(f));
+        self.group(header, |cf| cf.content(f));
     }
 
     /// Creates a [`ColumnFormatter`] whose source value was converted.
@@ -481,7 +481,7 @@ impl<T> BodyWriter<'_, '_, T> {
 }
 
 impl<T: CellSource> ColumnSource for T {
-    fn fmt(w: &mut ColumnFormatter<&Self>) {
-        w.content_raw(|&x| x);
+    fn fmt(f: &mut ColumnFormatter<&Self>) {
+        f.content_raw(|&x| x);
     }
 }

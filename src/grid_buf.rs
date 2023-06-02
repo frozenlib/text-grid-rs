@@ -280,7 +280,7 @@ impl Display for GridBuf {
                     if self.has_left_padding(column) {
                         write!(f, "-")?;
                     }
-                    write!(f, "{:-<w$}", "", w = widths[column])?;
+                    write!(f, "{:-<f$}", "", f = widths[column])?;
                     if self.has_right_padding(column) {
                         write!(f, "-")?;
                     }

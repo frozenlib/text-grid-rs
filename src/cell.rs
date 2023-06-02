@@ -133,8 +133,8 @@ impl<F: Fn(&mut String) -> Result> CellSource for FmtFnCellSource<F> {
 /// use std::fmt::Write;
 ///
 /// let s = String::from("ABC");
-/// let cell_a = cell_by(|w| write!(w, "{}", &s));
-/// let cell_b = cell_by(|w| write!(w, "{}", &s));
+/// let cell_a = cell_by(|f| write!(f, "{}", &s));
+/// let cell_b = cell_by(|f| write!(f, "{}", &s));
 /// ```
 pub fn cell_by<F: Fn(&mut String) -> Result>(f: F) -> Cell<impl CellSource> {
     Cell::new(FmtFnCellSource(f))
@@ -152,9 +152,9 @@ pub fn cell_by<F: Fn(&mut String) -> Result>(f: F) -> Cell<impl CellSource> {
 ///     b: f64,
 /// }
 /// impl ColumnSource for RowData {
-///     fn fmt(w: &mut ColumnFormatter<&Self>) {
-///         w.column("a", |&s| cell!("{:.2}", s.a).right());
-///         w.column("b", |&s| cell!("{:.3}", s.b).right());
+///     fn fmt(f: &mut ColumnFormatter<&Self>) {
+///         f.column("a", |&s| cell!("{:.2}", s.a).right());
+///         f.column("b", |&s| cell!("{:.3}", s.b).right());
 ///     }
 /// }
 ///
@@ -201,8 +201,8 @@ pub fn cell_by<F: Fn(&mut String) -> Result>(f: F) -> Cell<impl CellSource> {
 /// use std::fmt::Write;
 ///
 /// let s = String::from("ABC");
-/// let cell_a = cell_by(|w| write!(w, "{}", &s));
-/// let cell_b = cell_by(|w| write!(w, "{}", &s));
+/// let cell_a = cell_by(|f| write!(f, "{}", &s));
+/// let cell_b = cell_by(|f| write!(f, "{}", &s));
 /// // Return value owns the reference.
 /// // Therefore, the returned value can not be move out of the lifetime of the reference.
 /// ```
@@ -222,7 +222,7 @@ pub fn cell_by<F: Fn(&mut String) -> Result>(f: F) -> Cell<impl CellSource> {
 macro_rules! cell {
     ($ ( $ arg : tt ) *) => { {
             use std::fmt::Write;
-            $crate::cell_by(move |w| write!(w, $($arg)*))
+            $crate::cell_by(move |f| write!(f, $($arg)*))
         }
     };
 }
@@ -351,19 +351,19 @@ impl BaselineAlignedCell {
 }
 
 impl ColumnSource for BaselineAlignedCell {
-    fn fmt(w: &mut crate::ColumnFormatter<&Self>) {
-        w.content(|&this| cell(this.left()).right());
-        w.content(|&this| cell(this.right()).left());
+    fn fmt(f: &mut crate::ColumnFormatter<&Self>) {
+        f.content(|&this| cell(this.left()).right());
+        f.content(|&this| cell(this.right()).left());
     }
 }
 
 impl ColumnSource for f32 {
-    fn fmt(w: &mut crate::ColumnFormatter<&Self>) {
-        w.content(|&this| cell(this).baseline("."))
+    fn fmt(f: &mut crate::ColumnFormatter<&Self>) {
+        f.content(|&this| cell(this).baseline("."))
     }
 }
 impl ColumnSource for f64 {
-    fn fmt(w: &mut crate::ColumnFormatter<&Self>) {
-        w.content(|&this| cell(this).baseline("."))
+    fn fmt(f: &mut crate::ColumnFormatter<&Self>) {
+        f.content(|&this| cell(this).baseline("."))
     }
 }

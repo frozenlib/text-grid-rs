@@ -5,9 +5,9 @@ fn main() {
         b: f64,
     }
     impl ColumnSource for RowData {
-        fn fmt(w: &mut ColumnFormatter<&Self>) {
-            w.column("a", |&s| cell!("{:.2}", s.a).right());
-            w.column("b", |&s| cell!("{:.3}", s.b).right());
+        fn fmt(f: &mut ColumnFormatter<&Self>) {
+            f.column("a", |&s| cell!("{:.2}", s.a).right());
+            f.column("b", |&s| cell!("{:.3}", s.b).right());
         }
     }
 

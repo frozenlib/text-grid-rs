@@ -17,8 +17,8 @@ pub fn f_write() {
     use std::fmt::Write;
 
     let s = String::from("ABC");
-    let _cell_a = cell_by(|w| write!(w, "{}", &s));
-    let _cell_b = cell_by(|w| write!(w, "{}", &s));
+    let _cell_a = cell_by(|f| write!(f, "{}", &s));
+    let _cell_b = cell_by(|f| write!(f, "{}", &s));
 }
 
 pub fn f_format() {
