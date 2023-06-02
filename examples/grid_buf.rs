@@ -1,6 +1,6 @@
 fn main() {
     use text_grid::*;
-    let mut g = GridBuf::new();
+    let mut g = GridBuilder::new();
     {
         let mut row = g.push_row();
         row.push(cell("name").right());

@@ -10,7 +10,7 @@ use unicode_width::UnicodeWidthStr;
 /// # Examples
 /// ```rust
 /// use text_grid::*;
-/// let mut g = GridBuf::new();
+/// let mut g = GridBuilder::new();
 /// {
 ///     let mut row = g.push_row();
 ///     row.push(cell("name").right());
@@ -37,7 +37,7 @@ use unicode_width::UnicodeWidthStr;
 /// "#);
 /// ```
 #[derive(Default)]
-pub struct GridBuf {
+pub struct GridBuilder {
     s: String,
     cells: Vec<CellEntry>,
     rows: Vec<RowEntry>,
@@ -45,11 +45,11 @@ pub struct GridBuf {
     column_separators: Vec<bool>,
 }
 
-/// A builder used to create row of [`GridBuf`].
+/// A builder used to create row of [`GridBuilder`].
 ///
-/// This structure is created by [`GridBuf::push_row`].
-pub struct RowBuf<'a> {
-    grid: &'a mut GridBuf,
+/// This structure is created by [`GridBuilder::push_row`].
+pub struct RowBuilder<'a> {
+    grid: &'a mut GridBuilder,
     cells_idx: usize,
 }
 
@@ -64,10 +64,10 @@ struct RowEntry {
     has_separator: bool,
 }
 
-impl GridBuf {
-    /// Create a new `GridBuf`.
+impl GridBuilder {
+    /// Create a new `GridBuilder`.
     pub fn new() -> Self {
-        GridBuf {
+        GridBuilder {
             s: String::new(),
             cells: Vec::new(),
             rows: Vec::new(),
@@ -84,7 +84,7 @@ impl GridBuf {
     ///
     /// ```rust
     /// use text_grid::*;
-    /// let mut g = GridBuf::new();
+    /// let mut g = GridBuilder::new();
     /// {
     ///     let mut row = g.push_row();
     ///     row.push("A");
@@ -114,9 +114,9 @@ impl GridBuf {
     }
 
     /// Append a row to the bottom of the grid.
-    pub fn push_row(&mut self) -> RowBuf {
+    pub fn push_row(&mut self) -> RowBuilder {
         let cells_idx = self.cells.len();
-        RowBuf {
+        RowBuilder {
             grid: self,
             cells_idx,
         }
@@ -244,7 +244,7 @@ impl GridBuf {
     }
 }
 
-impl Display for GridBuf {
+impl Display for GridBuilder {
     fn fmt(&self, f: &mut Formatter) -> Result {
         let widths = self.get_widths();
         for row in 0..self.rows.len() {
@@ -301,13 +301,13 @@ impl Display for GridBuf {
         Ok(())
     }
 }
-impl Debug for GridBuf {
+impl Debug for GridBuilder {
     fn fmt(&self, f: &mut Formatter) -> Result {
         Display::fmt(self, f)
     }
 }
 
-impl RowBuf<'_> {
+impl RowBuilder<'_> {
     /// Append a cell to the right of row.
     pub fn push(&mut self, cell: impl CellSource) {
         self.grid.push_cell(cell, 1);
@@ -325,7 +325,7 @@ impl RowBuf<'_> {
         }
     }
 }
-impl Drop for RowBuf<'_> {
+impl Drop for RowBuilder<'_> {
     fn drop(&mut self) {
         self.grid.columns = max(self.grid.columns, self.grid.cells.len() - self.cells_idx);
         self.grid.rows.push(RowEntry {
@@ -336,7 +336,7 @@ impl Drop for RowBuf<'_> {
 }
 
 struct Cursor<'a> {
-    grid: &'a GridBuf,
+    grid: &'a GridBuilder,
     column: usize,
     idx: usize,
     end: usize,

@@ -83,7 +83,7 @@ impl<R: ColumnSource + ?Sized> GridSchema<R> for GridSchemaByColumnSource {
 /// "#);
 /// ```
 pub struct Grid<R: ?Sized, S> {
-    buf: GridBuf,
+    b: GridBuilder,
     schema: S,
     _phantom: PhantomData<fn(&R)>,
 }
@@ -110,17 +110,17 @@ impl<R: ?Sized, S: GridSchema<R>> Grid<R, S> {
         )));
         layout.separators.pop();
 
-        let mut buf = GridBuf::new();
-        buf.set_column_separators(layout.separators);
+        let mut b = GridBuilder::new();
+        b.set_column_separators(layout.separators);
 
         for target in 0..layout.depth_max {
             schema.fmt(&mut ColumnFormatter(ColumnFormatterData::Header(
-                &mut HeaderWriter::new(buf.push_row(), target),
+                &mut HeaderWriter::new(b.push_row(), target),
             )));
-            buf.push_separator();
+            b.push_separator();
         }
         Grid {
-            buf,
+            b,
             schema,
             _phantom: PhantomData::default(),
         }
@@ -132,7 +132,7 @@ impl<R: ?Sized, S: GridSchema<R>> Grid<R, S> {
         self.schema
             .fmt(&mut ColumnFormatter(ColumnFormatterData::Body(
                 BodyWriter {
-                    buf: &mut self.buf.push_row(),
+                    b: &mut self.b.push_row(),
                     data: Some(source),
                 },
             )));
@@ -140,17 +140,17 @@ impl<R: ?Sized, S: GridSchema<R>> Grid<R, S> {
 
     /// Append a row separator to the bottom of the grid.
     pub fn push_separator(&mut self) {
-        self.buf.push_separator();
+        self.b.push_separator();
     }
 }
 impl<R: ?Sized, S> Display for Grid<R, S> {
     fn fmt(&self, f: &mut Formatter) -> Result {
-        Display::fmt(&self.buf, f)
+        Display::fmt(&self.b, f)
     }
 }
 impl<R: ?Sized, S> Debug for Grid<R, S> {
     fn fmt(&self, f: &mut Formatter) -> Result {
-        Debug::fmt(&self.buf, f)
+        Debug::fmt(&self.b, f)
     }
 }
 
@@ -310,7 +310,7 @@ impl<'a, 'b, T> ColumnFormatter<'a, 'b, T> {
             ColumnFormatterData::Layout(w) => ColumnFormatterData::Layout(w),
             ColumnFormatterData::Header(w) => ColumnFormatterData::Header(w),
             ColumnFormatterData::Body(w) => ColumnFormatterData::Body(BodyWriter {
-                buf: w.buf,
+                b: w.b,
                 data: w.data.as_ref().map(f),
             }),
         })
@@ -322,7 +322,7 @@ impl<'a, 'b, T> ColumnFormatter<'a, 'b, T> {
             ColumnFormatterData::Layout(w) => ColumnFormatterData::Layout(w),
             ColumnFormatterData::Header(w) => ColumnFormatterData::Header(w),
             ColumnFormatterData::Body(w) => ColumnFormatterData::Body(BodyWriter {
-                buf: w.buf,
+                b: w.b,
                 data: w.data.as_ref(),
             }),
         })
@@ -334,7 +334,7 @@ impl<'a, 'b, T> ColumnFormatter<'a, 'b, T> {
             ColumnFormatterData::Layout(w) => ColumnFormatterData::Layout(w),
             ColumnFormatterData::Header(w) => ColumnFormatterData::Header(w),
             ColumnFormatterData::Body(w) => ColumnFormatterData::Body(BodyWriter {
-                buf: w.buf,
+                b: w.b,
                 data: w.data.as_ref().filter(|data| f(data)),
             }),
         })
@@ -349,7 +349,7 @@ impl<'a, 'b, T> ColumnFormatter<'a, 'b, T> {
             ColumnFormatterData::Layout(w) => ColumnFormatterData::Layout(w),
             ColumnFormatterData::Header(w) => ColumnFormatterData::Header(w),
             ColumnFormatterData::Body(w) => ColumnFormatterData::Body(BodyWriter {
-                buf: w.buf,
+                b: w.b,
                 data: w.data.as_ref().and_then(f),
             }),
         })
@@ -415,16 +415,16 @@ impl LayoutWriter {
 }
 
 struct HeaderWriter<'b> {
-    buf: RowBuf<'b>,
+    b: RowBuilder<'b>,
     depth: usize,
     target: usize,
     column: usize,
     column_last: usize,
 }
 impl<'b> HeaderWriter<'b> {
-    fn new(buf: RowBuf<'b>, target: usize) -> Self {
+    fn new(b: RowBuilder<'b>, target: usize) -> Self {
         Self {
-            buf,
+            b,
             depth: 0,
             target,
             column: 0,
@@ -434,7 +434,7 @@ impl<'b> HeaderWriter<'b> {
 
     fn push_cell(&mut self, cell: impl CellSource) {
         let colspan = self.column - self.column_last;
-        self.buf.push_with_colspan(cell, colspan);
+        self.b.push_with_colspan(cell, colspan);
         self.column_last = self.column;
     }
     fn content(&mut self) {
@@ -464,15 +464,15 @@ impl Drop for HeaderWriter<'_> {
 }
 
 struct BodyWriter<'a, 'b, T> {
-    buf: &'a mut RowBuf<'b>,
+    b: &'a mut RowBuilder<'b>,
     data: Option<T>,
 }
 impl<T> BodyWriter<'_, '_, T> {
     fn content<U: CellSource>(&mut self, f: impl FnOnce(&T) -> U) {
         if let Some(data) = &self.data {
-            self.buf.push(f(data));
+            self.b.push(f(data));
         } else {
-            self.buf.push("");
+            self.b.push("");
         }
     }
 
