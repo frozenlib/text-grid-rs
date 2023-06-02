@@ -328,6 +328,8 @@ impl_cell_source!(char, Center);
 impl_cell_source!(bool, Center);
 
 /// A cell with aligned baseline.
+///
+/// Use [`Cell::baseline`] to create an instance of this type.
 pub struct BaselineAlignedCell {
     value: String,
     baseline_offset: usize,
