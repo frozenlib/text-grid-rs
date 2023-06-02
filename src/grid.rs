@@ -165,6 +165,7 @@ impl<'a, 'b, T> ColumnFormatter<'a, 'b, T> {
     /// Define column group. Used to create multi row header.
     ///
     /// - header : Column group header's cell. If horizontal alignment is not specified, it is set to the center.
+    /// - f : A function to define columns in the group.
     ///
     /// # Examples
     ///
@@ -303,7 +304,7 @@ impl<'a, 'b, T> ColumnFormatter<'a, 'b, T> {
         self.group(header, |w| w.content(f));
     }
 
-    /// Takes a closure and creates [`ColumnFormatter`] whose source value was converted.
+    /// Creates a [`ColumnFormatter`] whose source value was converted.
     pub fn map<'x, U: 'x>(&'x mut self, f: impl FnOnce(&T) -> U) -> ColumnFormatter<'x, 'b, U> {
         ColumnFormatter(match &mut self.0 {
             ColumnFormatterData::Layout(w) => ColumnFormatterData::Layout(w),
@@ -315,6 +316,7 @@ impl<'a, 'b, T> ColumnFormatter<'a, 'b, T> {
         })
     }
 
+    /// Creates a [`ColumnFormatter`] whose source value was converted to reference.
     pub fn as_ref<'x>(&'x mut self) -> ColumnFormatter<'x, 'b, &'x T> {
         ColumnFormatter(match &mut self.0 {
             ColumnFormatterData::Layout(w) => ColumnFormatterData::Layout(w),
@@ -326,7 +328,7 @@ impl<'a, 'b, T> ColumnFormatter<'a, 'b, T> {
         })
     }
 
-    /// Creates [`ColumnFormatter`] which uses a closure to determine if an content should be outputed.
+    /// Creates a [`ColumnFormatter`] that outputs the body cell only when the source value satisfies the condition.
     pub fn filter(&mut self, f: impl FnOnce(&T) -> bool) -> ColumnFormatter<'_, 'b, &T> {
         ColumnFormatter(match &mut self.0 {
             ColumnFormatterData::Layout(w) => ColumnFormatterData::Layout(w),
@@ -338,7 +340,7 @@ impl<'a, 'b, T> ColumnFormatter<'a, 'b, T> {
         })
     }
 
-    /// Creates [`ColumnFormatter`] that both filters and maps.
+    /// Creates a [`ColumnFormatter`] that both filters and maps.
     pub fn filter_map<'a0, U: 'a0>(
         &'a0 mut self,
         f: impl FnOnce(&T) -> Option<U>,
