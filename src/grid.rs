@@ -154,7 +154,7 @@ impl<R: ?Sized, S> Debug for Grid<R, S> {
     }
 }
 
-/// Used to define column information.
+/// Used to define columns.
 ///
 /// - Use [`column`](Self::column) to create column.
 /// - Use [`group`](Self::group) to create multi level header.
