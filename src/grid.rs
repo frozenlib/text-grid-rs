@@ -105,9 +105,10 @@ impl<R: ?Sized, S: GridSchema<R>> Grid<R, S> {
     /// Create a new `Grid` with specified schema and prepare header rows.
     pub fn new_with_schema(schema: S) -> Self {
         let mut layout = LayoutWriter::new();
-        schema.fmt(&mut ColumnFormatter(ColumnFormatterData::Layout(
-            &mut layout,
-        )));
+        schema.fmt(&mut ColumnFormatter {
+            w: &mut layout,
+            d: None,
+        });
         layout.separators.pop();
 
         let mut b = GridBuilder::new();
@@ -115,9 +116,10 @@ impl<R: ?Sized, S: GridSchema<R>> Grid<R, S> {
 
         for target in 0..layout.depth_max {
             b.push_row(|b| {
-                schema.fmt(&mut ColumnFormatter(ColumnFormatterData::Header(
-                    &mut HeaderWriter::new(b, target),
-                )))
+                schema.fmt(&mut ColumnFormatter {
+                    w: &mut HeaderWriter::new(b, target),
+                    d: None,
+                })
             });
             b.push_separator();
         }
@@ -131,14 +133,11 @@ impl<R: ?Sized, S: GridSchema<R>> Grid<R, S> {
 impl<R: ?Sized, S: GridSchema<R>> Grid<R, S> {
     /// Append a row to the bottom of the grid.
     pub fn push_row(&mut self, source: &R) {
-        self.b.push_row(|mut b| {
-            self.schema
-                .fmt(&mut ColumnFormatter(ColumnFormatterData::Body(
-                    BodyWriter {
-                        b: &mut b,
-                        data: Some(source),
-                    },
-                )))
+        self.b.push_row(|b| {
+            self.schema.fmt(&mut ColumnFormatter {
+                w: &mut BodyWriter(b),
+                d: Some(source),
+            })
         });
     }
 
@@ -163,9 +162,12 @@ impl<R: ?Sized, S> Debug for Grid<R, S> {
 /// - Use [`column`](Self::column) to create column.
 /// - Use [`group`](Self::group) to create multi level header.
 /// - Use [`content`](Self::content) to create shared header columns.
-pub struct ColumnFormatter<'a, 'b, T>(ColumnFormatterData<'a, 'b, T>);
+pub struct ColumnFormatter<'a, T> {
+    w: &'a mut dyn ColumnWrite,
+    d: Option<T>,
+}
 
-impl<'a, 'b, T> ColumnFormatter<'a, 'b, T> {
+impl<'a, T> ColumnFormatter<'a, T> {
     /// Define column group. Used to create multi row header.
     ///
     /// - header : Column group header's cell. If horizontal alignment is not specified, it is set to the center.
@@ -210,14 +212,10 @@ impl<'a, 'b, T> ColumnFormatter<'a, 'b, T> {
     ///  300 |  1 | 500 |
     /// "#);
     /// ```
-    pub fn group(
-        &mut self,
-        header: impl CellSource,
-        f: impl FnOnce(&mut ColumnFormatter<'_, 'b, T>),
-    ) {
-        self.group_start();
+    pub fn group(&mut self, header: impl CellSource, f: impl FnOnce(&mut ColumnFormatter<T>)) {
+        self.w.group_start();
         f(self);
-        self.group_end(header);
+        self.w.group_end(&header);
     }
 
     /// Define column content. Used to create shared header column.
@@ -267,11 +265,13 @@ impl<'a, 'b, T> ColumnFormatter<'a, 'b, T> {
     }
 
     fn content_raw<U: CellSource>(&mut self, f: impl FnOnce(&T) -> U) {
-        match &mut self.0 {
-            ColumnFormatterData::Layout(w) => w.content(),
-            ColumnFormatterData::Header(w) => w.content(),
-            ColumnFormatterData::Body(w) => w.content(f),
-        }
+        self.w.content(
+            self.d
+                .as_ref()
+                .map(f)
+                .as_ref()
+                .map(|x| x as &dyn CellSource),
+        );
     }
 
     /// Define column.
@@ -309,81 +309,50 @@ impl<'a, 'b, T> ColumnFormatter<'a, 'b, T> {
     }
 
     /// Creates a [`ColumnFormatter`] whose source value was converted.
-    pub fn map<'x, U: 'x>(&'x mut self, f: impl FnOnce(&T) -> U) -> ColumnFormatter<'x, 'b, U> {
-        ColumnFormatter(match &mut self.0 {
-            ColumnFormatterData::Layout(w) => ColumnFormatterData::Layout(w),
-            ColumnFormatterData::Header(w) => ColumnFormatterData::Header(w),
-            ColumnFormatterData::Body(w) => ColumnFormatterData::Body(BodyWriter {
-                b: w.b,
-                data: w.data.as_ref().map(f),
-            }),
-        })
+    pub fn map<'x, U: 'x>(&'x mut self, f: impl FnOnce(&T) -> U) -> ColumnFormatter<'x, U> {
+        ColumnFormatter {
+            w: self.w,
+            d: self.d.as_ref().map(f),
+        }
     }
 
     /// Creates a [`ColumnFormatter`] whose source value was converted to reference.
-    pub fn as_ref<'x>(&'x mut self) -> ColumnFormatter<'x, 'b, &'x T> {
-        ColumnFormatter(match &mut self.0 {
-            ColumnFormatterData::Layout(w) => ColumnFormatterData::Layout(w),
-            ColumnFormatterData::Header(w) => ColumnFormatterData::Header(w),
-            ColumnFormatterData::Body(w) => ColumnFormatterData::Body(BodyWriter {
-                b: w.b,
-                data: w.data.as_ref(),
-            }),
-        })
+    pub fn as_ref(&mut self) -> ColumnFormatter<&T> {
+        ColumnFormatter {
+            w: self.w,
+            d: self.d.as_ref(),
+        }
     }
 
     /// Creates a [`ColumnFormatter`] that outputs the body cell only when the source value satisfies the condition.
-    pub fn filter(&mut self, f: impl FnOnce(&T) -> bool) -> ColumnFormatter<'_, 'b, &T> {
-        ColumnFormatter(match &mut self.0 {
-            ColumnFormatterData::Layout(w) => ColumnFormatterData::Layout(w),
-            ColumnFormatterData::Header(w) => ColumnFormatterData::Header(w),
-            ColumnFormatterData::Body(w) => ColumnFormatterData::Body(BodyWriter {
-                b: w.b,
-                data: w.data.as_ref().filter(|data| f(data)),
-            }),
-        })
+    pub fn filter(&mut self, f: impl FnOnce(&T) -> bool) -> ColumnFormatter<&T> {
+        ColumnFormatter {
+            w: self.w,
+            d: self.d.as_ref().filter(|data| f(data)),
+        }
     }
 
     /// Creates a [`ColumnFormatter`] that both filters and maps.
-    pub fn filter_map<'a0, U: 'a0>(
-        &'a0 mut self,
+    pub fn filter_map<'x, U: 'x>(
+        &'x mut self,
         f: impl FnOnce(&T) -> Option<U>,
-    ) -> ColumnFormatter<'a0, 'b, U> {
-        ColumnFormatter(match &mut self.0 {
-            ColumnFormatterData::Layout(w) => ColumnFormatterData::Layout(w),
-            ColumnFormatterData::Header(w) => ColumnFormatterData::Header(w),
-            ColumnFormatterData::Body(w) => ColumnFormatterData::Body(BodyWriter {
-                b: w.b,
-                data: w.data.as_ref().and_then(f),
-            }),
-        })
+    ) -> ColumnFormatter<'x, U> {
+        ColumnFormatter {
+            w: self.w,
+            d: self.d.as_ref().and_then(f),
+        }
     }
 
     /// Apply `f` to self.
     pub fn with(&mut self, f: impl Fn(&mut Self)) {
         f(self);
     }
-
-    fn group_start(&mut self) {
-        match &mut self.0 {
-            ColumnFormatterData::Layout(w) => w.group_start(),
-            ColumnFormatterData::Header(w) => w.group_start(),
-            ColumnFormatterData::Body(w) => w.group_start(),
-        }
-    }
-    fn group_end(&mut self, header: impl CellSource) {
-        match &mut self.0 {
-            ColumnFormatterData::Layout(w) => w.group_end(),
-            ColumnFormatterData::Header(w) => w.group_end(header),
-            ColumnFormatterData::Body(w) => w.group_end(),
-        }
-    }
 }
 
-enum ColumnFormatterData<'a, 'b, T> {
-    Layout(&'a mut LayoutWriter),
-    Header(&'a mut HeaderWriter<'b>),
-    Body(BodyWriter<'a, 'b, T>),
+trait ColumnWrite {
+    fn content(&mut self, cell: Option<&dyn CellSource>);
+    fn group_start(&mut self);
+    fn group_end(&mut self, header: &dyn CellSource);
 }
 
 struct LayoutWriter {
@@ -399,34 +368,38 @@ impl LayoutWriter {
             separators: Vec::new(),
         }
     }
-    fn content(&mut self) {
-        self.separators.push(false);
-    }
-    fn group_start(&mut self) {
-        self.set_separator();
-        self.depth += 1;
-        self.depth_max = max(self.depth_max, self.depth);
-    }
-    fn group_end(&mut self) {
-        self.depth -= 1;
-        self.set_separator()
-    }
     fn set_separator(&mut self) {
         if let Some(last) = self.separators.last_mut() {
             *last = true;
         }
     }
 }
+impl ColumnWrite for LayoutWriter {
+    fn content(&mut self, _cell: Option<&dyn CellSource>) {
+        self.separators.push(false);
+    }
 
-struct HeaderWriter<'b> {
-    b: RowBuilder<'b>,
+    fn group_start(&mut self) {
+        self.set_separator();
+        self.depth += 1;
+        self.depth_max = max(self.depth_max, self.depth);
+    }
+
+    fn group_end(&mut self, _header: &dyn CellSource) {
+        self.depth -= 1;
+        self.set_separator()
+    }
+}
+
+struct HeaderWriter<'a, 'b> {
+    b: &'a mut RowBuilder<'b>,
     depth: usize,
     target: usize,
     column: usize,
     column_last: usize,
 }
-impl<'b> HeaderWriter<'b> {
-    fn new(b: RowBuilder<'b>, target: usize) -> Self {
+impl<'a, 'b> HeaderWriter<'a, 'b> {
+    fn new(b: &'a mut RowBuilder<'b>, target: usize) -> Self {
         Self {
             b,
             depth: 0,
@@ -441,7 +414,9 @@ impl<'b> HeaderWriter<'b> {
         self.b.push_with_colspan(cell, colspan);
         self.column_last = self.column;
     }
-    fn content(&mut self) {
+}
+impl ColumnWrite for HeaderWriter<'_, '_> {
+    fn content(&mut self, _cell: Option<&dyn CellSource>) {
         self.column += 1;
     }
     fn group_start(&mut self) {
@@ -450,7 +425,7 @@ impl<'b> HeaderWriter<'b> {
         }
         self.depth += 1;
     }
-    fn group_end(&mut self, header: impl CellSource) {
+    fn group_end(&mut self, header: &dyn CellSource) {
         self.depth -= 1;
         if self.depth == self.target {
             let style = CellStyle {
@@ -461,27 +436,24 @@ impl<'b> HeaderWriter<'b> {
         }
     }
 }
-impl Drop for HeaderWriter<'_> {
+impl Drop for HeaderWriter<'_, '_> {
     fn drop(&mut self) {
         self.push_cell("");
     }
 }
 
-struct BodyWriter<'a, 'b, T> {
-    b: &'a mut RowBuilder<'b>,
-    data: Option<T>,
-}
-impl<T> BodyWriter<'_, '_, T> {
-    fn content<U: CellSource>(&mut self, f: impl FnOnce(&T) -> U) {
-        if let Some(data) = &self.data {
-            self.b.push(f(data));
+struct BodyWriter<'a, 'b>(&'a mut RowBuilder<'b>);
+
+impl ColumnWrite for BodyWriter<'_, '_> {
+    fn content(&mut self, cell: Option<&dyn CellSource>) {
+        if let Some(cell) = cell {
+            self.0.push(cell);
         } else {
-            self.b.push("");
+            self.0.push("");
         }
     }
-
     fn group_start(&mut self) {}
-    fn group_end(&mut self) {}
+    fn group_end(&mut self, _header: &dyn CellSource) {}
 }
 
 impl<T: CellSource> ColumnSource for T {

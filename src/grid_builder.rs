@@ -108,9 +108,9 @@ impl GridBuilder {
     }
 
     /// Append a row to the bottom of the grid.
-    pub fn push_row(&mut self, f: impl FnOnce(RowBuilder)) {
+    pub fn push_row(&mut self, f: impl FnOnce(&mut RowBuilder)) {
         let cells_idx = self.cells.len();
-        f(RowBuilder {
+        f(&mut RowBuilder {
             grid: self,
             cells_idx,
         })
@@ -130,7 +130,7 @@ impl GridBuilder {
             s_idx,
             width: self.s[s_idx..].width(),
             colspan,
-            style: cell.style().or(S::default_style()),
+            style: cell.style().or(cell.style_for_body()),
         });
     }
     fn get_width(&self, widths: &[usize], column: usize, colspan: usize) -> usize {

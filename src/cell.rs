@@ -1,4 +1,4 @@
-use crate::ColumnSource;
+use crate::{ColumnFormatter, ColumnSource};
 
 use self::HorizontalAlignment::*;
 use std::fmt::*;
@@ -39,31 +39,30 @@ pub trait CellSource {
         CellStyle::default()
     }
 
-    /// Return cell's default style that associated with `Self` type.
-    fn default_style() -> CellStyle {
+    fn style_for_body(&self) -> CellStyle {
         CellStyle::default()
     }
 }
-impl<T: CellSource> CellSource for &T {
+impl<T: ?Sized + CellSource> CellSource for &T {
     fn fmt(&self, s: &mut String) {
         T::fmt(*self, s)
     }
     fn style(&self) -> CellStyle {
         T::style(*self)
     }
-    fn default_style() -> CellStyle {
-        T::default_style()
+    fn style_for_body(&self) -> CellStyle {
+        T::style_for_body(*self)
     }
 }
-impl<T: CellSource> CellSource for &mut T {
+impl<T: ?Sized + CellSource> CellSource for &mut T {
     fn fmt(&self, s: &mut String) {
         T::fmt(*self, s)
     }
     fn style(&self) -> CellStyle {
         T::style(*self)
     }
-    fn default_style() -> CellStyle {
-        T::default_style()
+    fn style_for_body(&self) -> CellStyle {
+        T::style_for_body(*self)
     }
 }
 impl<T: CellSource> CellSource for Option<T> {
@@ -79,8 +78,12 @@ impl<T: CellSource> CellSource for Option<T> {
             CellStyle::default()
         }
     }
-    fn default_style() -> CellStyle {
-        T::default_style()
+    fn style_for_body(&self) -> CellStyle {
+        if let Some(value) = self {
+            value.style_for_body()
+        } else {
+            CellStyle::default()
+        }
     }
 }
 
@@ -324,7 +327,7 @@ macro_rules! impl_cell_source {
             fn fmt(&self, s: &mut String) {
                 write!(s, "{}", self).unwrap()
             }
-            fn default_style() -> CellStyle {
+            fn style_for_body(&self) -> CellStyle {
                 CellStyle {
                     align_h: Some($align),
                 }
@@ -374,19 +377,20 @@ impl BaselineAlignedCell {
 }
 
 impl ColumnSource for BaselineAlignedCell {
-    fn fmt(f: &mut crate::ColumnFormatter<&Self>) {
+    fn fmt(f: &mut ColumnFormatter<&Self>) {
         f.content(|&this| cell(this.left()).right());
         f.content(|&this| cell(this.right()).left());
     }
 }
 
 impl ColumnSource for f32 {
-    fn fmt(f: &mut crate::ColumnFormatter<&Self>) {
+    fn fmt(f: &mut ColumnFormatter<&Self>) {
         f.content(|&this| cell(this).baseline("."))
     }
 }
+
 impl ColumnSource for f64 {
-    fn fmt(f: &mut crate::ColumnFormatter<&Self>) {
+    fn fmt(f: &mut ColumnFormatter<&Self>) {
         f.content(|&this| cell(this).baseline("."))
     }
 }

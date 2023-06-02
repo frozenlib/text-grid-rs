@@ -3,7 +3,7 @@ use text_grid::*;
 #[test]
 fn cell_1() {
     let mut g = GridBuilder::new();
-    g.push_row(|mut b| b.push("aaa"));
+    g.push_row(|b| b.push("aaa"));
     let e = r"
  aaa |";
     do_test(g, e);
@@ -12,13 +12,13 @@ fn cell_1() {
 #[test]
 fn cell_u8() {
     let mut g = GridBuilder::new();
-    g.push_row(|mut b| b.push(10u8));
+    g.push_row(|b| b.push(10u8));
 }
 
 #[test]
 fn cell_option_u8() {
     let mut g = GridBuilder::new();
-    g.push_row(|mut b| {
+    g.push_row(|b| {
         b.push(Some(10u8));
     });
 }
@@ -26,18 +26,18 @@ fn cell_option_u8() {
 #[test]
 fn cell_option_ref_u8() {
     let mut g = GridBuilder::new();
-    g.push_row(|mut b| {
+    g.push_row(|b| {
         b.push(10u8);
     });
 }
 #[test]
 fn colspan_2() {
     let mut g = GridBuilder::new();
-    g.push_row(|mut b| {
+    g.push_row(|b| {
         b.push_with_colspan(cell("xxx").center(), 2);
         b.push(cell("end").center());
     });
-    g.push_row(|mut b| {
+    g.push_row(|b| {
         b.push("1");
         b.push("2");
         b.push("3");
@@ -52,11 +52,11 @@ fn colspan_2() {
 #[test]
 fn colspan_3() {
     let mut g = GridBuilder::new();
-    g.push_row(|mut b| {
+    g.push_row(|b| {
         b.push_with_colspan(cell("title").center(), 3);
         b.push(cell("end"));
     });
-    g.push_row(|mut b| {
+    g.push_row(|b| {
         b.push("1");
         b.push("2");
         b.push("3");
@@ -72,11 +72,11 @@ fn colspan_3() {
 #[test]
 fn separator() {
     let mut g = GridBuilder::new();
-    g.push_row(|mut b| {
+    g.push_row(|b| {
         b.push(cell("aaa").right());
     });
     g.push_separator();
-    g.push_row(|mut b| {
+    g.push_row(|b| {
         b.push(cell("aaa").right());
     });
 
