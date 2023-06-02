@@ -1,4 +1,4 @@
-use crate::{ColumnFormatter, ColumnSource};
+use crate::{GridFormatter, GridSource};
 
 use self::HorizontalAlignment::*;
 use std::fmt::*;
@@ -154,8 +154,8 @@ pub fn cell_by<F: Fn(&mut String) -> Result>(f: F) -> Cell<impl CellSource> {
 ///     a: f64,
 ///     b: f64,
 /// }
-/// impl ColumnSource for RowData {
-///     fn fmt(f: &mut ColumnFormatter<&Self>) {
+/// impl GridSource for RowData {
+///     fn fmt(f: &mut GridFormatter<&Self>) {
 ///         f.column("a", |&s| cell!("{:.2}", s.a).right());
 ///         f.column("b", |&s| cell!("{:.3}", s.b).right());
 ///     }
@@ -273,8 +273,8 @@ impl<T: CellSource> Cell<T> {
     ///
     /// struct Source(&'static str);
     ///
-    /// impl ColumnSource for Source {
-    ///     fn fmt(f: &mut ColumnFormatter<&Self>) {
+    /// impl GridSource for Source {
+    ///     fn fmt(f: &mut GridFormatter<&Self>) {
     ///         f.column("default", |x| &x.0);
     ///         f.column("baseline", |x| cell(&x.0).baseline("-"));
     ///     }
@@ -376,21 +376,21 @@ impl BaselineAlignedCell {
     }
 }
 
-impl ColumnSource for BaselineAlignedCell {
-    fn fmt(f: &mut ColumnFormatter<&Self>) {
+impl GridSource for BaselineAlignedCell {
+    fn fmt(f: &mut GridFormatter<&Self>) {
         f.content(|&this| cell(this.left()).right());
         f.content(|&this| cell(this.right()).left());
     }
 }
 
-impl ColumnSource for f32 {
-    fn fmt(f: &mut ColumnFormatter<&Self>) {
+impl GridSource for f32 {
+    fn fmt(f: &mut GridFormatter<&Self>) {
         f.content(|&this| cell(this).baseline("."))
     }
 }
 
-impl ColumnSource for f64 {
-    fn fmt(f: &mut ColumnFormatter<&Self>) {
+impl GridSource for f64 {
+    fn fmt(f: &mut GridFormatter<&Self>) {
         f.content(|&this| cell(this).baseline("."))
     }
 }

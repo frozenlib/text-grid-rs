@@ -6,7 +6,7 @@ fn main() {
     }
 
     impl GridSchema<[u32]> for MyGridSchema {
-        fn fmt(&self, f: &mut ColumnFormatter<&[u32]>) {
+        fn fmt(&self, f: &mut GridFormatter<&[u32]>) {
             for i in 0..self.len {
                 f.column(i, |s| s[i]);
             }
