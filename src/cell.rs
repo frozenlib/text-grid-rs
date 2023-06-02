@@ -264,6 +264,27 @@ impl<T: CellSource> Cell<T> {
     }
 
     /// Return the cell with aligned baseline.
+    ///
+    /// ```rust
+    /// struct Source(&'static str);
+    ///
+    /// impl ColumnSource for Source {
+    ///     fn fmt(f: &mut ColumnFormatter<&Self>) {
+    ///         f.column("default", |x| &x.0);
+    ///         f.column("baseline", |x| cell(&x.0).baseline("-"));
+    ///     }
+    /// }
+    /// let mut g = Grid::new();
+    /// g.push_row(&Source("1-2345"));
+    /// g.push_row(&Source("1234-5"));
+    ///
+    /// assert_eq!(format!("\n{g}"), r#"
+    ///  default | baseline  |
+    /// ---------|-----------|
+    ///  1-2345  |    1-2345 |
+    ///  1234-5  | 1234-5    |
+    /// "#);
+    /// ```
     pub fn baseline(self, baseline: &str) -> BaselineAlignedCell {
         let mut value = String::new();
         self.fmt(&mut value);
