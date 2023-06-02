@@ -333,7 +333,7 @@ pub struct BaselineAlignedCell {
     baseline_offset: usize,
 }
 impl BaselineAlignedCell {
-    pub fn new(value: String, baseline: &str) -> Self {
+    fn new(value: String, baseline: &str) -> Self {
         let baseline_offset = value.find(baseline).unwrap_or(value.len());
         Self {
             value,
