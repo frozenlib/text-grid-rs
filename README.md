@@ -15,25 +15,27 @@ fn main() {
     struct RowData {
         a: u32,
         b: u32,
+        c: f64
     }
     impl ColumnSource for RowData {
         fn fmt(w: &mut ColumnFormatter<&Self>) {
             w.column("a", |s| s.a);
             w.column("b", |s| s.b);
+            w.column("c", |s| s.c);
         }
     }
 
     let mut g = Grid::new();
-    g.push_row(&RowData { a: 300, b: 1 });
-    g.push_row(&RowData { a: 2, b: 200 });
+    g.push_row(&RowData { a: 300, b: 1, c: 100.1 });
+    g.push_row(&RowData { a: 2, b: 200, c: 1.234 });
 
     assert_eq!(format!("\n{g}"), OUTPUT);
 }
 const OUTPUT: &str = r#"
-  a  |  b  |
------|-----|
- 300 |   1 |
-   2 | 200 |
+  a  |  b  |    c    |
+-----|-----|---------|
+ 300 |   1 | 100.1   |
+   2 | 200 |   1.234 |
 "#;
 ```
 
