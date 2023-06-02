@@ -20,7 +20,7 @@ fn main() {
     impl ColumnSource for RowData {
         fn fmt(f: &mut ColumnFormatter<&Self>) {
             f.column("a", |s| s.a);
-            f.column("b", |s| s.b);
+            f.column("b", |s| cell(s.b).left());
             f.column("c", |s| s.c);
         }
     }
@@ -34,7 +34,7 @@ fn main() {
 const OUTPUT: &str = r#"
   a  |  b  |    c    |
 -----|-----|---------|
- 300 |   1 | 100.1   |
+ 300 | 1   | 100.1   |
    2 | 200 |   1.234 |
 "#;
 ```
