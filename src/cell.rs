@@ -266,6 +266,8 @@ impl<T: CellSource> Cell<T> {
     /// Return the cell with aligned baseline.
     ///
     /// ```rust
+    /// use text_grid::*;
+    ///
     /// struct Source(&'static str);
     ///
     /// impl ColumnSource for Source {
