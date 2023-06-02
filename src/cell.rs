@@ -282,12 +282,14 @@ impl<T: CellSource> Cell<T> {
     /// let mut g = Grid::new();
     /// g.push_row(&Source("1-2345"));
     /// g.push_row(&Source("1234-5"));
+    /// g.push_row(&Source("12345"));
     ///
     /// assert_eq!(format!("\n{g}"), r#"
-    ///  default | baseline  |
-    /// ---------|-----------|
-    ///  1-2345  |    1-2345 |
-    ///  1234-5  | 1234-5    |
+    ///  default |  baseline  |
+    /// ---------|------------|
+    ///  1-2345  |     1-2345 |
+    ///  1234-5  |  1234-5    |
+    ///  12345   | 12345      |
     /// "#);
     /// ```
     pub fn baseline(self, baseline: &str) -> BaselineAlignedCell {
