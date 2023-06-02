@@ -31,6 +31,7 @@ fn main() {
 
     assert_eq!(format!("\n{g}"), OUTPUT);
 }
+
 const OUTPUT: &str = r#"
   a  |  b  |    c    |
 -----|-----|---------|
