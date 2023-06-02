@@ -242,7 +242,7 @@ impl<T: CellSource> CellSource for Cell<T> {
 }
 
 impl<T: CellSource> Cell<T> {
-    /// Create a new `Cell` with specified [`CellSource`] and empty style.
+    /// Create a new `Cell` with specified [`CellSource`].
     pub fn new(source: T) -> Self {
         let style = source.style();
         Cell { source, style }
