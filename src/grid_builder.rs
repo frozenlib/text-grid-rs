@@ -11,24 +11,21 @@ use unicode_width::UnicodeWidthStr;
 /// ```rust
 /// use text_grid::*;
 /// let mut g = GridBuilder::new();
-/// {
-///     let mut row = g.push_row();
-///     row.push(cell("name").right());
-///     row.push("type");
-///     row.push("value");
-/// }
+/// g.push_row(|mut b| {
+///     b.push(cell("name").right());
+///     b.push("type");
+///     b.push("value");
+/// });
 /// g.push_separator();
-/// {
-///     let mut row = g.push_row();
-///     row.push(cell(String::from("X")).right());
-///     row.push("A");
-///     row.push(10);
-/// }
-/// {
-///     let mut row = g.push_row();
-///     row.push(cell("Y").right());
-///     row.push_with_colspan(cell("BBB").center(), 2);
-/// }
+/// g.push_row(|mut b| {
+///     b.push(cell(String::from("X")).right());
+///     b.push("A");
+///     b.push(10);
+/// });
+/// g.push_row(|mut b| {
+///     b.push(cell("Y").right());
+///     b.push_with_colspan(cell("BBB").center(), 2);
+/// });
 /// assert_eq!(format!("\n{g}"), r#"
 ///  name | type | value |
 /// ------|------|-------|
@@ -85,18 +82,16 @@ impl GridBuilder {
     /// ```rust
     /// use text_grid::*;
     /// let mut g = GridBuilder::new();
-    /// {
-    ///     let mut row = g.push_row();
-    ///     row.push("A");
-    ///     row.push("B");
-    ///     row.push("C");
-    /// }
-    /// {
-    ///     let mut row = g.push_row();
-    ///     row.push("AAA");
-    ///     row.push("BBB");
-    ///     row.push("CCC");
-    /// }
+    /// g.push_row(|mut b| {
+    ///     b.push("A");
+    ///     b.push("B");
+    ///     b.push("C");
+    /// });
+    /// g.push_row(|mut b| {
+    ///     b.push("AAA");
+    ///     b.push("BBB");
+    ///     b.push("CCC");
+    /// });
     /// g.set_column_separators(vec![true, true]);
     /// assert_eq!(format!("\n{g}"), r#"
     ///  A   | B   | C   |
@@ -108,18 +103,17 @@ impl GridBuilder {
     ///  A  B   | C   |
     ///  AAABBB | CCC |
     /// "#);
-    /// ```
     pub fn set_column_separators(&mut self, separators: Vec<bool>) {
         self.column_separators = separators;
     }
 
     /// Append a row to the bottom of the grid.
-    pub fn push_row(&mut self) -> RowBuilder {
+    pub fn push_row(&mut self, f: impl FnOnce(RowBuilder)) {
         let cells_idx = self.cells.len();
-        RowBuilder {
+        f(RowBuilder {
             grid: self,
             cells_idx,
-        }
+        })
     }
 
     /// Append a row separator to the bottom of the grid.

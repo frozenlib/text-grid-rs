@@ -1,18 +1,16 @@
 fn main() {
     use text_grid::*;
     let mut g = GridBuilder::new();
-    {
-        let mut row = g.push_row();
-        row.push("A");
-        row.push("B");
-        row.push("C");
-    }
-    {
-        let mut row = g.push_row();
-        row.push("AAA");
-        row.push("BBB");
-        row.push("CCC");
-    }
+    g.push_row(|mut b| {
+        b.push("A");
+        b.push("B");
+        b.push("C");
+    });
+    g.push_row(|mut b| {
+        b.push("AAA");
+        b.push("BBB");
+        b.push("CCC");
+    });
     g.set_column_separators(vec![true, true]);
     println!("{:?}", vec![true, true]);
     println!("{}", g);

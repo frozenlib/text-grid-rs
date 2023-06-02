@@ -3,7 +3,7 @@ use text_grid::*;
 #[test]
 fn cell_1() {
     let mut g = GridBuilder::new();
-    g.push_row().push("aaa");
+    g.push_row(|mut b| b.push("aaa"));
     let e = r"
  aaa |";
     do_test(g, e);
@@ -12,35 +12,36 @@ fn cell_1() {
 #[test]
 fn cell_u8() {
     let mut g = GridBuilder::new();
-    g.push_row().push(10u8);
+    g.push_row(|mut b| b.push(10u8));
 }
 
 #[test]
 fn cell_option_u8() {
     let mut g = GridBuilder::new();
-    g.push_row().push(Some(10u8));
+    g.push_row(|mut b| {
+        b.push(Some(10u8));
+    });
 }
 
 #[test]
 fn cell_option_ref_u8() {
     let mut g = GridBuilder::new();
-    g.push_row().push(10u8);
+    g.push_row(|mut b| {
+        b.push(10u8);
+    });
 }
-
 #[test]
 fn colspan_2() {
     let mut g = GridBuilder::new();
-    {
-        let mut row = g.push_row();
-        row.push_with_colspan(cell("xxx").center(), 2);
-        row.push(cell("end").center());
-    }
-    {
-        let mut row = g.push_row();
-        row.push("1");
-        row.push("2");
-        row.push("3");
-    }
+    g.push_row(|mut b| {
+        b.push_with_colspan(cell("xxx").center(), 2);
+        b.push(cell("end").center());
+    });
+    g.push_row(|mut b| {
+        b.push("1");
+        b.push("2");
+        b.push("3");
+    });
 
     let e = r"
   xxx  | end |
@@ -51,18 +52,16 @@ fn colspan_2() {
 #[test]
 fn colspan_3() {
     let mut g = GridBuilder::new();
-    {
-        let mut row = g.push_row();
-        row.push_with_colspan(cell("title").center(), 3);
-        row.push(cell("end"));
-    }
-    {
-        let mut row = g.push_row();
-        row.push("1");
-        row.push("2");
-        row.push("3");
-        row.push("4");
-    }
+    g.push_row(|mut b| {
+        b.push_with_colspan(cell("title").center(), 3);
+        b.push(cell("end"));
+    });
+    g.push_row(|mut b| {
+        b.push("1");
+        b.push("2");
+        b.push("3");
+        b.push("4");
+    });
 
     let e = r"
    title   | end |
@@ -73,9 +72,13 @@ fn colspan_3() {
 #[test]
 fn separator() {
     let mut g = GridBuilder::new();
-    g.push_row().push(cell("aaa").right());
+    g.push_row(|mut b| {
+        b.push(cell("aaa").right());
+    });
     g.push_separator();
-    g.push_row().push(cell("aaa").right());
+    g.push_row(|mut b| {
+        b.push(cell("aaa").right());
+    });
 
     let e = r"
  aaa |
@@ -83,7 +86,6 @@ fn separator() {
  aaa |";
     do_test(g, e);
 }
-
 fn do_test(g: GridBuilder, e: &str) {
     let a = format!("{}", g);
     let e = e.trim_matches('\n');

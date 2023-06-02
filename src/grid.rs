@@ -114,9 +114,11 @@ impl<R: ?Sized, S: GridSchema<R>> Grid<R, S> {
         b.set_column_separators(layout.separators);
 
         for target in 0..layout.depth_max {
-            schema.fmt(&mut ColumnFormatter(ColumnFormatterData::Header(
-                &mut HeaderWriter::new(b.push_row(), target),
-            )));
+            b.push_row(|b| {
+                schema.fmt(&mut ColumnFormatter(ColumnFormatterData::Header(
+                    &mut HeaderWriter::new(b, target),
+                )))
+            });
             b.push_separator();
         }
         Grid {
@@ -129,13 +131,15 @@ impl<R: ?Sized, S: GridSchema<R>> Grid<R, S> {
 impl<R: ?Sized, S: GridSchema<R>> Grid<R, S> {
     /// Append a row to the bottom of the grid.
     pub fn push_row(&mut self, source: &R) {
-        self.schema
-            .fmt(&mut ColumnFormatter(ColumnFormatterData::Body(
-                BodyWriter {
-                    b: &mut self.b.push_row(),
-                    data: Some(source),
-                },
-            )));
+        self.b.push_row(|mut b| {
+            self.schema
+                .fmt(&mut ColumnFormatter(ColumnFormatterData::Body(
+                    BodyWriter {
+                        b: &mut b,
+                        data: Some(source),
+                    },
+                )))
+        });
     }
 
     /// Append a row separator to the bottom of the grid.
