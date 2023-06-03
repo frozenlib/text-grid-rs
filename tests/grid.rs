@@ -470,6 +470,7 @@ fn disparate_column_count() {
     let mut g = Grid::new_with_schema(schema);
     g.extend(rows);
     assert_eq!(format!("\n{g}"), OUTPUT);
+
     const OUTPUT: &str = r"
  0 | 1 | 2 | 3 |
 ---|---|---|---|
@@ -477,6 +478,14 @@ fn disparate_column_count() {
  1 | 2 |   |   |
  1 | 2 | 3 | 4 |
 ";
+}
+
+#[test]
+fn extend() {
+    let mut g: Grid<u32> = Grid::new();
+    let items = vec![1, 2, 3];
+    g.extend(&items);
+    g.extend(items);
 }
 
 fn do_test<T: CellsSource>(s: Vec<T>, e: &str) {

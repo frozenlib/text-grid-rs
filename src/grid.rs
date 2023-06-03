@@ -31,7 +31,7 @@ use std::marker::PhantomData;
 ///    2 | 200 |
 /// "#);
 /// ```
-pub struct Grid<R: ?Sized, S> {
+pub struct Grid<R: ?Sized, S = DefaultGridSchema<R>> {
     b: GridBuilder,
     schema: S,
     _phantom: PhantomData<fn(&R)>,
@@ -72,10 +72,17 @@ impl<R: ?Sized, S: GridSchema<R>> Grid<R, S> {
         self.b.push_separator();
     }
 }
-impl<A: AsRef<R>, R, S: GridSchema<R>> Extend<A> for Grid<R, S> {
-    fn extend<T: IntoIterator<Item = A>>(&mut self, iter: T) {
+impl<R, S: GridSchema<R>> Extend<R> for Grid<R, S> {
+    fn extend<T: IntoIterator<Item = R>>(&mut self, iter: T) {
         for i in iter {
-            self.push(i.as_ref());
+            self.push(&i);
+        }
+    }
+}
+impl<'a, R, S: GridSchema<R>> Extend<&'a R> for Grid<R, S> {
+    fn extend<T: IntoIterator<Item = &'a R>>(&mut self, iter: T) {
+        for i in iter {
+            self.push(i);
         }
     }
 }
