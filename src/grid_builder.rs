@@ -211,6 +211,26 @@ pub trait GridSchema<R: ?Sized> {
     fn fmt(&self, f: &mut CellsFormatter<&R>);
 }
 
+impl<R: ?Sized, T: GridSchema<R>> GridSchema<R> for Vec<T> {
+    fn fmt(&self, f: &mut CellsFormatter<&R>) {
+        for s in self {
+            s.fmt(f);
+        }
+    }
+}
+impl<R: ?Sized, T: GridSchema<R>> GridSchema<R> for [T] {
+    fn fmt(&self, f: &mut CellsFormatter<&R>) {
+        for s in self {
+            s.fmt(f);
+        }
+    }
+}
+impl<R: ?Sized, T: ?Sized + GridSchema<R>> GridSchema<R> for &T {
+    fn fmt(&self, f: &mut CellsFormatter<&R>) {
+        T::fmt(self, f)
+    }
+}
+
 /// [`GridSchema`] implementation that use [`CellsSource`].
 pub struct DefaultGridSchema<T: ?Sized>(std::marker::PhantomData<T>);
 
