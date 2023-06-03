@@ -24,7 +24,7 @@ impl<T: ?Sized + CellsSource> CellsSource for &mut T {
 impl<T: CellsSource, const N: usize> CellsSource for [T; N] {
     fn fmt(f: &mut CellsFormatter<&Self>) {
         for i in 0..N {
-            T::fmt(&mut f.map(|x| &x[i]));
+            f.column(i, |x| &x[i]);
         }
     }
 }
