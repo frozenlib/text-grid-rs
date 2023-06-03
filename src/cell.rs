@@ -1,4 +1,4 @@
-use crate::{GridFormatter, GridSource};
+use crate::{CellsFormatter, CellsSource};
 
 use self::HorizontalAlignment::*;
 use std::fmt::*;
@@ -154,8 +154,8 @@ pub fn cell_by<F: Fn(&mut String) -> Result>(f: F) -> Cell<impl CellSource> {
 ///     a: f64,
 ///     b: f64,
 /// }
-/// impl GridSource for RowData {
-///     fn fmt(f: &mut GridFormatter<&Self>) {
+/// impl CellsSource for RowData {
+///     fn fmt(f: &mut CellsFormatter<&Self>) {
 ///         f.column("a", |&s| cell!("{:.2}", s.a).right());
 ///         f.column("b", |&s| cell!("{:.3}", s.b).right());
 ///     }
@@ -243,8 +243,8 @@ impl<T: CellSource> CellSource for Cell<T> {
         self.style
     }
 }
-impl<T: CellSource> GridSource for Cell<T> {
-    fn fmt(f: &mut GridFormatter<&Self>) {
+impl<T: CellSource> CellsSource for Cell<T> {
+    fn fmt(f: &mut CellsFormatter<&Self>) {
         f.content_cell(|s| *s);
     }
 }
@@ -278,8 +278,8 @@ impl<T: CellSource> Cell<T> {
     ///
     /// struct Source(&'static str);
     ///
-    /// impl GridSource for Source {
-    ///     fn fmt(f: &mut GridFormatter<&Self>) {
+    /// impl CellsSource for Source {
+    ///     fn fmt(f: &mut CellsFormatter<&Self>) {
     ///         f.column("default", |x| &x.0);
     ///         f.column("baseline", |x| cell(&x.0).baseline("-"));
     ///     }
@@ -297,7 +297,7 @@ impl<T: CellSource> Cell<T> {
     ///  12345   | 12345      |
     /// "#);
     /// ```
-    pub fn baseline(self, baseline: &str) -> impl GridSource {
+    pub fn baseline(self, baseline: &str) -> impl CellsSource {
         let mut value = String::new();
         self.fmt(&mut value);
         BaselineAlignedCell::new(value, baseline)
@@ -340,8 +340,8 @@ macro_rules! impl_cell_source {
                 }
             }
         }
-        impl GridSource for $t {
-            fn fmt(f: &mut GridFormatter<&Self>) {
+        impl CellsSource for $t {
+            fn fmt(f: &mut CellsFormatter<&Self>) {
                 f.content_cell(|x| *x);
             }
         }
@@ -388,21 +388,21 @@ impl BaselineAlignedCell {
     }
 }
 
-impl GridSource for BaselineAlignedCell {
-    fn fmt(f: &mut GridFormatter<&Self>) {
+impl CellsSource for BaselineAlignedCell {
+    fn fmt(f: &mut CellsFormatter<&Self>) {
         f.content(|&this| cell(this.left()).right());
         f.content(|&this| cell(this.right()).left());
     }
 }
 
-impl GridSource for f32 {
-    fn fmt(f: &mut GridFormatter<&Self>) {
+impl CellsSource for f32 {
+    fn fmt(f: &mut CellsFormatter<&Self>) {
         f.content(|&this| cell(this).baseline("."))
     }
 }
 
-impl GridSource for f64 {
-    fn fmt(f: &mut GridFormatter<&Self>) {
+impl CellsSource for f64 {
+    fn fmt(f: &mut CellsFormatter<&Self>) {
         f.content(|&this| cell(this).baseline("."))
     }
 }

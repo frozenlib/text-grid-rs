@@ -4,8 +4,8 @@ fn main() {
         a: u32,
         b: u32,
     }
-    impl GridSource for RowData {
-        fn fmt(f: &mut GridFormatter<&Self>) {
+    impl CellsSource for RowData {
+        fn fmt(f: &mut CellsFormatter<&Self>) {
             f.column("a", |s| s.a);
             f.column("b", |s| s.b);
         }

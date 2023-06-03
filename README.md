@@ -17,8 +17,8 @@ fn main() {
         b: u32,
         c: f64
     }
-    impl GridSource for RowData {
-        fn fmt(f: &mut GridFormatter<&Self>) {
+    impl CellsSource for RowData {
+        fn fmt(f: &mut CellsFormatter<&Self>) {
             f.column("a", |s| s.a);
             f.column("b", |s| cell(s.b).left());
             f.column("c", |s| s.c);

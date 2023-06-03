@@ -5,8 +5,8 @@ fn main() {
         b_1: u32,
         b_2: u32,
     }
-    impl GridSource for RowData {
-        fn fmt(f: &mut GridFormatter<&Self>) {
+    impl CellsSource for RowData {
+        fn fmt(f: &mut CellsFormatter<&Self>) {
             f.column("a", |s| s.a);
             f.group("b", |f| {
                 f.content(|s| s.b_1);

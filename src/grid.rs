@@ -5,23 +5,23 @@ use std::fmt::*;
 use std::marker::PhantomData;
 
 /// A data structure that can be formatted into cells.
-pub trait GridSource {
-    /// Define columns. see [`GridFormatter`] for details.
-    fn fmt(f: &mut GridFormatter<&Self>);
+pub trait CellsSource {
+    /// Define columns. see [`CellsFormatter`] for details.
+    fn fmt(f: &mut CellsFormatter<&Self>);
 }
-impl<T: ?Sized + GridSource> GridSource for &T {
-    fn fmt(f: &mut GridFormatter<&Self>) {
+impl<T: ?Sized + CellsSource> CellsSource for &T {
+    fn fmt(f: &mut CellsFormatter<&Self>) {
         T::fmt(&mut f.map(|x| **x));
     }
 }
-impl<T: ?Sized + GridSource> GridSource for &mut T {
-    fn fmt(f: &mut GridFormatter<&Self>) {
+impl<T: ?Sized + CellsSource> CellsSource for &mut T {
+    fn fmt(f: &mut CellsFormatter<&Self>) {
         T::fmt(&mut f.map(|x| **x as &T));
     }
 }
 
-impl<T: GridSource, const N: usize> GridSource for [T; N] {
-    fn fmt(f: &mut GridFormatter<&Self>) {
+impl<T: CellsSource, const N: usize> CellsSource for [T; N] {
+    fn fmt(f: &mut CellsFormatter<&Self>) {
         for i in 0..N {
             T::fmt(&mut f.map(|x| &x[i]));
         }
@@ -30,8 +30,8 @@ impl<T: GridSource, const N: usize> GridSource for [T; N] {
 
 macro_rules! impl_grid_source_for_tuple {
     ($($idx:tt : $ty:ident,)*) => {
-        impl<$($ty),*> GridSource for ($($ty,)*) where $($ty: GridSource),* {
-            fn fmt(f: &mut GridFormatter<&Self>) {
+        impl<$($ty),*> CellsSource for ($($ty,)*) where $($ty: CellsSource),* {
+            fn fmt(f: &mut CellsFormatter<&Self>) {
                 $(
                     $ty::fmt(&mut f.map(|x| &x.$idx));
                 )*
@@ -175,7 +175,7 @@ impl_grid_source_for_tuple!(
 /// }
 ///
 /// impl GridSchema<[u32]> for MyGridSchema {
-///     fn fmt(&self, f: &mut GridFormatter<&[u32]>) {
+///     fn fmt(&self, f: &mut CellsFormatter<&[u32]>) {
 ///         for i in 0..self.len {
 ///             f.column(i, |s| s[i]);
 ///         }
@@ -194,21 +194,21 @@ impl_grid_source_for_tuple!(
 /// "#);
 /// ```
 pub trait GridSchema<R: ?Sized> {
-    /// Define column information. see [`GridFormatter`] for details.
-    fn fmt(&self, f: &mut GridFormatter<&R>);
+    /// Define column information. see [`CellsFormatter`] for details.
+    fn fmt(&self, f: &mut CellsFormatter<&R>);
 }
 
-/// [`GridSchema`] implementation that use [`GridSource`].
-pub struct GridSchemaBySource;
-impl<R: GridSource + ?Sized> GridSchema<R> for GridSchemaBySource {
-    fn fmt(&self, f: &mut GridFormatter<&R>) {
+/// [`GridSchema`] implementation that use [`CellsSource`].
+pub struct DefaultGridSchema;
+impl<R: CellsSource + ?Sized> GridSchema<R> for DefaultGridSchema {
+    fn fmt(&self, f: &mut CellsFormatter<&R>) {
         R::fmt(f);
     }
 }
 
 /// A builder used to create plain-text table from row values.
 ///
-/// Generate a table using the columns defined by [`GridFormatter`].
+/// Generate a table using the columns defined by [`CellsFormatter`].
 ///
 /// # Examples
 ///
@@ -218,8 +218,8 @@ impl<R: GridSource + ?Sized> GridSchema<R> for GridSchemaBySource {
 ///     a: u32,
 ///     b: u32,
 /// }
-/// impl GridSource for RowData {
-///     fn fmt(f: &mut GridFormatter<&Self>) {
+/// impl CellsSource for RowData {
+///     fn fmt(f: &mut CellsFormatter<&Self>) {
 ///         f.column("a", |s| s.a);
 ///         f.column("b", |s| s.b);
 ///     }
@@ -242,16 +242,16 @@ pub struct Grid<R: ?Sized, S> {
     _phantom: PhantomData<fn(&R)>,
 }
 
-impl<R: GridSource + ?Sized> Default for Grid<R, GridSchemaBySource> {
+impl<R: CellsSource + ?Sized> Default for Grid<R, DefaultGridSchema> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<R: GridSource + ?Sized> Grid<R, GridSchemaBySource> {
-    /// Create a new `Grid` with [`GridSchemaBySource`] and prepare header rows.
+impl<R: CellsSource + ?Sized> Grid<R, DefaultGridSchema> {
+    /// Create a new `Grid` with [`DefaultGridSchema`] and prepare header rows.
     pub fn new() -> Self {
-        Self::new_with_schema(GridSchemaBySource)
+        Self::new_with_schema(DefaultGridSchema)
     }
 }
 
@@ -259,7 +259,7 @@ impl<R: ?Sized, S: GridSchema<R>> Grid<R, S> {
     /// Create a new `Grid` with specified schema and prepare header rows.
     pub fn new_with_schema(schema: S) -> Self {
         let mut layout = LayoutWriter::new();
-        schema.fmt(&mut GridFormatter {
+        schema.fmt(&mut CellsFormatter {
             w: &mut layout,
             d: None,
         });
@@ -270,7 +270,7 @@ impl<R: ?Sized, S: GridSchema<R>> Grid<R, S> {
 
         for target in 0..layout.depth_max {
             b.push_row(|b| {
-                schema.fmt(&mut GridFormatter {
+                schema.fmt(&mut CellsFormatter {
                     w: &mut HeaderWriter::new(b, target),
                     d: None,
                 })
@@ -288,7 +288,7 @@ impl<R: ?Sized, S: GridSchema<R>> Grid<R, S> {
     /// Append a row to the bottom of the grid.
     pub fn push_row(&mut self, source: &R) {
         self.b.push_row(|b| {
-            self.schema.fmt(&mut GridFormatter {
+            self.schema.fmt(&mut CellsFormatter {
                 w: &mut BodyWriter(b),
                 d: Some(source),
             })
@@ -316,12 +316,12 @@ impl<R: ?Sized, S> Debug for Grid<R, S> {
 /// - Use [`column`](Self::column) to create column.
 /// - Use [`group`](Self::group) to create multi level header.
 /// - Use [`content`](Self::content) to create shared header columns.
-pub struct GridFormatter<'a, T> {
+pub struct CellsFormatter<'a, T> {
     w: &'a mut dyn RowWrite,
     d: Option<T>,
 }
 
-impl<'a, T> GridFormatter<'a, T> {
+impl<'a, T> CellsFormatter<'a, T> {
     /// Define column group. Used to create multi row header.
     ///
     /// - header : Column group header's cell. If horizontal alignment is not specified, it is set to the center.
@@ -336,8 +336,8 @@ impl<'a, T> GridFormatter<'a, T> {
     ///     b_1: u32,
     ///     b_2: u32,
     /// }
-    /// impl GridSource for RowData {
-    ///     fn fmt(f: &mut GridFormatter<&Self>) {
+    /// impl CellsSource for RowData {
+    ///     fn fmt(f: &mut CellsFormatter<&Self>) {
     ///         f.column("a", |s| s.a);
     ///         f.group("b", |f| {
     ///             f.column("1", |s| s.b_1);
@@ -366,7 +366,7 @@ impl<'a, T> GridFormatter<'a, T> {
     ///  300 |  1 | 500 |
     /// "#);
     /// ```
-    pub fn group(&mut self, header: impl CellSource, f: impl FnOnce(&mut GridFormatter<T>)) {
+    pub fn group(&mut self, header: impl CellSource, f: impl FnOnce(&mut CellsFormatter<T>)) {
         self.w.group_start();
         f(self);
         self.w.group_end(&header);
@@ -385,8 +385,8 @@ impl<'a, T> GridFormatter<'a, T> {
     ///     b_1: u32,
     ///     b_2: u32,
     /// }
-    /// impl GridSource for RowData {
-    ///     fn fmt(f: &mut GridFormatter<&Self>) {
+    /// impl CellsSource for RowData {
+    ///     fn fmt(f: &mut CellsFormatter<&Self>) {
     ///         f.column("a", |s| s.a);
     ///         f.group("b", |f| {
     ///             f.content(|s| s.b_1);
@@ -414,7 +414,7 @@ impl<'a, T> GridFormatter<'a, T> {
     ///  300 |  1 500 |
     /// "#);
     /// ```
-    pub fn content<U: GridSource>(&mut self, f: impl FnOnce(&T) -> U) {
+    pub fn content<U: CellsSource>(&mut self, f: impl FnOnce(&T) -> U) {
         U::fmt(&mut self.map(f).as_ref())
     }
 
@@ -441,8 +441,8 @@ impl<'a, T> GridFormatter<'a, T> {
     ///     a: u32,
     ///     b: u32,
     /// }
-    /// impl GridSource for RowData {
-    ///     fn fmt(f: &mut GridFormatter<&Self>) {
+    /// impl CellsSource for RowData {
+    ///     fn fmt(f: &mut CellsFormatter<&Self>) {
     ///         f.column("a", |s| s.a);
     ///         f.column("b", |s| s.b);
     ///     }
@@ -458,40 +458,40 @@ impl<'a, T> GridFormatter<'a, T> {
     ///    2 | 200 |
     /// "#);
     /// ```
-    pub fn column<U: GridSource>(&mut self, header: impl CellSource, f: impl FnOnce(&T) -> U) {
+    pub fn column<U: CellsSource>(&mut self, header: impl CellSource, f: impl FnOnce(&T) -> U) {
         self.group(header, |cf| cf.content(f));
     }
 
-    /// Creates a [`GridFormatter`] whose source value was converted.
-    pub fn map<'x, U: 'x>(&'x mut self, f: impl FnOnce(&T) -> U) -> GridFormatter<'x, U> {
-        GridFormatter {
+    /// Creates a [`CellsFormatter`] whose source value was converted.
+    pub fn map<'x, U: 'x>(&'x mut self, f: impl FnOnce(&T) -> U) -> CellsFormatter<'x, U> {
+        CellsFormatter {
             w: self.w,
             d: self.d.as_ref().map(f),
         }
     }
 
-    /// Creates a [`GridFormatter`] whose source value was converted to reference.
-    pub fn as_ref(&mut self) -> GridFormatter<&T> {
-        GridFormatter {
+    /// Creates a [`CellsFormatter`] whose source value was converted to reference.
+    pub fn as_ref(&mut self) -> CellsFormatter<&T> {
+        CellsFormatter {
             w: self.w,
             d: self.d.as_ref(),
         }
     }
 
-    /// Creates a [`GridFormatter`] that outputs the body cell only when the source value satisfies the condition.
-    pub fn filter(&mut self, f: impl FnOnce(&T) -> bool) -> GridFormatter<&T> {
-        GridFormatter {
+    /// Creates a [`CellsFormatter`] that outputs the body cell only when the source value satisfies the condition.
+    pub fn filter(&mut self, f: impl FnOnce(&T) -> bool) -> CellsFormatter<&T> {
+        CellsFormatter {
             w: self.w,
             d: self.d.as_ref().filter(|data| f(data)),
         }
     }
 
-    /// Creates a [`GridFormatter`] that both filters and maps.
+    /// Creates a [`CellsFormatter`] that both filters and maps.
     pub fn filter_map<'x, U: 'x>(
         &'x mut self,
         f: impl FnOnce(&T) -> Option<U>,
-    ) -> GridFormatter<'x, U> {
-        GridFormatter {
+    ) -> CellsFormatter<'x, U> {
+        CellsFormatter {
             w: self.w,
             d: self.d.as_ref().and_then(f),
         }
