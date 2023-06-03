@@ -615,7 +615,7 @@ impl GridBuilder {
         }
     }
 
-    pub fn new_with_header<T: ?Sized>(schema: &dyn GridSchema<T>) -> Self {
+    pub(crate) fn new_with_header<T: ?Sized>(schema: &dyn GridSchema<T>) -> Self {
         let mut this = Self::new();
         let layout = GridLayout::from_schema(schema);
         this.set_column_separators(layout.separators);
