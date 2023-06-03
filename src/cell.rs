@@ -162,8 +162,8 @@ pub fn cell_by<F: Fn(&mut String) -> Result>(f: F) -> Cell<impl CellSource> {
 /// }
 ///
 /// let mut g = Grid::new();
-/// g.push_row(&RowData { a: 1.10, b: 1.11 });
-/// g.push_row(&RowData { a: 1.00, b: 0.10 });
+/// g.push(&RowData { a: 1.10, b: 1.11 });
+/// g.push(&RowData { a: 1.00, b: 0.10 });
 ///
 /// assert_eq!(format!("\n{g}"), r#"
 ///   a   |   b   |
@@ -285,9 +285,9 @@ impl<T: CellSource> Cell<T> {
     ///     }
     /// }
     /// let mut g = Grid::new();
-    /// g.push_row(&Source("1-2345"));
-    /// g.push_row(&Source("1234-5"));
-    /// g.push_row(&Source("12345"));
+    /// g.push(&Source("1-2345"));
+    /// g.push(&Source("1234-5"));
+    /// g.push(&Source("12345"));
     ///
     /// assert_eq!(format!("\n{g}"), r#"
     ///  default |  baseline  |

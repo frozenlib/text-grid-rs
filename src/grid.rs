@@ -21,8 +21,8 @@ use std::marker::PhantomData;
 /// }
 ///
 /// let mut g = Grid::new();
-/// g.push_row(&RowData { a: 300, b: 1 });
-/// g.push_row(&RowData { a: 2, b: 200 });
+/// g.push(&RowData { a: 300, b: 1 });
+/// g.push(&RowData { a: 2, b: 200 });
 ///
 /// assert_eq!(format!("\n{g}"), r#"
 ///   a  |  b  |
@@ -63,9 +63,8 @@ impl<R: ?Sized, S: GridSchema<R>> Grid<R, S> {
 }
 impl<R: ?Sized, S: GridSchema<R>> Grid<R, S> {
     /// Append a row to the bottom of the grid.
-    pub fn push_row(&mut self, source: &R) {
-        self.b
-            .push_row(|b| b.extend_with_schema(source, &self.schema));
+    pub fn push(&mut self, source: &R) {
+        self.b.push(|b| b.extend_with_schema(source, &self.schema));
     }
 
     /// Append a row separator to the bottom of the grid.
@@ -76,7 +75,7 @@ impl<R: ?Sized, S: GridSchema<R>> Grid<R, S> {
 impl<A: AsRef<R>, R, S: GridSchema<R>> Extend<A> for Grid<R, S> {
     fn extend<T: IntoIterator<Item = A>>(&mut self, iter: T) {
         for i in iter {
-            self.push_row(i.as_ref());
+            self.push(i.as_ref());
         }
     }
 }

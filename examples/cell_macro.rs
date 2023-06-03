@@ -12,8 +12,8 @@ fn main() {
     }
 
     let mut g = Grid::new();
-    g.push_row(&RowData { a: 1.10, b: 1.11 });
-    g.push_row(&RowData { a: 1.00, b: 0.10 });
+    g.push(&RowData { a: 1.10, b: 1.11 });
+    g.push(&RowData { a: 1.00, b: 0.10 });
 
     print!("{}", g);
 

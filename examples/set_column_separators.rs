@@ -1,12 +1,12 @@
 fn main() {
     use text_grid::*;
     let mut g = GridBuilder::new();
-    g.push_row(|b| {
+    g.push(|b| {
         b.push("A");
         b.push("B");
         b.push("C");
     });
-    g.push_row(|b| {
+    g.push(|b| {
         b.push("AAA");
         b.push("BBB");
         b.push("CCC");

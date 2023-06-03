@@ -361,8 +361,8 @@ fn impl_debug() {
     }
 
     let mut g = Grid::new();
-    g.push_row(&Source { a: 100, b: 200 });
-    g.push_row(&Source { a: 1, b: 2 });
+    g.push(&Source { a: 100, b: 200 });
+    g.push(&Source { a: 1, b: 2 });
 
     let d = format!("{:?}", g);
     let e = r"
@@ -389,8 +389,8 @@ fn with_schema() {
     }
 
     let mut g = Grid::new_with_schema(MyGridSchema { len: 3 });
-    g.push_row(&[1, 2, 3]);
-    g.push_row(&[4, 5, 6]);
+    g.push(&[1, 2, 3]);
+    g.push(&[4, 5, 6]);
 
     let d = format!("{:?}", g);
     let e = r"
@@ -486,7 +486,7 @@ fn do_test<T: CellsSource>(s: Vec<T>, e: &str) {
 fn do_test_with_schema<T>(s: Vec<T>, schema: impl GridSchema<T>, e: &str) {
     let mut g = Grid::new_with_schema(schema);
     for s in s {
-        g.push_row(&s);
+        g.push(&s);
     }
     let a = format!("{}", g);
     let e = e.trim_matches('\n');

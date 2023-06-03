@@ -26,8 +26,8 @@ fn main() {
     }
 
     let mut g = Grid::new();
-    g.push_row(&RowData { a: 300, b: 1, c: 100.1 });
-    g.push_row(&RowData { a: 2, b: 200, c: 1.234 });
+    g.push(&RowData { a: 300, b: 1, c: 100.1 });
+    g.push(&RowData { a: 2, b: 200, c: 1.234 });
 
     assert_eq!(format!("\n{g}"), OUTPUT);
 }

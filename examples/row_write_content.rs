@@ -17,12 +17,12 @@ fn main() {
     }
 
     let mut g = Grid::new();
-    g.push_row(&RowData {
+    g.push(&RowData {
         a: 300,
         b_1: 10,
         b_2: 20,
     });
-    g.push_row(&RowData {
+    g.push(&RowData {
         a: 300,
         b_1: 1,
         b_2: 500,

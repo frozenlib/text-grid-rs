@@ -14,8 +14,8 @@ fn main() {
     }
 
     let mut g = Grid::new_with_schema(MyGridSchema { len: 3 });
-    g.push_row(&[1, 2, 3]);
-    g.push_row(&[4, 5, 6]);
+    g.push(&[1, 2, 3]);
+    g.push(&[4, 5, 6]);
 
     print!("{}", g);
 }

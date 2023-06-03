@@ -6,6 +6,10 @@ use std::ops::Deref;
 use unicode_width::UnicodeWidthStr;
 
 /// A data structure that can be formatted into cells.
+///
+/// The number of columns must be statically determined from the type.
+///
+/// If the number of columns is dynamically determined, [`GridSchema`] must be used. See [`grid_schema`] for details.
 pub trait CellsSource {
     /// Define columns. see [`CellsFormatter`] for details.
     fn fmt(f: &mut CellsFormatter<&Self>);
@@ -188,8 +192,8 @@ impl_cells_source_for_tuple!(
 /// }
 ///
 /// let mut g = Grid::new_with_schema(MyGridSchema { len: 3 });
-/// g.push_row(&[1, 2, 3]);
-/// g.push_row(&[4, 5, 6]);
+/// g.push(&[1, 2, 3]);
+/// g.push(&[4, 5, 6]);
 ///
 /// assert_eq!(format!("\n{g}"), r#"
 ///  0 | 1 | 2 |
@@ -238,6 +242,11 @@ impl<T: CellsSource + ?Sized> GridSchema<T> for DefaultGridSchema<T> {
 }
 
 /// Create [`GridSchema`] from closure.
+///
+/// # Examples
+///
+/// By calculating the number of columns at runtime and creating a schema,
+/// it is possible to create tables where the number of columns cannot be obtained statically.
 ///
 /// ```rust
 /// use text_grid::*;
@@ -306,12 +315,12 @@ impl<'a, T> CellsFormatter<'a, T> {
     /// }
     ///
     /// let mut g = Grid::new();
-    /// g.push_row(&RowData {
+    /// g.push(&RowData {
     ///     a: 300,
     ///     b_1: 10,
     ///     b_2: 20,
     /// });
-    /// g.push_row(&RowData {
+    /// g.push(&RowData {
     ///     a: 300,
     ///     b_1: 1,
     ///     b_2: 500,
@@ -356,12 +365,12 @@ impl<'a, T> CellsFormatter<'a, T> {
     /// }
     ///
     /// let mut g = Grid::new();
-    /// g.push_row(&RowData {
+    /// g.push(&RowData {
     ///     a: 300,
     ///     b_1: 10,
     ///     b_2: 20,
     /// });
-    /// g.push_row(&RowData {
+    /// g.push(&RowData {
     ///     a: 300,
     ///     b_1: 1,
     ///     b_2: 500,
@@ -411,8 +420,8 @@ impl<'a, T> CellsFormatter<'a, T> {
     /// }
     ///
     /// let mut g = Grid::new();
-    /// g.push_row(&RowData { a: 300, b: 1 });
-    /// g.push_row(&RowData { a: 2, b: 200 });
+    /// g.push(&RowData { a: 300, b: 1 });
+    /// g.push(&RowData { a: 2, b: 200 });
     /// assert_eq!(format!("\n{g}"), r#"
     ///   a  |  b  |
     /// -----|-----|
@@ -586,18 +595,18 @@ impl CellsWrite for BodyWriter<'_, '_> {
 /// ```rust
 /// use text_grid::*;
 /// let mut g = GridBuilder::new();
-/// g.push_row(|mut b| {
+/// g.push(|b| {
 ///     b.push(cell("name").right());
 ///     b.push("type");
 ///     b.push("value");
 /// });
 /// g.push_separator();
-/// g.push_row(|mut b| {
+/// g.push(|b| {
 ///     b.push(cell(String::from("X")).right());
 ///     b.push("A");
 ///     b.push(10);
 /// });
-/// g.push_row(|mut b| {
+/// g.push(|b| {
 ///     b.push(cell("Y").right());
 ///     b.push_with_colspan(cell("BBB").center(), 2);
 /// });
@@ -645,7 +654,7 @@ impl GridBuilder {
         let layout = GridLayout::from_schema(schema);
         this.set_column_separators(layout.separators);
         for target in 0..layout.depth_max {
-            this.push_row(|b| {
+            this.push(|b| {
                 schema.fmt(&mut CellsFormatter {
                     w: &mut HeaderWriter::new(b, target),
                     d: None,
@@ -665,12 +674,12 @@ impl GridBuilder {
     /// ```rust
     /// use text_grid::*;
     /// let mut g = GridBuilder::new();
-    /// g.push_row(|mut b| {
+    /// g.push(|b| {
     ///     b.push("A");
     ///     b.push("B");
     ///     b.push("C");
     /// });
-    /// g.push_row(|mut b| {
+    /// g.push(|b| {
     ///     b.push("AAA");
     ///     b.push("BBB");
     ///     b.push("CCC");
@@ -691,7 +700,7 @@ impl GridBuilder {
     }
 
     /// Append a row to the bottom of the grid.
-    pub fn push_row(&mut self, f: impl FnOnce(&mut RowBuilder)) {
+    pub fn push(&mut self, f: impl FnOnce(&mut RowBuilder)) {
         let cells_idx = self.cells.len();
         f(&mut RowBuilder {
             grid: self,
@@ -886,7 +895,7 @@ impl Debug for GridBuilder {
 
 /// A builder used to create row of [`GridBuilder`].
 ///
-/// This structure is created by [`GridBuilder::push_row`].
+/// This structure is created by [`GridBuilder::push`].
 pub struct RowBuilder<'a> {
     grid: &'a mut GridBuilder,
     cells_idx: usize,
