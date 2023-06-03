@@ -37,16 +37,16 @@ pub struct Grid<R: ?Sized, S> {
     _phantom: PhantomData<fn(&R)>,
 }
 
-impl<R: CellsSource + ?Sized> Default for Grid<R, DefaultGridSchema> {
+impl<R: CellsSource + ?Sized> Default for Grid<R, DefaultGridSchema<R>> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<R: CellsSource + ?Sized> Grid<R, DefaultGridSchema> {
+impl<R: CellsSource + ?Sized> Grid<R, DefaultGridSchema<R>> {
     /// Create a new `Grid` with [`DefaultGridSchema`] and prepare header rows.
     pub fn new() -> Self {
-        Self::new_with_schema(DefaultGridSchema)
+        Self::new_with_schema(DefaultGridSchema::default())
     }
 }
 

@@ -212,10 +212,16 @@ pub trait GridSchema<R: ?Sized> {
 }
 
 /// [`GridSchema`] implementation that use [`CellsSource`].
-pub struct DefaultGridSchema;
-impl<R: CellsSource + ?Sized> GridSchema<R> for DefaultGridSchema {
-    fn fmt(&self, f: &mut CellsFormatter<&R>) {
-        R::fmt(f);
+pub struct DefaultGridSchema<T: ?Sized>(std::marker::PhantomData<T>);
+
+impl<T: CellsSource + ?Sized> Default for DefaultGridSchema<T> {
+    fn default() -> Self {
+        Self(std::marker::PhantomData)
+    }
+}
+impl<T: CellsSource + ?Sized> GridSchema<T> for DefaultGridSchema<T> {
+    fn fmt(&self, f: &mut CellsFormatter<&T>) {
+        T::fmt(f);
     }
 }
 

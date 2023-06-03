@@ -4,12 +4,10 @@
 #![doc(html_root_url = "https://docs.rs/text-grid/0.2.0")]
 
 mod cell;
-mod cells;
 mod grid;
 mod grid_builder;
 
 pub use self::cell::*;
-pub use self::cells::*;
 pub use self::grid::*;
 pub use self::grid_builder::*;
 
