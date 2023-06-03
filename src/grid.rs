@@ -73,6 +73,14 @@ impl<R: ?Sized, S: GridSchema<R>> Grid<R, S> {
         self.b.push_separator();
     }
 }
+impl<A: AsRef<R>, R, S: GridSchema<R>> Extend<A> for Grid<R, S> {
+    fn extend<T: IntoIterator<Item = A>>(&mut self, iter: T) {
+        for i in iter {
+            self.push_row(i.as_ref());
+        }
+    }
+}
+
 impl<R: ?Sized, S> Display for Grid<R, S> {
     fn fmt(&self, f: &mut Formatter) -> Result {
         Display::fmt(&self.b, f)

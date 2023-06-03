@@ -20,12 +20,16 @@ impl<T: ?Sized + CellsSource> CellsSource for &mut T {
         T::fmt(&mut f.map(|x| **x as &T));
     }
 }
-
 impl<T: CellsSource, const N: usize> CellsSource for [T; N] {
     fn fmt(f: &mut CellsFormatter<&Self>) {
         for i in 0..N {
             f.column(i, |x| &x[i]);
         }
+    }
+}
+impl<T: CellsSource> CellsSource for Option<T> {
+    fn fmt(f: &mut CellsFormatter<&Self>) {
+        f.filter_map(|x| x.as_ref()).content(|x| *x)
     }
 }
 
@@ -234,6 +238,28 @@ impl<T: CellsSource + ?Sized> GridSchema<T> for DefaultGridSchema<T> {
 }
 
 /// Create [`GridSchema`] from closure.
+///
+/// ```rust
+/// use text_grid::*;
+/// let rows = vec![vec![1, 2, 3], vec![1, 2], vec![1, 2, 3, 4]];
+/// let max_colunm_count = rows.iter().map(|r| r.len()).max().unwrap_or(0);
+/// let schema = grid_schema::<Vec<u32>>(move |f| {
+///     for i in 0..max_colunm_count {
+///         f.column(i, |x| x.get(i));
+///     }
+/// });
+/// let mut g = Grid::new_with_schema(schema);
+/// g.extend(rows);
+/// assert_eq!(format!("\n{g}"), OUTPUT);
+///
+/// const OUTPUT: &str = r"
+///  0 | 1 | 2 | 3 |
+/// ---|---|---|---|
+///  1 | 2 | 3 |   |
+///  1 | 2 |   |   |
+///  1 | 2 | 3 | 4 |
+/// ";
+/// ```
 pub fn grid_schema<T>(fmt: impl Fn(&mut CellsFormatter<&T>)) -> impl GridSchema<T> {
     struct FnGridSchema<F>(F);
     impl<T, F: Fn(&mut CellsFormatter<&T>)> GridSchema<T> for FnGridSchema<F> {

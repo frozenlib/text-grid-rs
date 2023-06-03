@@ -458,8 +458,33 @@ fn root_content() {
     );
 }
 
+#[test]
+fn disparate_column_count() {
+    let rows = vec![vec![1, 2, 3], vec![1, 2], vec![1, 2, 3, 4]];
+    let max_colunm_count = rows.iter().map(|r| r.len()).max().unwrap_or(0);
+    let schema = grid_schema::<Vec<u32>>(move |f| {
+        for i in 0..max_colunm_count {
+            f.column(i, |x| x.get(i));
+        }
+    });
+    let mut g = Grid::new_with_schema(schema);
+    g.extend(rows);
+    assert_eq!(format!("\n{g}"), OUTPUT);
+    const OUTPUT: &str = r"
+ 0 | 1 | 2 | 3 |
+---|---|---|---|
+ 1 | 2 | 3 |   |
+ 1 | 2 |   |   |
+ 1 | 2 | 3 | 4 |
+";
+}
+
 fn do_test<T: CellsSource>(s: Vec<T>, e: &str) {
-    let mut g = Grid::new();
+    do_test_with_schema(s, DefaultGridSchema::default(), e);
+}
+
+fn do_test_with_schema<T>(s: Vec<T>, schema: impl GridSchema<T>, e: &str) {
+    let mut g = Grid::new_with_schema(schema);
     for s in s {
         g.push_row(&s);
     }
