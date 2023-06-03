@@ -891,7 +891,7 @@ impl RowBuilder<'_> {
             d: Some(source),
         })
     }
-    pub fn extend_with<T: ?Sized>(&mut self, source: &T, schema: &dyn GridSchema<T>) {
+    pub fn extend_with_schema<T: ?Sized>(&mut self, source: &T, schema: &dyn GridSchema<T>) {
         schema.fmt(&mut CellsFormatter {
             w: &mut BodyWriter(self),
             d: Some(source),

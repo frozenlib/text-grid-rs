@@ -64,7 +64,8 @@ impl<R: ?Sized, S: GridSchema<R>> Grid<R, S> {
 impl<R: ?Sized, S: GridSchema<R>> Grid<R, S> {
     /// Append a row to the bottom of the grid.
     pub fn push_row(&mut self, source: &R) {
-        self.b.push_row(|b| b.extend_with(source, &self.schema));
+        self.b
+            .push_row(|b| b.extend_with_schema(source, &self.schema));
     }
 
     /// Append a row separator to the bottom of the grid.
