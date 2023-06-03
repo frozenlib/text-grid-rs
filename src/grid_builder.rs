@@ -165,18 +165,6 @@ impl_cells_source_for_tuple!(
     15: T15,
 );
 
-// pub fn cells_with<T: ?Sized>(value: &T, schema: &impl GridSchema<T>) -> impl CellsSource {
-//     struct GridSchemaCellsSource<'a, T, S> {
-//         value: &'a T,
-//         schema: &'a S,
-//     }
-//     impl<T: ?Sized, S: GridSchema<T>> CellsSource for GridSchemaCellsSource<T, S> {
-//         fn fmt(f: &mut CellsFormatter<&Self>) {
-//             todo!()
-//         }
-//     }
-// }
-
 /// Column definitions.
 ///
 /// # Examples
@@ -243,6 +231,17 @@ impl<T: CellsSource + ?Sized> GridSchema<T> for DefaultGridSchema<T> {
     fn fmt(&self, f: &mut CellsFormatter<&T>) {
         T::fmt(f);
     }
+}
+
+/// Create [`GridSchema`] from closure.
+pub fn grid_schema<T>(fmt: impl Fn(&mut CellsFormatter<&T>)) -> impl GridSchema<T> {
+    struct FnGridSchema<F>(F);
+    impl<T, F: Fn(&mut CellsFormatter<&T>)> GridSchema<T> for FnGridSchema<F> {
+        fn fmt(&self, f: &mut CellsFormatter<&T>) {
+            (self.0)(f)
+        }
+    }
+    FnGridSchema(fmt)
 }
 
 /// Used to define columns.
