@@ -243,6 +243,11 @@ impl<T: CellSource> CellSource for Cell<T> {
         self.style
     }
 }
+impl<T: CellSource> GridSource for Cell<T> {
+    fn fmt(f: &mut GridFormatter<&Self>) {
+        f.content_cell(|s| *s);
+    }
+}
 
 impl<T: CellSource> Cell<T> {
     /// Create a new `Cell` with specified [`CellSource`].
@@ -333,6 +338,11 @@ macro_rules! impl_cell_source {
                 CellStyle {
                     align_h: Some($align),
                 }
+            }
+        }
+        impl GridSource for $t {
+            fn fmt(f: &mut GridFormatter<&Self>) {
+                f.content_cell(|x| *x);
             }
         }
     };

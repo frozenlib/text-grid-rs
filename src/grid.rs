@@ -9,6 +9,160 @@ pub trait GridSource {
     /// Define columns. see [`GridFormatter`] for details.
     fn fmt(f: &mut GridFormatter<&Self>);
 }
+impl<T: ?Sized + GridSource> GridSource for &T {
+    fn fmt(f: &mut GridFormatter<&Self>) {
+        T::fmt(&mut f.map(|x| **x));
+    }
+}
+impl<T: ?Sized + GridSource> GridSource for &mut T {
+    fn fmt(f: &mut GridFormatter<&Self>) {
+        T::fmt(&mut f.map(|x| **x as &T));
+    }
+}
+
+impl<T: GridSource, const N: usize> GridSource for [T; N] {
+    fn fmt(f: &mut GridFormatter<&Self>) {
+        for i in 0..N {
+            T::fmt(&mut f.map(|x| &x[i]));
+        }
+    }
+}
+
+macro_rules! impl_grid_source_for_tuple {
+    ($($idx:tt : $ty:ident,)*) => {
+        impl<$($ty),*> GridSource for ($($ty,)*) where $($ty: GridSource),* {
+            fn fmt(f: &mut GridFormatter<&Self>) {
+                $(
+                    $ty::fmt(&mut f.map(|x| &x.$idx));
+                )*
+            }
+        }
+    };
+}
+impl_grid_source_for_tuple!(0: T0,);
+impl_grid_source_for_tuple!(0: T0, 1: T1,);
+impl_grid_source_for_tuple!(0: T0, 1: T1, 2: T2,);
+impl_grid_source_for_tuple!(0: T0, 1: T1, 2: T2, 3: T3,);
+impl_grid_source_for_tuple!(0: T0, 1: T1, 2: T2, 3: T3, 4: T4,);
+impl_grid_source_for_tuple!(0: T0, 1: T1, 2: T2, 3: T3, 4: T4, 5: T5,);
+impl_grid_source_for_tuple!(0: T0, 1: T1, 2: T2, 3: T3, 4: T4, 5: T5, 6: T6,);
+impl_grid_source_for_tuple!(0: T0, 1: T1, 2: T2, 3: T3, 4: T4, 5: T5, 6: T6, 7: T7,);
+impl_grid_source_for_tuple!(
+    0: T0,
+    1: T1,
+    2: T2,
+    3: T3,
+    4: T4,
+    5: T5,
+    6: T6,
+    7: T7,
+    8: T8,
+);
+impl_grid_source_for_tuple!(
+    0: T0,
+    1: T1,
+    2: T2,
+    3: T3,
+    4: T4,
+    5: T5,
+    6: T6,
+    7: T7,
+    8: T8,
+    9: T9,
+);
+impl_grid_source_for_tuple!(
+    0: T0,
+    1: T1,
+    2: T2,
+    3: T3,
+    4: T4,
+    5: T5,
+    6: T6,
+    7: T7,
+    8: T8,
+    9: T9,
+    10: T10,
+);
+impl_grid_source_for_tuple!(
+    0: T0,
+    1: T1,
+    2: T2,
+    3: T3,
+    4: T4,
+    5: T5,
+    6: T6,
+    7: T7,
+    8: T8,
+    9: T9,
+    10: T10,
+    11: T11,
+);
+impl_grid_source_for_tuple!(
+    0: T0,
+    1: T1,
+    2: T2,
+    3: T3,
+    4: T4,
+    5: T5,
+    6: T6,
+    7: T7,
+    8: T8,
+    9: T9,
+    10: T10,
+    11: T11,
+    12: T12,
+);
+impl_grid_source_for_tuple!(
+    0: T0,
+    1: T1,
+    2: T2,
+    3: T3,
+    4: T4,
+    5: T5,
+    6: T6,
+    7: T7,
+    8: T8,
+    9: T9,
+    10: T10,
+    11: T11,
+    12: T12,
+    13: T13,
+);
+impl_grid_source_for_tuple!(
+    0: T0,
+    1: T1,
+    2: T2,
+    3: T3,
+    4: T4,
+    5: T5,
+    6: T6,
+    7: T7,
+    8: T8,
+    9: T9,
+    10: T10,
+    11: T11,
+    12: T12,
+    13: T13,
+    14: T14,
+);
+impl_grid_source_for_tuple!(
+    0: T0,
+    1: T1,
+    2: T2,
+    3: T3,
+    4: T4,
+    5: T5,
+    6: T6,
+    7: T7,
+    8: T8,
+    9: T9,
+    10: T10,
+    11: T11,
+    12: T12,
+    13: T13,
+    14: T14,
+    15: T15,
+);
 
 /// Columns definition.
 ///
@@ -264,7 +418,7 @@ impl<'a, T> GridFormatter<'a, T> {
         U::fmt(&mut self.map(f).as_ref())
     }
 
-    fn content_raw<U: CellSource>(&mut self, f: impl FnOnce(&T) -> U) {
+    pub fn content_cell<U: CellSource>(&mut self, f: impl FnOnce(&T) -> U) {
         self.w.content(
             self.d
                 .as_ref()
@@ -454,10 +608,4 @@ impl RowWrite for BodyWriter<'_, '_> {
     }
     fn group_start(&mut self) {}
     fn group_end(&mut self, _header: &dyn CellSource) {}
-}
-
-impl<T: CellSource> GridSource for T {
-    fn fmt(f: &mut GridFormatter<&Self>) {
-        f.content_raw(|&x| x);
-    }
 }
