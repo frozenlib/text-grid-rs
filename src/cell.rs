@@ -351,7 +351,7 @@ impl_cell_source!(i128, Right);
 impl_cell_source!(isize, Right);
 impl_cell_source!(usize, Right);
 impl_cell_source!(String, Left);
-impl_cell_source!(&str, Left);
+impl_cell_source!(str, Left);
 impl_cell_source!(char, Center);
 impl_cell_source!(bool, Center);
 
