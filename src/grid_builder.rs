@@ -177,7 +177,7 @@ impl_cells_source_for_tuple!(
 //     }
 // }
 
-/// Columns definition.
+/// Column definitions.
 ///
 /// # Examples
 /// ```
