@@ -292,7 +292,7 @@ impl<T: CellSource> Cell<T> {
     ///  12345   | 12345      |
     /// "#);
     /// ```
-    pub fn baseline(self, baseline: &str) -> BaselineAlignedCell {
+    pub fn baseline(self, baseline: &str) -> impl GridSource {
         let mut value = String::new();
         self.fmt(&mut value);
         BaselineAlignedCell::new(value, baseline)
@@ -358,7 +358,7 @@ impl_cell_source!(bool, Center);
 /// A cell with aligned baseline.
 ///
 /// Use [`Cell::baseline`] to create an instance of this type.
-pub struct BaselineAlignedCell {
+struct BaselineAlignedCell {
     value: String,
     baseline_offset: usize,
 }
