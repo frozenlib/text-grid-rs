@@ -282,7 +282,7 @@ impl<'a, T> CellsFormatter<'a, T> {
 
     /// Define column content. Used to create shared header column.
     ///
-    /// - f : A function to obtain cell.
+    /// - f : A function to obtain cells.
     ///
     /// # Examples
     ///
@@ -326,6 +326,9 @@ impl<'a, T> CellsFormatter<'a, T> {
         U::fmt(&mut self.map(f).as_ref())
     }
 
+    /// Define column content.
+    ///
+    /// - f : A function to obtain cell.
     pub fn content_cell<U: CellSource>(&mut self, f: impl FnOnce(&T) -> U) {
         self.w.content(
             self.d
