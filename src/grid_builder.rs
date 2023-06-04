@@ -39,6 +39,11 @@ impl<T: CellsSource> CellsSource for Option<T> {
         f.filter_map(|x| x.as_ref()).content(|x| *x)
     }
 }
+impl<T: CellsSource, E: CellSource> CellsSource for std::result::Result<T, E> {
+    fn fmt(f: &mut CellsFormatter<&Self>) {
+        f.ok_with(|f| f.content(|&x| x))
+    }
+}
 
 macro_rules! impl_cells_source_for_tuple {
     ($($idx:tt : $ty:ident,)*) => {
@@ -478,9 +483,35 @@ impl<'a, T> CellsFormatter<'a, T> {
         f(self);
     }
 }
+impl<T, E: CellSource> CellsFormatter<'_, std::result::Result<T, E>> {
+    /// If `Ok`, output the cells defined by `f`. If `Err`, output the cell by the error value using the colspan of the cells output by `f`.
+    pub fn ok_with(&mut self, f: impl FnOnce(&mut CellsFormatter<&T>)) {
+        if let Some(Err(_)) = &self.d {
+            self.w.content_start();
+        }
+        f(&mut self.as_ref().filter_map(|&x| x.as_ref().ok()));
+        if let Some(Err(e)) = &self.d {
+            self.w.content_end(e);
+        }
+    }
+}
+impl<T, E: CellSource> CellsFormatter<'_, &'_ std::result::Result<T, E>> {
+    /// If `Ok`, output the cells defined by `f`. If `Err`, output the cell by the error value using the colspan of the cells output by `f`.
+    pub fn ok_with(&mut self, f: impl FnOnce(&mut CellsFormatter<&T>)) {
+        if let Some(Err(_)) = &self.d {
+            self.w.content_start();
+        }
+        f(&mut self.as_ref().filter_map(|&x| x.as_ref().ok()));
+        if let Some(Err(e)) = &self.d {
+            self.w.content_end(e);
+        }
+    }
+}
 
 trait CellsWrite {
     fn content(&mut self, cell: Option<&dyn CellSource>);
+    fn content_start(&mut self);
+    fn content_end(&mut self, cell: &dyn CellSource);
     fn column_start(&mut self);
     fn column_end(&mut self, header: &dyn CellSource);
 }
@@ -517,7 +548,8 @@ impl CellsWrite for GridLayout {
     fn content(&mut self, _cell: Option<&dyn CellSource>) {
         self.separators.push(false);
     }
-
+    fn content_start(&mut self) {}
+    fn content_end(&mut self, _cell: &dyn CellSource) {}
     fn column_start(&mut self) {
         self.set_separator();
         self.depth += 1;
@@ -558,6 +590,8 @@ impl CellsWrite for HeaderWriter<'_, '_> {
     fn content(&mut self, _cell: Option<&dyn CellSource>) {
         self.column += 1;
     }
+    fn content_start(&mut self) {}
+    fn content_end(&mut self, _cell: &dyn CellSource) {}
     fn column_start(&mut self) {
         if self.depth <= self.target {
             self.push_cell(Cell::empty());
@@ -580,16 +614,34 @@ impl Drop for HeaderWriter<'_, '_> {
         self.push_cell("");
     }
 }
-struct BodyWriter<'a, 'b>(&'a mut RowBuilder<'b>);
+struct BodyWriter<'a, 'b> {
+    b: &'a mut RowBuilder<'b>,
+    colspan: Option<usize>,
+}
+
+impl<'a, 'b> BodyWriter<'a, 'b> {
+    fn new(b: &'a mut RowBuilder<'b>) -> Self {
+        Self { b, colspan: None }
+    }
+}
 
 impl CellsWrite for BodyWriter<'_, '_> {
     fn content(&mut self, cell: Option<&dyn CellSource>) {
-        if let Some(cell) = cell {
-            self.0.push(cell);
+        if let Some(colspan) = &mut self.colspan {
+            *colspan += 1;
         } else {
-            self.0.push("");
+            self.b.push(cell);
         }
     }
+    fn content_start(&mut self) {
+        assert!(self.colspan.is_none());
+        self.colspan = Some(0);
+    }
+    fn content_end(&mut self, cell: &dyn CellSource) {
+        let colspan = self.colspan.take().unwrap();
+        self.b.push_with_colspan(cell, colspan);
+    }
+
     fn column_start(&mut self) {}
     fn column_end(&mut self, _header: &dyn CellSource) {}
 }
@@ -926,13 +978,13 @@ impl RowBuilder<'_> {
 
     pub fn extend<T: ?Sized + CellsSource>(&mut self, source: &T) {
         T::fmt(&mut CellsFormatter {
-            w: &mut BodyWriter(self),
+            w: &mut BodyWriter::new(self),
             d: Some(source),
         })
     }
     pub fn extend_with_schema<T: ?Sized>(&mut self, source: &T, schema: &dyn GridSchema<T>) {
         schema.fmt(&mut CellsFormatter {
-            w: &mut BodyWriter(self),
+            w: &mut BodyWriter::new(self),
             d: Some(source),
         })
     }

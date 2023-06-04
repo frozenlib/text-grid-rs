@@ -150,7 +150,7 @@ impl<F: Fn(&mut String) -> Result> CellSource for FmtFnCellSource<F> {
     }
 }
 
-/// Create [`Cell`] from closure that call `std::write!` macro.
+/// Create [`Cell`] from closure that call [`std::write!`] macro.
 ///
 /// # Examples
 ///
@@ -166,7 +166,7 @@ pub fn cell_by<F: Fn(&mut String) -> Result>(f: F) -> Cell<impl CellSource> {
     Cell::new(FmtFnCellSource(f))
 }
 
-/// Creates a [`Cell`] using interpolation of runtime expressions, as in [`format!`].
+/// Create [`Cell`] via runtime expression interpolation, as in [`format!`].
 ///
 /// Use the `format!` syntax to create [`Cell`]. See [`std::fmt`] for more information.
 ///
@@ -441,6 +441,7 @@ impl CellsSource for f64 {
     }
 }
 
+/// Create [`CellsSource`] for float numbers via runtime expression interpolation.
 #[macro_export]
 macro_rules! cells_e {
     ($($t:tt)*) => {
@@ -448,6 +449,7 @@ macro_rules! cells_e {
     };
 }
 
+/// Create [`CellsSource`] for float numbers from [`Display`].
 pub fn cells_e(value: impl Display) -> impl CellsSource {
     ExpCells::new(value.to_string())
 }

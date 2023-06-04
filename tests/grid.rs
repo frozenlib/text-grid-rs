@@ -555,6 +555,19 @@ fn empty_group() {
     );
 }
 
+#[test]
+fn result() {
+    do_test(
+        vec![Ok(["a", "b"]), Err("********")],
+        r"
+  0  | 1  |
+-----|----|
+ a   | b  |
+ ******** |
+",
+    );
+}
+
 #[track_caller]
 fn do_test<T: CellsSource>(s: Vec<T>, e: &str) {
     do_test_with_schema(s, DefaultGridSchema::default(), e);
