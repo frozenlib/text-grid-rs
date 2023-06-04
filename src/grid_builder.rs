@@ -175,6 +175,8 @@ impl_cells_source_for_tuple!(
 
 /// Column definitions.
 ///
+/// Define columns using [`CellsFormatter`].
+///
 /// # Examples
 /// ```
 /// use text_grid::*;
