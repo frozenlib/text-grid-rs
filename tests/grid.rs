@@ -108,7 +108,7 @@ fn column_group() {
 
     impl CellsSource for Source {
         fn fmt(f: &mut CellsFormatter<&Self>) {
-            f.group("g", |f| {
+            f.column_with("g", |f| {
                 f.column("a", |x| x.a);
                 f.column("b", |x| x.b);
             })
@@ -138,7 +138,7 @@ fn column_group_differing_level() {
     impl CellsSource for Source {
         fn fmt(f: &mut CellsFormatter<&Self>) {
             f.column("a", |s| s.a);
-            f.group("b", |f| {
+            f.column_with("b", |f| {
                 f.column("1", |s| s.b_1);
                 f.column("2", |s| s.b_2);
             });
@@ -180,11 +180,11 @@ fn column_group_differing_level_2() {
     impl CellsSource for Source {
         fn fmt(f: &mut CellsFormatter<&Self>) {
             f.column("a", |s| s.a);
-            f.group("b", |f| {
+            f.column_with("b", |f| {
                 f.column("1", |s| s.b_1);
                 f.column("2", |s| s.b_2);
             });
-            f.group("c", |f| {
+            f.column_with("c", |f| {
                 f.content(|s| s.c_1);
                 f.content(|s| s.c_2);
             });
@@ -227,7 +227,7 @@ fn column_multipart() {
 
     impl CellsSource for Source {
         fn fmt(f: &mut CellsFormatter<&Self>) {
-            f.group("g", |f| {
+            f.column_with("g", |f| {
                 f.content(|x| x.a);
                 f.content(|x| x.b);
             })
@@ -540,7 +540,7 @@ fn cells_e() {
 #[test]
 fn empty_group() {
     let s = grid_schema::<()>(|f| {
-        f.group("header", |_| {});
+        f.column_with("header", |_| {});
         f.column("1", |_| cell(1));
     });
 

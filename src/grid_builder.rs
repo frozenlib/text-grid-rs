@@ -287,7 +287,7 @@ pub fn grid_schema<T: ?Sized>(fmt: impl Fn(&mut CellsFormatter<&T>)) -> impl Gri
 /// Used to define columns.
 ///
 /// - Use [`column`](Self::column) to create column.
-/// - Use [`group`](Self::group) to create multi level header.
+/// - Use [`column_with`](Self::column_with) to create multi level header.
 /// - Use [`content`](Self::content) to create shared header columns.
 pub struct CellsFormatter<'a, T> {
     w: &'a mut dyn CellsWrite,
@@ -312,7 +312,7 @@ impl<'a, T> CellsFormatter<'a, T> {
     /// impl CellsSource for RowData {
     ///     fn fmt(f: &mut CellsFormatter<&Self>) {
     ///         f.column("a", |s| s.a);
-    ///         f.group("b", |f| {
+    ///         f.column_with("b", |f| {
     ///             f.column("1", |s| s.b_1);
     ///             f.column("2", |s| s.b_2);
     ///         });
@@ -339,10 +339,10 @@ impl<'a, T> CellsFormatter<'a, T> {
     ///  300 |  1 | 500 |
     /// "#);
     /// ```
-    pub fn group(&mut self, header: impl CellSource, f: impl FnOnce(&mut CellsFormatter<T>)) {
-        self.w.group_start();
+    pub fn column_with(&mut self, header: impl CellSource, f: impl FnOnce(&mut CellsFormatter<T>)) {
+        self.w.column_start();
         f(self);
-        self.w.group_end(&header);
+        self.w.column_end(&header);
     }
 
     /// Define column content. Used to create shared header column.
@@ -361,7 +361,7 @@ impl<'a, T> CellsFormatter<'a, T> {
     /// impl CellsSource for RowData {
     ///     fn fmt(f: &mut CellsFormatter<&Self>) {
     ///         f.column("a", |s| s.a);
-    ///         f.group("b", |f| {
+    ///         f.column_with("b", |f| {
     ///             f.content(|s| s.b_1);
     ///             f.content(|_| " ");
     ///             f.content(|s| s.b_2);
@@ -435,7 +435,7 @@ impl<'a, T> CellsFormatter<'a, T> {
     /// "#);
     /// ```
     pub fn column<U: CellsSource>(&mut self, header: impl CellSource, f: impl FnOnce(&T) -> U) {
-        self.group(header, |cf| cf.content(f));
+        self.column_with(header, |cf| cf.content(f));
     }
 
     /// Creates a [`CellsFormatter`] whose source value was converted.
@@ -481,8 +481,8 @@ impl<'a, T> CellsFormatter<'a, T> {
 
 trait CellsWrite {
     fn content(&mut self, cell: Option<&dyn CellSource>);
-    fn group_start(&mut self);
-    fn group_end(&mut self, header: &dyn CellSource);
+    fn column_start(&mut self);
+    fn column_end(&mut self, header: &dyn CellSource);
 }
 
 pub(crate) struct GridLayout {
@@ -518,13 +518,13 @@ impl CellsWrite for GridLayout {
         self.separators.push(false);
     }
 
-    fn group_start(&mut self) {
+    fn column_start(&mut self) {
         self.set_separator();
         self.depth += 1;
         self.depth_max = max(self.depth_max, self.depth);
     }
 
-    fn group_end(&mut self, _header: &dyn CellSource) {
+    fn column_end(&mut self, _header: &dyn CellSource) {
         self.depth -= 1;
         self.set_separator()
     }
@@ -558,13 +558,13 @@ impl CellsWrite for HeaderWriter<'_, '_> {
     fn content(&mut self, _cell: Option<&dyn CellSource>) {
         self.column += 1;
     }
-    fn group_start(&mut self) {
+    fn column_start(&mut self) {
         if self.depth <= self.target {
             self.push_cell(Cell::empty());
         }
         self.depth += 1;
     }
-    fn group_end(&mut self, header: &dyn CellSource) {
+    fn column_end(&mut self, header: &dyn CellSource) {
         self.depth -= 1;
         if self.depth == self.target {
             let style = CellStyle {
@@ -590,8 +590,8 @@ impl CellsWrite for BodyWriter<'_, '_> {
             self.0.push("");
         }
     }
-    fn group_start(&mut self) {}
-    fn group_end(&mut self, _header: &dyn CellSource) {}
+    fn column_start(&mut self) {}
+    fn column_end(&mut self, _header: &dyn CellSource) {}
 }
 
 /// A builder used to create plain-text table.

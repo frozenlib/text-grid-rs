@@ -8,7 +8,7 @@ fn main() {
     impl CellsSource for RowData {
         fn fmt(f: &mut CellsFormatter<&Self>) {
             f.column("a", |s| s.a);
-            f.group("b", |f| {
+            f.column_with("b", |f| {
                 f.column("1", |s| s.b_1);
                 f.column("2", |s| s.b_2);
             });
