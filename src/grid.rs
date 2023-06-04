@@ -86,6 +86,20 @@ impl<'a, R, S: GridSchema<R>> Extend<&'a R> for Grid<R, S> {
         }
     }
 }
+impl<R: CellsSource> FromIterator<R> for Grid<R> {
+    fn from_iter<T: IntoIterator<Item = R>>(iter: T) -> Self {
+        let mut g = Self::new();
+        g.extend(iter);
+        g
+    }
+}
+impl<'a, R: CellsSource> FromIterator<&'a R> for Grid<R> {
+    fn from_iter<T: IntoIterator<Item = &'a R>>(iter: T) -> Self {
+        let mut g = Self::new();
+        g.extend(iter);
+        g
+    }
+}
 
 impl<R: ?Sized, S> Display for Grid<R, S> {
     fn fmt(&self, f: &mut Formatter) -> Result {
