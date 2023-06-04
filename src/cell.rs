@@ -43,6 +43,9 @@ pub trait CellSource {
         CellStyle::default()
     }
 }
+impl CellSource for () {
+    fn fmt(&self, _: &mut String) {}
+}
 impl<T: ?Sized + CellSource> CellSource for &T {
     fn fmt(&self, s: &mut String) {
         T::fmt(*self, s)

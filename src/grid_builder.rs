@@ -14,6 +14,9 @@ pub trait CellsSource {
     /// Define columns. see [`CellsFormatter`] for details.
     fn fmt(f: &mut CellsFormatter<&Self>);
 }
+impl CellsSource for () {
+    fn fmt(_: &mut CellsFormatter<&Self>) {}
+}
 impl<T: ?Sized + CellsSource> CellsSource for &T {
     fn fmt(f: &mut CellsFormatter<&Self>) {
         T::fmt(&mut f.map(|x| **x));
