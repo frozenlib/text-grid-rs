@@ -274,9 +274,9 @@ impl<T: CellsSource + ?Sized> GridSchema<T> for DefaultGridSchema<T> {
 ///  1 | 2 | 3 | 4 |
 /// ";
 /// ```
-pub fn grid_schema<T>(fmt: impl Fn(&mut CellsFormatter<&T>)) -> impl GridSchema<T> {
+pub fn grid_schema<T: ?Sized>(fmt: impl Fn(&mut CellsFormatter<&T>)) -> impl GridSchema<T> {
     struct FnGridSchema<F>(F);
-    impl<T, F: Fn(&mut CellsFormatter<&T>)> GridSchema<T> for FnGridSchema<F> {
+    impl<T: ?Sized, F: Fn(&mut CellsFormatter<&T>)> GridSchema<T> for FnGridSchema<F> {
         fn fmt(&self, f: &mut CellsFormatter<&T>) {
             (self.0)(f)
         }

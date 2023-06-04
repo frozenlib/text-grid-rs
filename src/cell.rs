@@ -1,7 +1,7 @@
 use crate::{CellsFormatter, CellsSource};
 
 use self::HorizontalAlignment::*;
-use std::fmt::*;
+use std::{cmp::min, fmt::*};
 
 /// Cell`s style.
 #[derive(Clone, Copy, Default)]
@@ -86,6 +86,26 @@ impl<T: CellSource> CellSource for Option<T> {
             value.style_for_body()
         } else {
             CellStyle::default()
+        }
+    }
+}
+impl<T: CellSource, E: CellSource> CellSource for std::result::Result<T, E> {
+    fn fmt(&self, s: &mut String) {
+        match self {
+            Ok(value) => value.fmt(s),
+            Err(value) => value.fmt(s),
+        }
+    }
+    fn style(&self) -> CellStyle {
+        match self {
+            Ok(value) => value.style(),
+            Err(value) => value.style(),
+        }
+    }
+    fn style_for_body(&self) -> CellStyle {
+        match self {
+            Ok(value) => value.style_for_body(),
+            Err(value) => value.style_for_body(),
         }
     }
 }
@@ -418,5 +438,53 @@ impl CellsSource for f32 {
 impl CellsSource for f64 {
     fn fmt(f: &mut CellsFormatter<&Self>) {
         f.content(|&this| cell(this).baseline("."))
+    }
+}
+
+#[macro_export]
+macro_rules! cells_e {
+    ($($t:tt)*) => {
+        $crate::cells_e(format!($($t)*))
+    };
+}
+
+pub fn cells_e(value: impl Display) -> impl CellsSource {
+    ExpCells::new(value.to_string())
+}
+struct ExpCells {
+    value: String,
+    offset_dot: usize,
+    offset_e: usize,
+}
+impl ExpCells {
+    fn new(value: String) -> Self {
+        let offset_e = value.rfind(['e', 'E']).unwrap_or(value.len());
+        let offset_dot = min(value.find('.').unwrap_or(value.len()), offset_e);
+        Self {
+            value,
+            offset_dot,
+            offset_e,
+        }
+    }
+}
+
+impl CellsSource for ExpCells {
+    fn fmt(f: &mut CellsFormatter<&Self>) {
+        f.content(|&x| cell(&x.value[..x.offset_dot]).right());
+        f.content(|&x| {
+            if x.offset_dot < x.offset_e {
+                &x.value[x.offset_dot..x.offset_e]
+            } else {
+                ""
+            }
+        });
+        f.content(|&x| {
+            Cell::new(if x.offset_e < x.value.len() {
+                Ok(cell!(" {} ", &x.value[x.offset_e..x.offset_e + 1]))
+            } else {
+                Err(())
+            })
+        });
+        f.content(|&x| cell(&x.value[min(x.offset_e + 1, x.value.len())..]).right());
     }
 }
