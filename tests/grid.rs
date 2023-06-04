@@ -537,6 +537,24 @@ fn cells_e() {
     );
 }
 
+#[test]
+fn empty_group() {
+    let s = grid_schema::<()>(|f| {
+        f.group("header", |_| {});
+        f.column("1", |_| cell(1));
+    });
+
+    do_test_with_schema(
+        vec![()],
+        s,
+        r"
+ 1 |
+---|
+ 1 |
+",
+    );
+}
+
 #[track_caller]
 fn do_test<T: CellsSource>(s: Vec<T>, e: &str) {
     do_test_with_schema(s, DefaultGridSchema::default(), e);
