@@ -146,7 +146,7 @@ pub fn cell_by<F: Fn(&mut String) -> Result>(f: F) -> Cell<impl CellSource> {
     Cell::new(FmtFnCellSource(f))
 }
 
-/// Creates a [`Cell`] using interpolation of runtime expressions.
+/// Creates a [`Cell`] using interpolation of runtime expressions, as in [`format!`].
 ///
 /// Use the `format!` syntax to create [`Cell`]. See [`std::fmt`] for more information.
 ///
@@ -223,6 +223,17 @@ pub fn cell_by<F: Fn(&mut String) -> Result>(f: F) -> Cell<impl CellSource> {
 /// let cell_b = cell(format!("{}", &s));
 /// // Retrun value owns formatted string.
 /// // Therefore, the returned value can move anywhere.
+/// ```
+///
+/// When used with [`CellsFormatter`],
+/// ownership can be shared by using a reference owned by `CellsFormatter` instead of a temporary reference.
+///
+/// ```
+/// use text_grid::*;
+/// let _ = grid_schema(|f: &mut CellsFormatter<&String>| {
+///   // f.column("x", | x| cell!("__{}__", x)); // BAD  : x is temporary reference
+///      f.column("x", |&x| cell!("__{}__", x)); // GOOD : x is reference owned by CellsFormatter
+/// });
 /// ```
 #[macro_export]
 macro_rules! cell {

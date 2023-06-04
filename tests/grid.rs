@@ -488,6 +488,14 @@ fn extend() {
     g.extend(items);
 }
 
+#[test]
+fn cell_ref() {
+    let _ = grid_schema(|f: &mut CellsFormatter<&String>| {
+        // f.column("x", |x| cell!("__{}__", x)); // BAD
+        f.column("x", |&x| cell!("__{}__", x)); // GOOD
+    });
+}
+
 fn do_test<T: CellsSource>(s: Vec<T>, e: &str) {
     do_test_with_schema(s, DefaultGridSchema::default(), e);
 }
