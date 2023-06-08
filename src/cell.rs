@@ -442,6 +442,34 @@ impl CellsSource for f64 {
 }
 
 /// Create [`CellsSource`] for float numbers via runtime expression interpolation.
+///
+/// # Examples
+///
+/// ```
+/// use text_grid::*;
+/// let s = grid_schema::<f64>(|f| {
+///     f.column("",      |&x| cell!("{x:e}"));
+///     f.column("e",     |&x| cells_e!("{x:e}"));
+///     f.column(".2e",   |&x| cells_e!("{x:.2e}"));
+///     f.column("E",     |&x| cells_e!("{x:E}"));
+///     f.column("debug", |&x| cells_e!("{x:?}"));
+/// });
+///
+/// let mut g = Grid::new_with_schema(s);
+/// g.extend(vec![1.0, 0.95, 123.45, 0.000001, 1.0e-20, 10000000000.0]);
+/// assert_eq!(format!("\n{g}"), OUTPUT);
+///
+/// const OUTPUT: &str = r"
+///           |      e       |    .2e     |      E       |        debug         |
+/// ----------|--------------|------------|--------------|----------------------|
+///  1e0      | 1      e   0 | 1.00 e   0 | 1      E   0 |           1.0        |
+///  9.5e-1   | 9.5    e  -1 | 9.50 e  -1 | 9.5    E  -1 |           0.95       |
+///  1.2345e2 | 1.2345 e   2 | 1.23 e   2 | 1.2345 E   2 |         123.45       |
+///  1e-6     | 1      e  -6 | 1.00 e  -6 | 1      E  -6 |           1    e  -6 |
+///  1e-20    | 1      e -20 | 1.00 e -20 | 1      E -20 |           1    e -20 |
+///  1e10     | 1      e  10 | 1.00 e  10 | 1      E  10 | 10000000000.0        |
+/// ";
+/// ```
 #[macro_export]
 macro_rules! cells_e {
     ($($t:tt)*) => {
@@ -450,6 +478,8 @@ macro_rules! cells_e {
 }
 
 /// Create [`CellsSource`] for float numbers from [`Display`].
+///
+/// Format in the same way as [`cells_e!`] macro.
 pub fn cells_e(value: impl Display) -> impl CellsSource {
     ExpCells::new(value.to_string())
 }
