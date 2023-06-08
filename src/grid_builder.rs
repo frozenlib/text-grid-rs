@@ -401,7 +401,7 @@ impl<'a, T> CellsFormatter<'a, T> {
     /// Define column content.
     ///
     /// - f : A function to obtain cell.
-    pub fn content_cell<U: CellSource>(&mut self, f: impl FnOnce(&T) -> U) {
+    fn content_cell<U: CellSource>(&mut self, f: impl FnOnce(&T) -> U) {
         self.w.content(
             self.d
                 .as_ref()
