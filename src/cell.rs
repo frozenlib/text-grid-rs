@@ -383,7 +383,6 @@ impl<T: CellSource> Cell<T> {
             source: self.source,
             style: CellStyle {
                 align_h: Some(align_h),
-                ..self.style
             },
         }
     }
@@ -404,7 +403,6 @@ macro_rules! impl_cell_source {
             fn style_for_body(&self) -> CellStyle {
                 CellStyle {
                     align_h: Some($align),
-                    ..CellStyle::default()
                 }
             }
         }

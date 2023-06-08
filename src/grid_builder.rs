@@ -605,7 +605,6 @@ impl CellsWrite for HeaderWriter<'_, '_> {
         if self.depth == self.target {
             let style = CellStyle {
                 align_h: Some(HorizontalAlignment::Center),
-                ..CellStyle::default()
             };
             let header = Cell::new(header).with_base_style(style);
             self.push_cell(header);
