@@ -5,16 +5,27 @@ use std::{cmp::min, fmt::*};
 
 /// Cell`s style.
 #[derive(Clone, Copy, Default)]
+
 pub struct CellStyle {
     pub(crate) align_h: Option<HorizontalAlignment>,
 }
 impl CellStyle {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     /// Returns the styles in which the empty style has been replaced with the specified style.
     ///
     /// Judgment as to whether the style is empty or not is done for each individual element.
     pub fn or(self, style: CellStyle) -> CellStyle {
         CellStyle {
             align_h: self.align_h.or(style.align_h),
+        }
+    }
+
+    pub fn align_h(self, value: HorizontalAlignment) -> Self {
+        CellStyle {
+            align_h: Some(value),
         }
     }
 }
@@ -30,6 +41,27 @@ pub enum HorizontalAlignment {
 /// A data structure that can be formatted into cell.
 ///
 /// Normally, [`cell()`] or [`cell!`](crate::cell!) is used to create a value that implements `CellSource`.
+///
+/// If you implement `CellSource` for a type, you should also implement [`CellsSource`] for convenience.
+///
+/// ```
+/// use text_grid::*;
+/// struct X(String);
+///
+/// impl CellSource for X {
+///     fn fmt(&self, s: &mut String) {
+///         s.push_str(&self.0);
+///     }
+///     fn style(&self) -> CellStyle {
+///         CellStyle::new().align_h(HorizontalAlignment::Right)
+///     }
+/// }
+/// impl CellsSource for X {
+///     fn fmt(f: &mut CellsFormatter<&Self>) {
+///         f.content(|x| Cell::new(*x));
+///     }
+/// }
+/// ```
 pub trait CellSource {
     /// Output the cell text to given buffer.
     fn fmt(&self, s: &mut String);
@@ -351,6 +383,7 @@ impl<T: CellSource> Cell<T> {
             source: self.source,
             style: CellStyle {
                 align_h: Some(align_h),
+                ..self.style
             },
         }
     }
@@ -371,6 +404,7 @@ macro_rules! impl_cell_source {
             fn style_for_body(&self) -> CellStyle {
                 CellStyle {
                     align_h: Some($align),
+                    ..CellStyle::default()
                 }
             }
         }

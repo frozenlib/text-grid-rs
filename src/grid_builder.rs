@@ -401,7 +401,7 @@ impl<'a, T> CellsFormatter<'a, T> {
     /// Define column content.
     ///
     /// - f : A function to obtain cell.
-    fn content_cell<U: CellSource>(&mut self, f: impl FnOnce(&T) -> U) {
+    pub(crate) fn content_cell<U: CellSource>(&mut self, f: impl FnOnce(&T) -> U) {
         self.w.content(
             self.d
                 .as_ref()
@@ -605,6 +605,7 @@ impl CellsWrite for HeaderWriter<'_, '_> {
         if self.depth == self.target {
             let style = CellStyle {
                 align_h: Some(HorizontalAlignment::Center),
+                ..CellStyle::default()
             };
             let header = Cell::new(header).with_base_style(style);
             self.push_cell(header);
