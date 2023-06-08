@@ -185,6 +185,8 @@ impl_cells_source_for_tuple!(
 ///
 /// Define columns using [`CellsFormatter`].
 ///
+/// To dynamically create a `GridSchema`, use [`grid_schema`].
+///
 /// # Examples
 /// ```
 /// use text_grid::*;
