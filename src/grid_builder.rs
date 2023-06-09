@@ -111,6 +111,7 @@ impl<T: ?Sized + GridSchema> GridSchema for &T {
 }
 
 /// [`GridSchema`] implementation that use [`CellsSource`].
+#[derive(Clone, Copy, Debug)]
 pub struct DefaultGridSchema<T: ?Sized>(PhantomData<T>);
 
 impl<T: CellsSource + ?Sized> Default for DefaultGridSchema<T> {
