@@ -55,6 +55,16 @@ macro_rules! impl_cells_source_for_tuple {
                 )*
             }
         }
+
+        impl<$($ty),*> GridSchema for ($($ty,)*)
+        where
+            $($ty: GridSchema, $ty::Source: Sized,)*
+        {
+            type Source = ($($ty::Source,)*);
+            fn fmt(&self, f: &mut CellsFormatter<&Self::Source>) {
+                $(self.$idx.fmt(&mut f.map(|&x| &x.$idx));)*
+            }
+        }
     };
 }
 impl_cells_source_for_tuple!(0: T0,);
