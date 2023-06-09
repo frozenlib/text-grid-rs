@@ -46,152 +46,6 @@ impl<T: CellsSource, E: CellSource> CellsSource for std::result::Result<T, E> {
     }
 }
 
-macro_rules! impl_cells_source_for_tuple {
-    ($($idx:tt : $ty:ident,)*) => {
-        impl<$($ty),*> CellsSource for ($($ty,)*) where $($ty: CellsSource),* {
-            fn fmt(f: &mut CellsFormatter<&Self>) {
-                $(
-                    $ty::fmt(&mut f.map(|x| &x.$idx));
-                )*
-            }
-        }
-
-        impl<$($ty),*> GridSchema for ($($ty,)*)
-        where
-            $($ty: GridSchema, $ty::Source: Sized,)*
-        {
-            type Source = ($($ty::Source,)*);
-            fn fmt(&self, f: &mut CellsFormatter<&Self::Source>) {
-                $(self.$idx.fmt(&mut f.map(|&x| &x.$idx));)*
-            }
-        }
-    };
-}
-impl_cells_source_for_tuple!(0: T0,);
-impl_cells_source_for_tuple!(0: T0, 1: T1,);
-impl_cells_source_for_tuple!(0: T0, 1: T1, 2: T2,);
-impl_cells_source_for_tuple!(0: T0, 1: T1, 2: T2, 3: T3,);
-impl_cells_source_for_tuple!(0: T0, 1: T1, 2: T2, 3: T3, 4: T4,);
-impl_cells_source_for_tuple!(0: T0, 1: T1, 2: T2, 3: T3, 4: T4, 5: T5,);
-impl_cells_source_for_tuple!(0: T0, 1: T1, 2: T2, 3: T3, 4: T4, 5: T5, 6: T6,);
-impl_cells_source_for_tuple!(0: T0, 1: T1, 2: T2, 3: T3, 4: T4, 5: T5, 6: T6, 7: T7,);
-impl_cells_source_for_tuple!(
-    0: T0,
-    1: T1,
-    2: T2,
-    3: T3,
-    4: T4,
-    5: T5,
-    6: T6,
-    7: T7,
-    8: T8,
-);
-impl_cells_source_for_tuple!(
-    0: T0,
-    1: T1,
-    2: T2,
-    3: T3,
-    4: T4,
-    5: T5,
-    6: T6,
-    7: T7,
-    8: T8,
-    9: T9,
-);
-impl_cells_source_for_tuple!(
-    0: T0,
-    1: T1,
-    2: T2,
-    3: T3,
-    4: T4,
-    5: T5,
-    6: T6,
-    7: T7,
-    8: T8,
-    9: T9,
-    10: T10,
-);
-impl_cells_source_for_tuple!(
-    0: T0,
-    1: T1,
-    2: T2,
-    3: T3,
-    4: T4,
-    5: T5,
-    6: T6,
-    7: T7,
-    8: T8,
-    9: T9,
-    10: T10,
-    11: T11,
-);
-impl_cells_source_for_tuple!(
-    0: T0,
-    1: T1,
-    2: T2,
-    3: T3,
-    4: T4,
-    5: T5,
-    6: T6,
-    7: T7,
-    8: T8,
-    9: T9,
-    10: T10,
-    11: T11,
-    12: T12,
-);
-impl_cells_source_for_tuple!(
-    0: T0,
-    1: T1,
-    2: T2,
-    3: T3,
-    4: T4,
-    5: T5,
-    6: T6,
-    7: T7,
-    8: T8,
-    9: T9,
-    10: T10,
-    11: T11,
-    12: T12,
-    13: T13,
-);
-impl_cells_source_for_tuple!(
-    0: T0,
-    1: T1,
-    2: T2,
-    3: T3,
-    4: T4,
-    5: T5,
-    6: T6,
-    7: T7,
-    8: T8,
-    9: T9,
-    10: T10,
-    11: T11,
-    12: T12,
-    13: T13,
-    14: T14,
-);
-impl_cells_source_for_tuple!(
-    0: T0,
-    1: T1,
-    2: T2,
-    3: T3,
-    4: T4,
-    5: T5,
-    6: T6,
-    7: T7,
-    8: T8,
-    9: T9,
-    10: T10,
-    11: T11,
-    12: T12,
-    13: T13,
-    14: T14,
-    15: T15,
-);
-
 /// Column definitions.
 ///
 /// Define columns using [`CellsFormatter`].
@@ -1070,3 +924,149 @@ impl<'a> Deref for CellRef<'a> {
         &self.cell
     }
 }
+
+macro_rules! impl_for_tuple {
+    ($($idx:tt : $ty:ident,)*) => {
+        impl<$($ty),*> CellsSource for ($($ty,)*) where $($ty: CellsSource),* {
+            fn fmt(f: &mut CellsFormatter<&Self>) {
+                $(
+                    $ty::fmt(&mut f.map(|x| &x.$idx));
+                )*
+            }
+        }
+
+        impl<$($ty),*> GridSchema for ($($ty,)*)
+        where
+            $($ty: GridSchema, $ty::Source: Sized,)*
+        {
+            type Source = ($($ty::Source,)*);
+            fn fmt(&self, f: &mut CellsFormatter<&Self::Source>) {
+                $(self.$idx.fmt(&mut f.map(|&x| &x.$idx));)*
+            }
+        }
+    };
+}
+impl_for_tuple!(0: T0,);
+impl_for_tuple!(0: T0, 1: T1,);
+impl_for_tuple!(0: T0, 1: T1, 2: T2,);
+impl_for_tuple!(0: T0, 1: T1, 2: T2, 3: T3,);
+impl_for_tuple!(0: T0, 1: T1, 2: T2, 3: T3, 4: T4,);
+impl_for_tuple!(0: T0, 1: T1, 2: T2, 3: T3, 4: T4, 5: T5,);
+impl_for_tuple!(0: T0, 1: T1, 2: T2, 3: T3, 4: T4, 5: T5, 6: T6,);
+impl_for_tuple!(0: T0, 1: T1, 2: T2, 3: T3, 4: T4, 5: T5, 6: T6, 7: T7,);
+impl_for_tuple!(
+    0: T0,
+    1: T1,
+    2: T2,
+    3: T3,
+    4: T4,
+    5: T5,
+    6: T6,
+    7: T7,
+    8: T8,
+);
+impl_for_tuple!(
+    0: T0,
+    1: T1,
+    2: T2,
+    3: T3,
+    4: T4,
+    5: T5,
+    6: T6,
+    7: T7,
+    8: T8,
+    9: T9,
+);
+impl_for_tuple!(
+    0: T0,
+    1: T1,
+    2: T2,
+    3: T3,
+    4: T4,
+    5: T5,
+    6: T6,
+    7: T7,
+    8: T8,
+    9: T9,
+    10: T10,
+);
+impl_for_tuple!(
+    0: T0,
+    1: T1,
+    2: T2,
+    3: T3,
+    4: T4,
+    5: T5,
+    6: T6,
+    7: T7,
+    8: T8,
+    9: T9,
+    10: T10,
+    11: T11,
+);
+impl_for_tuple!(
+    0: T0,
+    1: T1,
+    2: T2,
+    3: T3,
+    4: T4,
+    5: T5,
+    6: T6,
+    7: T7,
+    8: T8,
+    9: T9,
+    10: T10,
+    11: T11,
+    12: T12,
+);
+impl_for_tuple!(
+    0: T0,
+    1: T1,
+    2: T2,
+    3: T3,
+    4: T4,
+    5: T5,
+    6: T6,
+    7: T7,
+    8: T8,
+    9: T9,
+    10: T10,
+    11: T11,
+    12: T12,
+    13: T13,
+);
+impl_for_tuple!(
+    0: T0,
+    1: T1,
+    2: T2,
+    3: T3,
+    4: T4,
+    5: T5,
+    6: T6,
+    7: T7,
+    8: T8,
+    9: T9,
+    10: T10,
+    11: T11,
+    12: T12,
+    13: T13,
+    14: T14,
+);
+impl_for_tuple!(
+    0: T0,
+    1: T1,
+    2: T2,
+    3: T3,
+    4: T4,
+    5: T5,
+    6: T6,
+    7: T7,
+    8: T8,
+    9: T9,
+    10: T10,
+    11: T11,
+    12: T12,
+    13: T13,
+    14: T14,
+    15: T15,
+);
