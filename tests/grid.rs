@@ -380,7 +380,8 @@ fn with_schema() {
         len: usize,
     }
 
-    impl GridSchema<[u32]> for MyGridSchema {
+    impl GridSchema for MyGridSchema {
+        type Source = [u32];
         fn fmt(&self, f: &mut CellsFormatter<&[u32]>) {
             for i in 0..self.len {
                 f.column(i, |s| s[i]);
@@ -574,7 +575,7 @@ fn do_test<T: CellsSource>(s: Vec<T>, e: &str) {
 }
 
 #[track_caller]
-fn do_test_with_schema<T>(s: Vec<T>, schema: impl GridSchema<T>, e: &str) {
+fn do_test_with_schema<T>(s: Vec<T>, schema: impl GridSchema<Source = T>, e: &str) {
     let mut g = Grid::new_with_schema(schema);
     for s in s {
         g.push(&s);

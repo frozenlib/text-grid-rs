@@ -2,6 +2,7 @@ use self::HorizontalAlignment::*;
 use crate::cell::*;
 use std::cmp::*;
 use std::fmt::*;
+use std::marker::PhantomData;
 use std::ops::Deref;
 use unicode_width::UnicodeWidthStr;
 
@@ -195,7 +196,8 @@ impl_cells_source_for_tuple!(
 ///     len: usize,
 /// }
 ///
-/// impl GridSchema<[u32]> for MyGridSchema {
+/// impl GridSchema for MyGridSchema {
+///     type Source = [u32];
 ///     fn fmt(&self, f: &mut CellsFormatter<&[u32]>) {
 ///         for i in 0..self.len {
 ///             f.column(i, |s| s[i]);
@@ -214,41 +216,47 @@ impl_cells_source_for_tuple!(
 ///  4 | 5 | 6 |
 /// "#);
 /// ```
-pub trait GridSchema<R: ?Sized> {
+pub trait GridSchema {
+    type Source: ?Sized;
+
     /// Define column information. see [`CellsFormatter`] for details.
-    fn fmt(&self, f: &mut CellsFormatter<&R>);
+    fn fmt(&self, f: &mut CellsFormatter<&Self::Source>);
 }
 
-impl<R: ?Sized, T: GridSchema<R>> GridSchema<R> for Vec<T> {
-    fn fmt(&self, f: &mut CellsFormatter<&R>) {
+impl<T: GridSchema> GridSchema for Vec<T> {
+    type Source = T::Source;
+    fn fmt(&self, f: &mut CellsFormatter<&Self::Source>) {
         for s in self {
             s.fmt(f);
         }
     }
 }
-impl<R: ?Sized, T: GridSchema<R>> GridSchema<R> for [T] {
-    fn fmt(&self, f: &mut CellsFormatter<&R>) {
+impl<T: GridSchema> GridSchema for [T] {
+    type Source = T::Source;
+    fn fmt(&self, f: &mut CellsFormatter<&Self::Source>) {
         for s in self {
             s.fmt(f);
         }
     }
 }
-impl<R: ?Sized, T: ?Sized + GridSchema<R>> GridSchema<R> for &T {
-    fn fmt(&self, f: &mut CellsFormatter<&R>) {
+impl<T: ?Sized + GridSchema> GridSchema for &T {
+    type Source = T::Source;
+    fn fmt(&self, f: &mut CellsFormatter<&Self::Source>) {
         T::fmt(self, f)
     }
 }
 
 /// [`GridSchema`] implementation that use [`CellsSource`].
-pub struct DefaultGridSchema<T: ?Sized>(std::marker::PhantomData<T>);
+pub struct DefaultGridSchema<T: ?Sized>(PhantomData<T>);
 
 impl<T: CellsSource + ?Sized> Default for DefaultGridSchema<T> {
     fn default() -> Self {
-        Self(std::marker::PhantomData)
+        Self(PhantomData)
     }
 }
-impl<T: CellsSource + ?Sized> GridSchema<T> for DefaultGridSchema<T> {
-    fn fmt(&self, f: &mut CellsFormatter<&T>) {
+impl<T: CellsSource + ?Sized> GridSchema for DefaultGridSchema<T> {
+    type Source = T;
+    fn fmt(&self, f: &mut CellsFormatter<&Self::Source>) {
         T::fmt(f);
     }
 }
@@ -281,14 +289,24 @@ impl<T: CellsSource + ?Sized> GridSchema<T> for DefaultGridSchema<T> {
 ///  1 | 2 | 3 | 4 |
 /// ";
 /// ```
-pub fn grid_schema<T: ?Sized>(fmt: impl Fn(&mut CellsFormatter<&T>)) -> impl GridSchema<T> {
-    struct FnGridSchema<F>(F);
-    impl<T: ?Sized, F: Fn(&mut CellsFormatter<&T>)> GridSchema<T> for FnGridSchema<F> {
+pub fn grid_schema<T: ?Sized>(
+    fmt: impl Fn(&mut CellsFormatter<&T>),
+) -> impl GridSchema<Source = T> {
+    struct FnGridSchema<T: ?Sized, F> {
+        fmt: F,
+        _phantom: PhantomData<fn(&mut CellsFormatter<&T>)>,
+    }
+
+    impl<T: ?Sized, F: Fn(&mut CellsFormatter<&T>)> GridSchema for FnGridSchema<T, F> {
+        type Source = T;
         fn fmt(&self, f: &mut CellsFormatter<&T>) {
-            (self.0)(f)
+            (self.fmt)(f)
         }
     }
-    FnGridSchema(fmt)
+    FnGridSchema {
+        fmt,
+        _phantom: PhantomData,
+    }
 }
 
 /// Used to define columns.
@@ -524,7 +542,7 @@ pub(crate) struct GridLayout {
     pub separators: Vec<bool>,
 }
 impl GridLayout {
-    pub fn from_schema<T: ?Sized>(schema: &dyn GridSchema<T>) -> Self {
+    pub fn from_schema<T: ?Sized>(schema: &dyn GridSchema<Source = T>) -> Self {
         let mut this = GridLayout::new();
         schema.fmt(&mut CellsFormatter {
             w: &mut this,
@@ -708,7 +726,7 @@ impl GridBuilder {
         }
     }
 
-    pub(crate) fn new_with_header<T: ?Sized>(schema: &dyn GridSchema<T>) -> Self {
+    pub(crate) fn new_with_header<T: ?Sized>(schema: &dyn GridSchema<Source = T>) -> Self {
         let mut this = Self::new();
         let layout = GridLayout::from_schema(schema);
         this.set_column_separators(layout.separators);
@@ -984,7 +1002,11 @@ impl RowBuilder<'_> {
             d: Some(source),
         })
     }
-    pub fn extend_with_schema<T: ?Sized>(&mut self, source: &T, schema: &dyn GridSchema<T>) {
+    pub fn extend_with_schema<T: ?Sized>(
+        &mut self,
+        source: &T,
+        schema: &dyn GridSchema<Source = T>,
+    ) {
         schema.fmt(&mut CellsFormatter {
             w: &mut BodyWriter::new(self),
             d: Some(source),

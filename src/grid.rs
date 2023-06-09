@@ -50,7 +50,7 @@ impl<R: CellsSource + ?Sized> Grid<R, DefaultGridSchema<R>> {
     }
 }
 
-impl<R: ?Sized, S: GridSchema<R>> Grid<R, S> {
+impl<R: ?Sized, S: GridSchema<Source = R>> Grid<S::Source, S> {
     /// Create a new `Grid` with specified schema and prepare header rows.
     pub fn new_with_schema(schema: S) -> Self {
         let b = GridBuilder::new_with_header(&schema);
@@ -61,7 +61,7 @@ impl<R: ?Sized, S: GridSchema<R>> Grid<R, S> {
         }
     }
 }
-impl<R: ?Sized, S: GridSchema<R>> Grid<R, S> {
+impl<R: ?Sized, S: GridSchema<Source = R>> Grid<R, S> {
     /// Append a row to the bottom of the grid.
     pub fn push(&mut self, source: &R) {
         self.b.push(|b| b.extend_with_schema(source, &self.schema));
@@ -72,14 +72,14 @@ impl<R: ?Sized, S: GridSchema<R>> Grid<R, S> {
         self.b.push_separator();
     }
 }
-impl<R, S: GridSchema<R>> Extend<R> for Grid<R, S> {
+impl<R, S: GridSchema<Source = R>> Extend<R> for Grid<R, S> {
     fn extend<T: IntoIterator<Item = R>>(&mut self, iter: T) {
         for i in iter {
             self.push(&i);
         }
     }
 }
-impl<'a, R, S: GridSchema<R>> Extend<&'a R> for Grid<R, S> {
+impl<'a, R, S: GridSchema<Source = R>> Extend<&'a R> for Grid<R, S> {
     fn extend<T: IntoIterator<Item = &'a R>>(&mut self, iter: T) {
         for i in iter {
             self.push(i);
