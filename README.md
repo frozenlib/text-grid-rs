@@ -10,33 +10,36 @@ A library to create formatted plain-text tables.
 
 ```rust :main.rs
 use text_grid::*;
-
-fn main() {
-    struct RowData {
-        a: u32,
-        b: u32,
-        c: f64
+struct RowData {
+    a: String,
+    b: u32,
+    c: u32,
+    d: f64,
+}
+impl CellsSource for RowData {
+    fn fmt(f: &mut CellsFormatter<&Self>) {
+        f.column("a", |&s| &s.a);
+        f.column("b", |&s| s.b);
+        f.column("c", |&s| cell(s.c).left());
+        f.column_with("d", |f| {
+            f.column("x", |&s| s.d);
+            f.column("y", |&s| cells_e!("{:.2e}", s.d));
+        });
     }
-    impl CellsSource for RowData {
-        fn fmt(f: &mut CellsFormatter<&Self>) {
-            f.column("a", |s| s.a);
-            f.column("b", |s| cell(s.b).left());
-            f.column("c", |s| s.c);
-        }
-    }
-
-    let mut g = Grid::new();
-    g.push(&RowData { a: 300, b: 1, c: 100.1 });
-    g.push(&RowData { a: 2, b: 200, c: 1.234 });
-
-    assert_eq!(format!("\n{g}"), OUTPUT);
 }
 
+let mut g = Grid::new();
+g.push(&RowData { a: "ABC".to_string(), b: 300, c: 1,   d: 100.1 });
+g.push(&RowData { a: "XY".to_string(),  b: 2,   c: 200, d: 1.234 });
+assert_eq!(format!("\n{g}"), OUTPUT);
+
 const OUTPUT: &str = r#"
-  a  |  b  |    c    |
------|-----|---------|
- 300 | 1   | 100.1   |
-   2 | 200 |   1.234 |
+  a  |  b  |  c  |         d          |
+-----|-----|-----|--------------------|
+     |     |     |    x    |    y     |
+-----|-----|-----|---------|----------|
+ ABC | 300 | 1   | 100.1   | 1.00 e 2 |
+ XY  |   2 | 200 |   1.234 | 1.23 e 0 |
 "#;
 ```
 
