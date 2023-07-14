@@ -57,7 +57,7 @@ impl<R: ?Sized, S: GridSchema<Source = R>> Grid<S::Source, S> {
         Grid {
             b,
             schema,
-            _phantom: PhantomData::default(),
+            _phantom: PhantomData,
         }
     }
 }
