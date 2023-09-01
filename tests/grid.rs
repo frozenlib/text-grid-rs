@@ -305,8 +305,8 @@ fn map_value() {
 
     impl Cells for Source {
         fn fmt(f: &mut CellsFormatter<Self>) {
-            f.map_value(|x| x.a).f().column("a", |&x| x);
-            f.map_value(|x| x.b).f().column("b", |&x| x);
+            f.map_value(|x| x.a).f().column("a", |x| x);
+            f.map_value(|x| x.b).f().column("b", |x| x);
         }
     }
 
@@ -330,8 +330,8 @@ fn map() {
 
     impl Cells for Source {
         fn fmt(f: &mut CellsFormatter<Self>) {
-            f.map(|x| &x.a).column("a", |&x| x);
-            f.map(|x| &x.b).column("b", |&x| x);
+            f.map(|x| &x.a).column("a", |x| x);
+            f.map(|x| &x.b).column("b", |x| x);
         }
     }
 
@@ -405,7 +405,7 @@ fn with_schema() {
 
 #[test]
 fn right() {
-    let s = grid_schema::<&str>(|f| f.column("x", |&x| cell(x).right()));
+    let s = grid_schema::<&str>(|f| f.column("x", |x| cell(x).right()));
     do_test_with_schema(
         vec!["a", "ab", "abc"],
         &s,
@@ -507,19 +507,18 @@ fn extend() {
 #[test]
 fn cell_ref() {
     let _ = grid_schema(|f: &mut CellsFormatter<&String>| {
-        // f.column("x", |x| cell!("__{}__", x)); // BAD
-        f.column("x", |&x| cell!("__{}__", x)); // GOOD
+        f.column("x", |x| cell!("__{}__", x));
     });
 }
 
 #[test]
 fn cells_e() {
     let s = grid_schema::<f64>(|f| {
-        f.column("", |&x| cell!("{x:e}"));
-        f.column("e", |&x| cells_e!("{x:e}"));
-        f.column(".2e", |&x| cells_e!("{x:.2e}"));
-        f.column("E", |&x| cells_e!("{x:E}"));
-        f.column("debug", |&x| cells_e!("{x:?}"));
+        f.column("", |x| cell!("{x:e}"));
+        f.column("e", |x| cells_e!("{x:e}"));
+        f.column(".2e", |x| cells_e!("{x:.2e}"));
+        f.column("E", |x| cells_e!("{x:E}"));
+        f.column("debug", |x| cells_e!("{x:?}"));
     });
 
     do_test_with_schema(

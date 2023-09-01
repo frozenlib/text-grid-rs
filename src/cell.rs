@@ -276,17 +276,6 @@ pub fn cell_by<F: Fn(&mut String) -> Result>(f: F) -> Cell<impl RawCell> {
 /// // Retrun value owns formatted string.
 /// // Therefore, the returned value can move anywhere.
 /// ```
-///
-/// When used with [`CellsFormatter`],
-/// ownership can be shared by using a reference owned by `CellsFormatter` instead of a temporary reference.
-///
-/// ```
-/// use text_grid::*;
-/// let _ = grid_schema(|f: &mut CellsFormatter<&String>| {
-///   // f.column("x", | x| cell!("__{}__", x)); // BAD  : x is temporary reference
-///      f.column("x", |&x| cell!("__{}__", x)); // GOOD : x is reference owned by CellsFormatter
-/// });
-/// ```
 #[macro_export]
 macro_rules! cell {
     ($ ( $ arg : tt ) *) => { {
@@ -469,7 +458,7 @@ impl Cells for f32 {
 
 impl Cells for f64 {
     fn fmt(f: &mut CellsFormatter<Self>) {
-        f.content(|&this| cell(this).baseline("."))
+        f.content(|this| cell(this).baseline("."))
     }
 }
 
@@ -480,11 +469,11 @@ impl Cells for f64 {
 /// ```
 /// use text_grid::*;
 /// let s = grid_schema::<f64>(|f| {
-///     f.column("",      |&x| cell!("{x:e}"));
-///     f.column("e",     |&x| cells_e!("{x:e}"));
-///     f.column(".2e",   |&x| cells_e!("{x:.2e}"));
-///     f.column("E",     |&x| cells_e!("{x:E}"));
-///     f.column("debug", |&x| cells_e!("{x:?}"));
+///     f.column("",      |x| cell!("{x:e}"));
+///     f.column("e",     |x| cells_e!("{x:e}"));
+///     f.column(".2e",   |x| cells_e!("{x:.2e}"));
+///     f.column("E",     |x| cells_e!("{x:E}"));
+///     f.column("debug", |x| cells_e!("{x:?}"));
 /// });
 ///
 /// let mut g = Grid::new_with_schema(s);
