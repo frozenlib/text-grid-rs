@@ -20,12 +20,12 @@ impl CellsSource for () {
 }
 impl<T: ?Sized + CellsSource> CellsSource for &T {
     fn fmt(f: &mut CellsFormatter<Self>) {
-        T::fmt(&mut f.unwrap());
+        T::fmt(&mut f.unref());
     }
 }
 impl<T: ?Sized + CellsSource> CellsSource for &mut T {
     fn fmt(f: &mut CellsFormatter<Self>) {
-        T::fmt(&mut f.unwrap());
+        T::fmt(&mut f.unref());
     }
 }
 impl<T: CellsSource, const N: usize> CellsSource for [T; N] {
@@ -381,7 +381,7 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
     }
 }
 impl<T: ?Sized> CellsFormatter<'_, '_, &T> {
-    pub fn unwrap(&mut self) -> CellsFormatter<T> {
+    pub fn unref(&mut self) -> CellsFormatter<T> {
         CellsFormatter {
             w: self.w,
             d: self.d.map(|x| &**x),
@@ -389,7 +389,7 @@ impl<T: ?Sized> CellsFormatter<'_, '_, &T> {
     }
 }
 impl<T: ?Sized> CellsFormatter<'_, '_, &mut T> {
-    pub fn unwrap(&mut self) -> CellsFormatter<T> {
+    pub fn unref(&mut self) -> CellsFormatter<T> {
         CellsFormatter {
             w: self.w,
             d: self.d.map(|x| &**x),
