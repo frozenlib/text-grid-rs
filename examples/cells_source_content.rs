@@ -6,7 +6,7 @@ fn main() {
         b_2: u32,
     }
     impl CellsSource for RowData {
-        fn fmt(f: &mut CellsFormatter<&Self>) {
+        fn fmt(f: &mut CellsFormatter<Self>) {
             f.column("a", |s| s.a);
             f.column_with("b", |f| {
                 f.content(|s| s.b_1);

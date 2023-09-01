@@ -57,8 +57,8 @@ pub enum HorizontalAlignment {
 ///     }
 /// }
 /// impl CellsSource for X {
-///     fn fmt(f: &mut CellsFormatter<&Self>) {
-///         f.content(|x| Cell::new(*x));
+///     fn fmt(f: &mut CellsFormatter<Self>) {
+///         f.content(Cell::new);
 ///     }
 /// }
 /// ```
@@ -210,9 +210,9 @@ pub fn cell_by<F: Fn(&mut String) -> Result>(f: F) -> Cell<impl CellSource> {
 ///     b: f64,
 /// }
 /// impl CellsSource for RowData {
-///     fn fmt(f: &mut CellsFormatter<&Self>) {
-///         f.column("a", |&s| cell!("{:.2}", s.a).right());
-///         f.column("b", |&s| cell!("{:.3}", s.b).right());
+///     fn fmt(f: &mut CellsFormatter<Self>) {
+///         f.column("a", |s| cell!("{:.2}", s.a).right());
+///         f.column("b", |s| cell!("{:.3}", s.b).right());
 ///     }
 /// }
 ///
@@ -310,8 +310,8 @@ impl<T: CellSource> CellSource for Cell<T> {
     }
 }
 impl<T: CellSource> CellsSource for Cell<T> {
-    fn fmt(f: &mut CellsFormatter<&Self>) {
-        f.content_cell(|s| *s);
+    fn fmt(f: &mut CellsFormatter<Self>) {
+        f.content_cell(|s| s);
     }
 }
 
@@ -345,7 +345,7 @@ impl<T: CellSource> Cell<T> {
     /// struct Source(&'static str);
     ///
     /// impl CellsSource for Source {
-    ///     fn fmt(f: &mut CellsFormatter<&Self>) {
+    ///     fn fmt(f: &mut CellsFormatter<Self>) {
     ///         f.column("default", |x| &x.0);
     ///         f.column("baseline", |x| cell(&x.0).baseline("-"));
     ///     }
@@ -407,8 +407,8 @@ macro_rules! impl_cell_source {
             }
         }
         impl CellsSource for $t {
-            fn fmt(f: &mut CellsFormatter<&Self>) {
-                f.content_cell(|x| *x);
+            fn fmt(f: &mut CellsFormatter<Self>) {
+                f.content_cell(|x| x);
             }
         }
     };
@@ -455,20 +455,20 @@ impl BaselineAlignedCell {
 }
 
 impl CellsSource for BaselineAlignedCell {
-    fn fmt(f: &mut CellsFormatter<&Self>) {
-        f.content(|&this| cell(this.left()).right());
-        f.content(|&this| cell(this.right()).left());
+    fn fmt(f: &mut CellsFormatter<Self>) {
+        f.content(|this| cell(this.left()).right());
+        f.content(|this| cell(this.right()).left());
     }
 }
 
 impl CellsSource for f32 {
-    fn fmt(f: &mut CellsFormatter<&Self>) {
-        f.content(|&this| cell(this).baseline("."))
+    fn fmt(f: &mut CellsFormatter<Self>) {
+        f.content(|this| cell(this).baseline("."))
     }
 }
 
 impl CellsSource for f64 {
-    fn fmt(f: &mut CellsFormatter<&Self>) {
+    fn fmt(f: &mut CellsFormatter<Self>) {
         f.content(|&this| cell(this).baseline("."))
     }
 }
@@ -533,22 +533,22 @@ impl ExpCells {
 }
 
 impl CellsSource for ExpCells {
-    fn fmt(f: &mut CellsFormatter<&Self>) {
-        f.content(|&x| cell(&x.value[..x.offset_dot]).right());
-        f.content(|&x| {
+    fn fmt(f: &mut CellsFormatter<Self>) {
+        f.content(|x| cell(&x.value[..x.offset_dot]).right());
+        f.content(|x| {
             if x.offset_dot < x.offset_e {
                 &x.value[x.offset_dot..x.offset_e]
             } else {
                 ""
             }
         });
-        f.content(|&x| {
+        f.content(|x| {
             Cell::new(if x.offset_e < x.value.len() {
                 Ok(cell!(" {} ", &x.value[x.offset_e..x.offset_e + 1]))
             } else {
                 Err(())
             })
         });
-        f.content(|&x| cell(&x.value[min(x.offset_e + 1, x.value.len())..]).right());
+        f.content(|x| cell(&x.value[min(x.offset_e + 1, x.value.len())..]).right());
     }
 }

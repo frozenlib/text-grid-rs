@@ -13,8 +13,8 @@ fn impl_cell() {
         }
     }
     impl CellsSource for X {
-        fn fmt(f: &mut CellsFormatter<&Self>) {
-            f.content(|x| Cell::new(*x));
+        fn fmt(f: &mut CellsFormatter<Self>) {
+            f.content(Cell::new);
         }
     }
 }

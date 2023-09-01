@@ -7,7 +7,7 @@ fn main() {
 
     impl GridSchema for MyGridSchema {
         type Source = [u32];
-        fn fmt(&self, f: &mut CellsFormatter<&[u32]>) {
+        fn fmt(&self, f: &mut CellsFormatter<[u32]>) {
             for i in 0..self.len {
                 f.column(i, |s| s[i]);
             }

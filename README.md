@@ -17,13 +17,13 @@ struct RowData {
     d: f64,
 }
 impl CellsSource for RowData {
-    fn fmt(f: &mut CellsFormatter<&Self>) {
-        f.column("a", |&s| &s.a);
-        f.column("b", |&s| s.b);
-        f.column("c", |&s| cell(s.c).left());
+    fn fmt(f: &mut CellsFormatter<Self>) {
+        f.column("a", |s| &s.a);
+        f.column("b", |s| s.b);
+        f.column("c", |s| cell(s.c).left());
         f.column_with("d", |f| {
-            f.column("x", |&s| s.d);
-            f.column("y", |&s| cells_e!("{:.2e}", s.d));
+            f.column("x", |s| s.d);
+            f.column("y", |s| cells_e!("{:.2e}", s.d));
         });
     }
 }
