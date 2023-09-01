@@ -5,7 +5,7 @@ fn main() {
         b_1: u32,
         b_2: u32,
     }
-    impl CellsSource for RowData {
+    impl Cells for RowData {
         fn fmt(f: &mut CellsFormatter<Self>) {
             f.column("a", |s| s.a);
             f.column_with("b", |f| {

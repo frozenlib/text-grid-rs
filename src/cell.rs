@@ -1,4 +1,4 @@
-use crate::{CellsFormatter, CellsSource};
+use crate::{Cells, CellsFormatter};
 
 use self::HorizontalAlignment::*;
 use std::{cmp::min, fmt::*};
@@ -40,15 +40,15 @@ pub enum HorizontalAlignment {
 
 /// A data structure that can be formatted into cell.
 ///
-/// Normally, [`cell()`] or [`cell!`](crate::cell!) is used to create a value that implements `CellSource`.
+/// Normally, [`cell()`] or [`cell!`](crate::cell!) is used to create a value that implements `RawCell`.
 ///
-/// If you implement `CellSource` for a type, you should also implement [`CellsSource`] for convenience.
+/// If you implement `RawCell` for a type, you should also implement [`Cells`] for convenience.
 ///
 /// ```
 /// use text_grid::*;
 /// struct X(String);
 ///
-/// impl CellSource for X {
+/// impl RawCell for X {
 ///     fn fmt(&self, s: &mut String) {
 ///         s.push_str(&self.0);
 ///     }
@@ -56,13 +56,13 @@ pub enum HorizontalAlignment {
 ///         CellStyle::new().align_h(HorizontalAlignment::Right)
 ///     }
 /// }
-/// impl CellsSource for X {
+/// impl Cells for X {
 ///     fn fmt(f: &mut CellsFormatter<Self>) {
 ///         f.content(Cell::new);
 ///     }
 /// }
 /// ```
-pub trait CellSource {
+pub trait RawCell {
     /// Output the cell text to given buffer.
     fn fmt(&self, s: &mut String);
 
@@ -75,10 +75,10 @@ pub trait CellSource {
         CellStyle::default()
     }
 }
-impl CellSource for () {
+impl RawCell for () {
     fn fmt(&self, _: &mut String) {}
 }
-impl<T: ?Sized + CellSource> CellSource for &T {
+impl<T: ?Sized + RawCell> RawCell for &T {
     fn fmt(&self, s: &mut String) {
         T::fmt(*self, s)
     }
@@ -89,7 +89,7 @@ impl<T: ?Sized + CellSource> CellSource for &T {
         T::style_for_body(*self)
     }
 }
-impl<T: ?Sized + CellSource> CellSource for &mut T {
+impl<T: ?Sized + RawCell> RawCell for &mut T {
     fn fmt(&self, s: &mut String) {
         T::fmt(*self, s)
     }
@@ -100,7 +100,7 @@ impl<T: ?Sized + CellSource> CellSource for &mut T {
         T::style_for_body(*self)
     }
 }
-impl<T: CellSource> CellSource for Option<T> {
+impl<T: RawCell> RawCell for Option<T> {
     fn fmt(&self, s: &mut String) {
         if let Some(value) = self {
             value.fmt(s);
@@ -121,7 +121,7 @@ impl<T: CellSource> CellSource for Option<T> {
         }
     }
 }
-impl<T: CellSource, E: CellSource> CellSource for std::result::Result<T, E> {
+impl<T: RawCell, E: RawCell> RawCell for std::result::Result<T, E> {
     fn fmt(&self, s: &mut String) {
         match self {
             Ok(value) => value.fmt(s),
@@ -143,7 +143,7 @@ impl<T: CellSource, E: CellSource> CellSource for std::result::Result<T, E> {
 }
 
 struct DisplayCellSource<T: Display>(T);
-impl<T: Display> CellSource for DisplayCellSource<T> {
+impl<T: Display> RawCell for DisplayCellSource<T> {
     fn fmt(&self, s: &mut String) {
         write!(s, "{}", self.0).unwrap()
     }
@@ -157,7 +157,7 @@ impl<T: Display> CellSource for DisplayCellSource<T> {
 /// ```ignore
 /// use text_grid::*;
 ///
-/// fn f_error() -> Cell<impl CellSource> {
+/// fn f_error() -> Cell<impl RawCell> {
 ///     let s = String::from("ABC");
 ///     cell(&s) // Error : returns a value referencing data owned by the current function
 /// }
@@ -166,17 +166,17 @@ impl<T: Display> CellSource for DisplayCellSource<T> {
 /// ```
 /// use text_grid::*;
 ///
-/// fn f_ok() -> Cell<impl CellSource> {
+/// fn f_ok() -> Cell<impl RawCell> {
 ///     let s = String::from("ABC");
 ///     cell(s) // OK
 /// }
 /// ```
-pub fn cell(value: impl Display) -> Cell<impl CellSource> {
+pub fn cell(value: impl Display) -> Cell<impl RawCell> {
     Cell::new(DisplayCellSource(value))
 }
 
 struct FmtFnCellSource<F>(F);
-impl<F: Fn(&mut String) -> Result> CellSource for FmtFnCellSource<F> {
+impl<F: Fn(&mut String) -> Result> RawCell for FmtFnCellSource<F> {
     fn fmt(&self, s: &mut String) {
         (self.0)(s).unwrap()
     }
@@ -194,7 +194,7 @@ impl<F: Fn(&mut String) -> Result> CellSource for FmtFnCellSource<F> {
 /// let cell_a = cell_by(|f| write!(f, "{}", &s));
 /// let cell_b = cell_by(|f| write!(f, "{}", &s));
 /// ```
-pub fn cell_by<F: Fn(&mut String) -> Result>(f: F) -> Cell<impl CellSource> {
+pub fn cell_by<F: Fn(&mut String) -> Result>(f: F) -> Cell<impl RawCell> {
     Cell::new(FmtFnCellSource(f))
 }
 
@@ -209,7 +209,7 @@ pub fn cell_by<F: Fn(&mut String) -> Result>(f: F) -> Cell<impl CellSource> {
 ///     a: f64,
 ///     b: f64,
 /// }
-/// impl CellsSource for RowData {
+/// impl Cells for RowData {
 ///     fn fmt(f: &mut CellsFormatter<Self>) {
 ///         f.column("a", |s| cell!("{:.2}", s.a).right());
 ///         f.column("b", |s| cell!("{:.3}", s.b).right());
@@ -296,12 +296,12 @@ macro_rules! cell {
     };
 }
 
-/// Implementation of [`CellSource`] that can specify styles.
+/// Implementation of [`RawCell`] that can specify styles.
 pub struct Cell<T> {
     source: T,
     style: CellStyle,
 }
-impl<T: CellSource> CellSource for Cell<T> {
+impl<T: RawCell> RawCell for Cell<T> {
     fn fmt(&self, s: &mut String) {
         self.source.fmt(s)
     }
@@ -309,14 +309,14 @@ impl<T: CellSource> CellSource for Cell<T> {
         self.style
     }
 }
-impl<T: CellSource> CellsSource for Cell<T> {
+impl<T: RawCell> Cells for Cell<T> {
     fn fmt(f: &mut CellsFormatter<Self>) {
         f.content_cell(|s| s);
     }
 }
 
-impl<T: CellSource> Cell<T> {
-    /// Create a new `Cell` with specified [`CellSource`].
+impl<T: RawCell> Cell<T> {
+    /// Create a new `Cell` with specified [`RawCell`].
     pub fn new(source: T) -> Self {
         let style = source.style();
         Cell { source, style }
@@ -344,7 +344,7 @@ impl<T: CellSource> Cell<T> {
     ///
     /// struct Source(&'static str);
     ///
-    /// impl CellsSource for Source {
+    /// impl Cells for Source {
     ///     fn fmt(f: &mut CellsFormatter<Self>) {
     ///         f.column("default", |x| &x.0);
     ///         f.column("baseline", |x| cell(&x.0).baseline("-"));
@@ -363,7 +363,7 @@ impl<T: CellSource> Cell<T> {
     ///  12345   | 12345      |
     /// "#);
     /// ```
-    pub fn baseline(self, baseline: &str) -> impl CellsSource {
+    pub fn baseline(self, baseline: &str) -> impl Cells {
         let mut value = String::new();
         self.fmt(&mut value);
         BaselineAlignedCell::new(value, baseline)
@@ -396,7 +396,7 @@ impl Cell<String> {
 
 macro_rules! impl_cell_source {
     ($t:ty, $align:expr ) => {
-        impl CellSource for $t {
+        impl RawCell for $t {
             fn fmt(&self, s: &mut String) {
                 write!(s, "{}", self).unwrap()
             }
@@ -406,7 +406,7 @@ macro_rules! impl_cell_source {
                 }
             }
         }
-        impl CellsSource for $t {
+        impl Cells for $t {
             fn fmt(f: &mut CellsFormatter<Self>) {
                 f.content_cell(|x| x);
             }
@@ -454,26 +454,26 @@ impl BaselineAlignedCell {
     }
 }
 
-impl CellsSource for BaselineAlignedCell {
+impl Cells for BaselineAlignedCell {
     fn fmt(f: &mut CellsFormatter<Self>) {
         f.content(|this| cell(this.left()).right());
         f.content(|this| cell(this.right()).left());
     }
 }
 
-impl CellsSource for f32 {
+impl Cells for f32 {
     fn fmt(f: &mut CellsFormatter<Self>) {
         f.content(|this| cell(this).baseline("."))
     }
 }
 
-impl CellsSource for f64 {
+impl Cells for f64 {
     fn fmt(f: &mut CellsFormatter<Self>) {
         f.content(|&this| cell(this).baseline("."))
     }
 }
 
-/// Create [`CellsSource`] for float numbers via runtime expression interpolation.
+/// Create [`Cells`] for float numbers via runtime expression interpolation.
 ///
 /// # Examples
 ///
@@ -509,10 +509,10 @@ macro_rules! cells_e {
     };
 }
 
-/// Create [`CellsSource`] for float numbers from [`Display`].
+/// Create [`Cells`] for float numbers from [`Display`].
 ///
 /// Format in the same way as [`cells_e!`] macro.
-pub fn cells_e(value: impl Display) -> impl CellsSource {
+pub fn cells_e(value: impl Display) -> impl Cells {
     ExpCells::new(value.to_string())
 }
 struct ExpCells {
@@ -532,7 +532,7 @@ impl ExpCells {
     }
 }
 
-impl CellsSource for ExpCells {
+impl Cells for ExpCells {
     fn fmt(f: &mut CellsFormatter<Self>) {
         f.content(|x| cell(&x.value[..x.offset_dot]).right());
         f.content(|x| {

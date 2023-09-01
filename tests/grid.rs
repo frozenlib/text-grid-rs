@@ -7,7 +7,7 @@ fn column_u8() {
         b: u8,
     }
 
-    impl CellsSource for Source {
+    impl Cells for Source {
         fn fmt(f: &mut CellsFormatter<Self>) {
             f.column("a", |x| x.a);
             f.column("b", |x| x.b);
@@ -32,7 +32,7 @@ fn column_u8_ref() {
         b: u8,
     }
 
-    impl CellsSource for Source {
+    impl Cells for Source {
         fn fmt(f: &mut CellsFormatter<Self>) {
             f.column("a", |x| x.a);
             f.column("b", |x| &x.b);
@@ -56,7 +56,7 @@ fn column_str() {
         s: &'s str,
     }
 
-    impl<'s> CellsSource for Source<'s> {
+    impl<'s> Cells for Source<'s> {
         fn fmt(f: &mut CellsFormatter<Self>) {
             f.column("a", |x| x.s);
         }
@@ -80,7 +80,7 @@ fn column_static_str() {
         b: u8,
     }
 
-    impl CellsSource for Source {
+    impl Cells for Source {
         fn fmt(f: &mut CellsFormatter<Self>) {
             f.column("a", |x| x.a);
             f.column("p", |_| "xxx");
@@ -106,7 +106,7 @@ fn column_group() {
         b: u8,
     }
 
-    impl CellsSource for Source {
+    impl Cells for Source {
         fn fmt(f: &mut CellsFormatter<Self>) {
             f.column_with("g", |f| {
                 f.column("a", |x| x.a);
@@ -135,7 +135,7 @@ fn column_group_differing_level() {
         b_1: u32,
         b_2: u32,
     }
-    impl CellsSource for Source {
+    impl Cells for Source {
         fn fmt(f: &mut CellsFormatter<Self>) {
             f.column("a", |s| s.a);
             f.column_with("b", |f| {
@@ -177,7 +177,7 @@ fn column_group_differing_level_2() {
         c_1: u32,
         c_2: u32,
     }
-    impl CellsSource for Source {
+    impl Cells for Source {
         fn fmt(f: &mut CellsFormatter<Self>) {
             f.column("a", |s| s.a);
             f.column_with("b", |f| {
@@ -225,7 +225,7 @@ fn column_multipart() {
         b: u8,
     }
 
-    impl CellsSource for Source {
+    impl Cells for Source {
         fn fmt(f: &mut CellsFormatter<Self>) {
             f.column_with("g", |f| {
                 f.content(|x| x.a);
@@ -253,7 +253,7 @@ fn column_cell_by() {
     }
     use std::fmt::*;
 
-    impl CellsSource for Source {
+    impl Cells for Source {
         fn fmt(f: &mut CellsFormatter<Self>) {
             f.column("a", |x| cell_by(move |f| write!(f, "{:.2}", x.a)).right());
             f.column("b", |x| x.b);
@@ -278,7 +278,7 @@ fn column_cell_macro() {
         b: u32,
     }
 
-    impl CellsSource for Source {
+    impl Cells for Source {
         fn fmt(f: &mut CellsFormatter<Self>) {
             f.column("a", |x| cell!("{:.2}", x.a).right());
             f.column("b", |x| x.b);
@@ -303,7 +303,7 @@ fn map_value() {
         b: u8,
     }
 
-    impl CellsSource for Source {
+    impl Cells for Source {
         fn fmt(f: &mut CellsFormatter<Self>) {
             f.map_value(|x| x.a).f().column("a", |&x| x);
             f.map_value(|x| x.b).f().column("b", |&x| x);
@@ -328,7 +328,7 @@ fn map() {
         b: u8,
     }
 
-    impl CellsSource for Source {
+    impl Cells for Source {
         fn fmt(f: &mut CellsFormatter<Self>) {
             f.map(|x| &x.a).column("a", |&x| x);
             f.map(|x| &x.b).column("b", |&x| x);
@@ -353,7 +353,7 @@ fn impl_debug() {
         b: u8,
     }
 
-    impl CellsSource for Source {
+    impl Cells for Source {
         fn fmt(f: &mut CellsFormatter<Self>) {
             f.column("a", |x| x.a);
             f.column("b", |x| x.b);
@@ -425,7 +425,7 @@ fn baseline() {
         b: String,
     }
 
-    impl CellsSource for Source {
+    impl Cells for Source {
         fn fmt(f: &mut CellsFormatter<Self>) {
             f.column("a", |x| x.a);
             f.column("b", |x| cell(&x.b).baseline("-"));
@@ -458,7 +458,7 @@ fn root_content() {
         b: u32,
     }
 
-    impl CellsSource for Source {
+    impl Cells for Source {
         fn fmt(f: &mut CellsFormatter<Self>) {
             f.content(|x| x.a);
             f.content(|_| " ");
@@ -570,7 +570,7 @@ fn result() {
 }
 
 #[track_caller]
-fn do_test<T: CellsSource>(s: Vec<T>, e: &str) {
+fn do_test<T: Cells>(s: Vec<T>, e: &str) {
     do_test_with_schema(s, DefaultGridSchema::default(), e);
 }
 

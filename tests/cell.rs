@@ -1,10 +1,10 @@
-use text_grid::{Cell, CellSource, CellStyle, CellsFormatter, CellsSource, HorizontalAlignment};
+use text_grid::{Cell, CellStyle, Cells, CellsFormatter, HorizontalAlignment, RawCell};
 
 #[test]
 fn impl_cell() {
     struct X(String);
 
-    impl CellSource for X {
+    impl RawCell for X {
         fn fmt(&self, s: &mut String) {
             s.push_str(&self.0);
         }
@@ -12,7 +12,7 @@ fn impl_cell() {
             CellStyle::new().align_h(HorizontalAlignment::Right)
         }
     }
-    impl CellsSource for X {
+    impl Cells for X {
         fn fmt(f: &mut CellsFormatter<Self>) {
             f.content(Cell::new);
         }

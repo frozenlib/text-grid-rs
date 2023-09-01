@@ -11,36 +11,36 @@ use unicode_width::UnicodeWidthStr;
 /// The number of columns must be statically determined from the type.
 ///
 /// If the number of columns is dynamically determined, [`GridSchema`] must be used. See [`grid_schema`] for details.
-pub trait CellsSource {
+pub trait Cells {
     /// Define columns. see [`CellsFormatter`] for details.
     fn fmt(f: &mut CellsFormatter<Self>);
 }
-impl CellsSource for () {
+impl Cells for () {
     fn fmt(_: &mut CellsFormatter<Self>) {}
 }
-impl<T: ?Sized + CellsSource> CellsSource for &T {
+impl<T: ?Sized + Cells> Cells for &T {
     fn fmt(f: &mut CellsFormatter<Self>) {
         T::fmt(&mut f.unref());
     }
 }
-impl<T: ?Sized + CellsSource> CellsSource for &mut T {
+impl<T: ?Sized + Cells> Cells for &mut T {
     fn fmt(f: &mut CellsFormatter<Self>) {
         T::fmt(&mut f.unref());
     }
 }
-impl<T: CellsSource, const N: usize> CellsSource for [T; N] {
+impl<T: Cells, const N: usize> Cells for [T; N] {
     fn fmt(f: &mut CellsFormatter<Self>) {
         for i in 0..N {
             f.column(i, |x| &x[i]);
         }
     }
 }
-impl<T: CellsSource> CellsSource for Option<T> {
+impl<T: Cells> Cells for Option<T> {
     fn fmt(f: &mut CellsFormatter<Self>) {
         f.filter_map(|x| x.as_ref()).content(|x| x)
     }
 }
-impl<T: CellsSource, E: CellSource> CellsSource for std::result::Result<T, E> {
+impl<T: Cells, E: RawCell> Cells for std::result::Result<T, E> {
     fn fmt(f: &mut CellsFormatter<Self>) {
         f.ok_with(|f| f.content(|x| x))
     }
@@ -110,16 +110,16 @@ impl<T: ?Sized + GridSchema> GridSchema for &T {
     }
 }
 
-/// [`GridSchema`] implementation that use [`CellsSource`].
+/// [`GridSchema`] implementation that use [`Cells`].
 #[derive(Clone, Copy, Debug)]
 pub struct DefaultGridSchema<T: ?Sized>(PhantomData<T>);
 
-impl<T: CellsSource + ?Sized> Default for DefaultGridSchema<T> {
+impl<T: Cells + ?Sized> Default for DefaultGridSchema<T> {
     fn default() -> Self {
         Self(PhantomData)
     }
 }
-impl<T: CellsSource + ?Sized> GridSchema for DefaultGridSchema<T> {
+impl<T: Cells + ?Sized> GridSchema for DefaultGridSchema<T> {
     type Source = T;
     fn fmt(&self, f: &mut CellsFormatter<Self::Source>) {
         T::fmt(f);
@@ -197,7 +197,7 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
     ///     b_1: u32,
     ///     b_2: u32,
     /// }
-    /// impl CellsSource for RowData {
+    /// impl Cells for RowData {
     ///     fn fmt(f: &mut CellsFormatter<Self>) {
     ///         f.column("a", |s| s.a);
     ///         f.column_with("b", |f| {
@@ -229,7 +229,7 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
     /// ```
     pub fn column_with(
         &mut self,
-        header: impl CellSource,
+        header: impl RawCell,
         f: impl FnOnce(&mut CellsFormatter<'_, 'b, T>),
     ) {
         self.w.column_start();
@@ -250,7 +250,7 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
     ///     b_1: u32,
     ///     b_2: u32,
     /// }
-    /// impl CellsSource for RowData {
+    /// impl Cells for RowData {
     ///     fn fmt(f: &mut CellsFormatter<Self>) {
     ///         f.column("a", |s| s.a);
     ///         f.column_with("b", |f| {
@@ -279,16 +279,16 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
     ///  300 |  1 500 |
     /// "#);
     /// ```
-    pub fn content<U: CellsSource + 'b>(&mut self, f: impl FnOnce(&'b T) -> U) {
+    pub fn content<U: Cells + 'b>(&mut self, f: impl FnOnce(&'b T) -> U) {
         U::fmt(&mut self.map_value(f).f())
     }
 
     /// Define column content.
     ///
     /// - f : A function to obtain cell.
-    pub(crate) fn content_cell<U: CellSource>(&mut self, f: impl FnOnce(&'b T) -> U) {
+    pub(crate) fn content_cell<U: RawCell>(&mut self, f: impl FnOnce(&'b T) -> U) {
         self.w
-            .content(self.d.map(f).as_ref().map(|x| x as &dyn CellSource));
+            .content(self.d.map(f).as_ref().map(|x| x as &dyn RawCell));
     }
 
     /// Define column.
@@ -304,7 +304,7 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
     ///     a: u32,
     ///     b: u32,
     /// }
-    /// impl CellsSource for RowData {
+    /// impl Cells for RowData {
     ///     fn fmt(f: &mut CellsFormatter<Self>) {
     ///         f.column("a", |s| s.a);
     ///         f.column("b", |s| s.b);
@@ -321,11 +321,7 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
     ///    2 | 200 |
     /// "#);
     /// ```
-    pub fn column<U: CellsSource + 'b>(
-        &mut self,
-        header: impl CellSource,
-        f: impl FnOnce(&'b T) -> U,
-    ) {
+    pub fn column<U: Cells + 'b>(&mut self, header: impl RawCell, f: impl FnOnce(&'b T) -> U) {
         self.column_with(header, |cf| cf.content(f));
     }
 
@@ -397,7 +393,7 @@ impl<T: ?Sized> CellsFormatter<'_, '_, &mut T> {
     }
 }
 
-impl<T, E: CellSource> CellsFormatter<'_, '_, std::result::Result<T, E>> {
+impl<T, E: RawCell> CellsFormatter<'_, '_, std::result::Result<T, E>> {
     /// If `Ok`, output the cells defined by `f`. If `Err`, output the cell by the error value using the colspan of the cells output by `f`.
     pub fn ok_with(&mut self, f: impl FnOnce(&mut CellsFormatter<T>)) {
         if let Some(Err(_)) = &self.d {
@@ -427,11 +423,11 @@ impl<T> CellsFormatterMapValue<'_, T> {
 }
 
 trait CellsWrite {
-    fn content(&mut self, cell: Option<&dyn CellSource>);
+    fn content(&mut self, cell: Option<&dyn RawCell>);
     fn content_start(&mut self);
-    fn content_end(&mut self, cell: &dyn CellSource);
+    fn content_end(&mut self, cell: &dyn RawCell);
     fn column_start(&mut self);
-    fn column_end(&mut self, header: &dyn CellSource);
+    fn column_end(&mut self, header: &dyn RawCell);
 }
 
 pub(crate) struct GridLayout {
@@ -463,18 +459,18 @@ impl GridLayout {
     }
 }
 impl CellsWrite for GridLayout {
-    fn content(&mut self, _cell: Option<&dyn CellSource>) {
+    fn content(&mut self, _cell: Option<&dyn RawCell>) {
         self.separators.push(false);
     }
     fn content_start(&mut self) {}
-    fn content_end(&mut self, _cell: &dyn CellSource) {}
+    fn content_end(&mut self, _cell: &dyn RawCell) {}
     fn column_start(&mut self) {
         self.set_separator();
         self.depth += 1;
         self.depth_max = max(self.depth_max, self.depth);
     }
 
-    fn column_end(&mut self, _header: &dyn CellSource) {
+    fn column_end(&mut self, _header: &dyn RawCell) {
         self.depth -= 1;
         self.set_separator()
     }
@@ -498,25 +494,25 @@ impl<'a, 'b> HeaderWriter<'a, 'b> {
         }
     }
 
-    fn push_cell(&mut self, cell: impl CellSource) {
+    fn push_cell(&mut self, cell: impl RawCell) {
         let colspan = self.column - self.column_last;
         self.b.push_with_colspan(cell, colspan);
         self.column_last = self.column;
     }
 }
 impl CellsWrite for HeaderWriter<'_, '_> {
-    fn content(&mut self, _cell: Option<&dyn CellSource>) {
+    fn content(&mut self, _cell: Option<&dyn RawCell>) {
         self.column += 1;
     }
     fn content_start(&mut self) {}
-    fn content_end(&mut self, _cell: &dyn CellSource) {}
+    fn content_end(&mut self, _cell: &dyn RawCell) {}
     fn column_start(&mut self) {
         if self.depth <= self.target {
             self.push_cell(Cell::empty());
         }
         self.depth += 1;
     }
-    fn column_end(&mut self, header: &dyn CellSource) {
+    fn column_end(&mut self, header: &dyn RawCell) {
         self.depth -= 1;
         if self.depth == self.target {
             let style = CellStyle {
@@ -544,7 +540,7 @@ impl<'a, 'b> BodyWriter<'a, 'b> {
 }
 
 impl CellsWrite for BodyWriter<'_, '_> {
-    fn content(&mut self, cell: Option<&dyn CellSource>) {
+    fn content(&mut self, cell: Option<&dyn RawCell>) {
         if let Some(colspan) = &mut self.colspan {
             *colspan += 1;
         } else {
@@ -555,13 +551,13 @@ impl CellsWrite for BodyWriter<'_, '_> {
         assert!(self.colspan.is_none());
         self.colspan = Some(0);
     }
-    fn content_end(&mut self, cell: &dyn CellSource) {
+    fn content_end(&mut self, cell: &dyn RawCell) {
         let colspan = self.colspan.take().unwrap();
         self.b.push_with_colspan(cell, colspan);
     }
 
     fn column_start(&mut self) {}
-    fn column_end(&mut self, _header: &dyn CellSource) {}
+    fn column_end(&mut self, _header: &dyn RawCell) {}
 }
 
 /// A builder used to create plain-text table.
@@ -690,7 +686,7 @@ impl GridBuilder {
         }
     }
 
-    fn push_cell<S: CellSource>(&mut self, cell: S, colspan: usize) {
+    fn push_cell<S: RawCell>(&mut self, cell: S, colspan: usize) {
         let s_idx = self.s.len();
         cell.fmt(&mut self.s);
         self.cells.push(CellEntry {
@@ -878,7 +874,7 @@ pub struct RowBuilder<'a> {
 
 impl RowBuilder<'_> {
     /// Append a cell to the right of row.
-    pub fn push(&mut self, cell: impl CellSource) {
+    pub fn push(&mut self, cell: impl RawCell) {
         self.grid.push_cell(cell, 1);
     }
 
@@ -888,13 +884,13 @@ impl RowBuilder<'_> {
     /// - `colspan` : Number of columns used by the cell to be appended.
     ///
     /// if `colspan == 0`, this method will do nothing.
-    pub fn push_with_colspan(&mut self, cell: impl CellSource, colspan: usize) {
+    pub fn push_with_colspan(&mut self, cell: impl RawCell, colspan: usize) {
         if colspan != 0 {
             self.grid.push_cell(cell, colspan);
         }
     }
 
-    pub fn extend<T: ?Sized + CellsSource>(&mut self, source: &T) {
+    pub fn extend<T: ?Sized + Cells>(&mut self, source: &T) {
         T::fmt(&mut CellsFormatter {
             w: &mut BodyWriter::new(self),
             d: Some(source),
@@ -961,7 +957,7 @@ impl<'a> Deref for CellRef<'a> {
 
 macro_rules! impl_for_tuple {
     ($($idx:tt : $ty:ident,)*) => {
-        impl<$($ty),*> CellsSource for ($($ty,)*) where $($ty: CellsSource),* {
+        impl<$($ty),*> Cells for ($($ty,)*) where $($ty: Cells),* {
             fn fmt(f: &mut CellsFormatter<Self>) {
                 $(
                     $ty::fmt(&mut f.map(|x| &x.$idx));

@@ -13,7 +13,7 @@ use std::marker::PhantomData;
 ///     a: u32,
 ///     b: u32,
 /// }
-/// impl CellsSource for RowData {
+/// impl Cells for RowData {
 ///     fn fmt(f: &mut CellsFormatter<Self>) {
 ///         f.column("a", |s| s.a);
 ///         f.column("b", |s| s.b);
@@ -37,13 +37,13 @@ pub struct Grid<R: ?Sized, S = DefaultGridSchema<R>> {
     _phantom: PhantomData<fn(&R)>,
 }
 
-impl<R: CellsSource + ?Sized> Default for Grid<R, DefaultGridSchema<R>> {
+impl<R: Cells + ?Sized> Default for Grid<R, DefaultGridSchema<R>> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<R: CellsSource + ?Sized> Grid<R, DefaultGridSchema<R>> {
+impl<R: Cells + ?Sized> Grid<R, DefaultGridSchema<R>> {
     /// Create a new `Grid` with [`DefaultGridSchema`] and prepare header rows.
     pub fn new() -> Self {
         Self::new_with_schema(DefaultGridSchema::default())
@@ -86,14 +86,14 @@ impl<'a, R, S: GridSchema<Source = R>> Extend<&'a R> for Grid<R, S> {
         }
     }
 }
-impl<R: CellsSource> FromIterator<R> for Grid<R> {
+impl<R: Cells> FromIterator<R> for Grid<R> {
     fn from_iter<T: IntoIterator<Item = R>>(iter: T) -> Self {
         let mut g = Self::new();
         g.extend(iter);
         g
     }
 }
-impl<'a, R: CellsSource> FromIterator<&'a R> for Grid<R> {
+impl<'a, R: Cells> FromIterator<&'a R> for Grid<R> {
     fn from_iter<T: IntoIterator<Item = &'a R>>(iter: T) -> Self {
         let mut g = Self::new();
         g.extend(iter);
