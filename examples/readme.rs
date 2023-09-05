@@ -13,7 +13,7 @@ fn main() {
             f.column("c", |s| cell(s.c).left());
             f.column_with("d", |f| {
                 f.column("x", |s| s.d);
-                f.column("y", |s| cells_e!("{:.2e}", s.d));
+                f.column("y", |s| cells_f!("{:.2e}", s.d));
             });
         }
     }

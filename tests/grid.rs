@@ -537,13 +537,13 @@ fn cell_ref() {
 }
 
 #[test]
-fn cells_e() {
+fn cells_f() {
     let s = grid_schema::<f64>(|f| {
         f.column("", |x| cell!("{x:e}"));
-        f.column("e", |x| cells_e!("{x:e}"));
-        f.column(".2e", |x| cells_e!("{x:.2e}"));
-        f.column("E", |x| cells_e!("{x:E}"));
-        f.column("debug", |x| cells_e!("{x:?}"));
+        f.column("e", |x| cells_f!("{x:e}"));
+        f.column(".2e", |x| cells_f!("{x:.2e}"));
+        f.column("E", |x| cells_f!("{x:E}"));
+        f.column("debug", |x| cells_f!("{x:?}"));
     });
 
     do_test_with_schema(

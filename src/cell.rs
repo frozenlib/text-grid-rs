@@ -470,10 +470,10 @@ impl Cells for f64 {
 /// use text_grid::*;
 /// let s = grid_schema::<f64>(|f| {
 ///     f.column("",      |x| cell!("{x:e}"));
-///     f.column("e",     |x| cells_e!("{x:e}"));
-///     f.column(".2e",   |x| cells_e!("{x:.2e}"));
-///     f.column("E",     |x| cells_e!("{x:E}"));
-///     f.column("debug", |x| cells_e!("{x:?}"));
+///     f.column("e",     |x| cells_f!("{x:e}"));
+///     f.column(".2e",   |x| cells_f!("{x:.2e}"));
+///     f.column("E",     |x| cells_f!("{x:E}"));
+///     f.column("debug", |x| cells_f!("{x:?}"));
 /// });
 ///
 /// let mut g = Grid::new_with_schema(s);
@@ -492,16 +492,16 @@ impl Cells for f64 {
 /// ";
 /// ```
 #[macro_export]
-macro_rules! cells_e {
+macro_rules! cells_f {
     ($($t:tt)*) => {
-        $crate::cells_e(format!($($t)*))
+        $crate::cells_f(format!($($t)*))
     };
 }
 
 /// Create [`Cells`] for float numbers from [`Display`].
 ///
-/// Format in the same way as [`cells_e!`] macro.
-pub fn cells_e(value: impl Display) -> impl Cells {
+/// Format in the same way as [`cells_f!`] macro.
+pub fn cells_f(value: impl Display) -> impl Cells {
     ExpCells::new(value.to_string())
 }
 struct ExpCells {
