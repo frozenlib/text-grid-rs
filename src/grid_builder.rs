@@ -349,15 +349,6 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
         });
     }
 
-    /// Creates a [`CellsFormatter`] whose source value was converted.
-    #[deprecated]
-    pub fn map_value<U: 'b>(&mut self, f: impl FnOnce(&'b T) -> U) -> CellsFormatterMapValue<U> {
-        CellsFormatterMapValue {
-            w: self.w,
-            d: self.d.as_ref().map(|x| f(x)),
-        }
-    }
-
     /// Creates a [`CellsFormatter`] that outputs the body cell only when the source value satisfies the condition.
     pub fn filter(&mut self, f: impl FnOnce(&T) -> bool) -> CellsFormatter<T> {
         CellsFormatter {
