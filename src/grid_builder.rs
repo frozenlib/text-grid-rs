@@ -369,23 +369,23 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
     /// Creates a [`CellsFormatter`] that both filters and maps.
     pub fn filter_map<U: 'b>(
         &mut self,
-        m: impl FnOnce(&T) -> Option<&U>,
+        f: impl FnOnce(&T) -> Option<&U>,
     ) -> CellsFormatter<'_, 'b, U> {
         CellsFormatter {
             w: self.w,
-            d: self.d.and_then(m),
+            d: self.d.and_then(f),
         }
     }
 
     /// Creates a [`CellsFormatter`] that both filters and maps.
     pub fn filter_map_with<U: 'b>(
         &mut self,
-        m: impl FnOnce(&'b T) -> Option<U>,
-        f: impl FnOnce(&mut CellsFormatter<U>),
+        f: impl FnOnce(&'b T) -> Option<U>,
+        some: impl FnOnce(&mut CellsFormatter<U>),
     ) {
-        f(&mut CellsFormatter {
+        some(&mut CellsFormatter {
             w: self.w,
-            d: self.d.and_then(m).as_ref(),
+            d: self.d.and_then(f).as_ref(),
         });
     }
 
