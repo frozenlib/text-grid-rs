@@ -42,16 +42,7 @@ impl<T: Cells> Cells for Option<T> {
 }
 impl<T: Cells, E: RawCell> Cells for std::result::Result<T, E> {
     fn fmt(f: &mut CellsFormatter<Self>) {
-        if let Some(Err(_)) = &f.d {
-            f.w.content_start();
-        }
-        T::fmt(&mut CellsFormatter {
-            w: f.w,
-            d: f.d.and_then(|x| x.as_ref().ok()),
-        });
-        if let Some(Err(e)) = &f.d {
-            f.w.content_end(e);
-        }
+        f.try_map_with(|x| x.as_ref(), |f| T::fmt(&mut f.unref()));
     }
 }
 
@@ -387,6 +378,24 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
             w: self.w,
             d: self.d.and_then(f).as_ref(),
         });
+    }
+
+    pub fn try_map_with<O, E: RawCell>(
+        &mut self,
+        f: impl FnOnce(&'b T) -> std::result::Result<O, E>,
+        ok: impl FnOnce(&mut CellsFormatter<O>),
+    ) {
+        let d = self.d.map(f);
+        if let Some(Err(_)) = &d {
+            self.w.content_start();
+        }
+        ok(&mut CellsFormatter {
+            w: self.w,
+            d: d.as_ref().and_then(|x| x.as_ref().ok()),
+        });
+        if let Some(Err(e)) = &d {
+            self.w.content_end(e);
+        }
     }
 
     /// Apply `f` to self.
