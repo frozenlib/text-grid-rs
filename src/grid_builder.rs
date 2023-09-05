@@ -10,7 +10,7 @@ use unicode_width::UnicodeWidthStr;
 ///
 /// The number of columns must be statically determined from the type.
 ///
-/// If the number of columns is dynamically determined, [`GridSchema`] must be used. See [`grid_schema`] for details.
+/// If the number of columns is dynamically determined, [`CellsSchema`] must be used. See [`cells_schema`] for details.
 pub trait Cells {
     /// Define columns. see [`CellsFormatter`] for details.
     fn fmt(f: &mut CellsFormatter<Self>);
@@ -50,17 +50,17 @@ impl<T: Cells, E: RawCell> Cells for std::result::Result<T, E> {
 ///
 /// Define columns using [`CellsFormatter`].
 ///
-/// To dynamically create a `GridSchema`, use [`grid_schema`].
+/// To dynamically create a `CellsSchema`, use [`cells_schema`].
 ///
 /// # Examples
 /// ```
 /// use text_grid::*;
 ///
-/// struct MyGridSchema {
+/// struct MyCellsSchema {
 ///     len: usize,
 /// }
 ///
-/// impl GridSchema for MyGridSchema {
+/// impl CellsSchema for MyCellsSchema {
 ///     type Source = [u32];
 ///     fn fmt(&self, f: &mut CellsFormatter<[u32]>) {
 ///         for i in 0..self.len {
@@ -69,7 +69,7 @@ impl<T: Cells, E: RawCell> Cells for std::result::Result<T, E> {
 ///     }
 /// }
 ///
-/// let mut g = Grid::new_with_schema(MyGridSchema { len: 3 });
+/// let mut g = Grid::new_with_schema(MyCellsSchema { len: 3 });
 /// g.push(&[1, 2, 3]);
 /// g.push(&[4, 5, 6]);
 ///
@@ -80,14 +80,14 @@ impl<T: Cells, E: RawCell> Cells for std::result::Result<T, E> {
 ///  4 | 5 | 6 |
 /// "#);
 /// ```
-pub trait GridSchema {
+pub trait CellsSchema {
     type Source: ?Sized;
 
     /// Define column information. see [`CellsFormatter`] for details.
     fn fmt(&self, f: &mut CellsFormatter<Self::Source>);
 }
 
-impl<T: GridSchema> GridSchema for Vec<T> {
+impl<T: CellsSchema> CellsSchema for Vec<T> {
     type Source = T::Source;
     fn fmt(&self, f: &mut CellsFormatter<Self::Source>) {
         for s in self {
@@ -95,7 +95,7 @@ impl<T: GridSchema> GridSchema for Vec<T> {
         }
     }
 }
-impl<T: GridSchema> GridSchema for [T] {
+impl<T: CellsSchema> CellsSchema for [T] {
     type Source = T::Source;
     fn fmt(&self, f: &mut CellsFormatter<Self::Source>) {
         for s in self {
@@ -103,30 +103,30 @@ impl<T: GridSchema> GridSchema for [T] {
         }
     }
 }
-impl<T: ?Sized + GridSchema> GridSchema for &T {
+impl<T: ?Sized + CellsSchema> CellsSchema for &T {
     type Source = T::Source;
     fn fmt(&self, f: &mut CellsFormatter<Self::Source>) {
         T::fmt(self, f)
     }
 }
 
-/// [`GridSchema`] implementation that use [`Cells`].
+/// [`CellsSchema`] implementation that use [`Cells`].
 #[derive(Clone, Copy, Debug)]
-pub struct DefaultGridSchema<T: ?Sized>(PhantomData<T>);
+pub struct DefaultCellsSchema<T: ?Sized>(PhantomData<T>);
 
-impl<T: Cells + ?Sized> Default for DefaultGridSchema<T> {
+impl<T: Cells + ?Sized> Default for DefaultCellsSchema<T> {
     fn default() -> Self {
         Self(PhantomData)
     }
 }
-impl<T: Cells + ?Sized> GridSchema for DefaultGridSchema<T> {
+impl<T: Cells + ?Sized> CellsSchema for DefaultCellsSchema<T> {
     type Source = T;
     fn fmt(&self, f: &mut CellsFormatter<Self::Source>) {
         T::fmt(f);
     }
 }
 
-/// Create [`GridSchema`] from closure.
+/// Create [`CellsSchema`] from closure.
 ///
 /// # Examples
 ///
@@ -137,7 +137,7 @@ impl<T: Cells + ?Sized> GridSchema for DefaultGridSchema<T> {
 /// use text_grid::*;
 /// let rows = vec![vec![1, 2, 3], vec![1, 2], vec![1, 2, 3, 4]];
 /// let max_colunm_count = rows.iter().map(|r| r.len()).max().unwrap_or(0);
-/// let schema = grid_schema::<Vec<u32>>(move |f| {
+/// let schema = cells_schema::<Vec<u32>>(move |f| {
 ///     for i in 0..max_colunm_count {
 ///         f.column(i, |x| x.get(i));
 ///     }
@@ -154,19 +154,21 @@ impl<T: Cells + ?Sized> GridSchema for DefaultGridSchema<T> {
 ///  1 | 2 | 3 | 4 |
 /// ";
 /// ```
-pub fn grid_schema<T: ?Sized>(fmt: impl Fn(&mut CellsFormatter<T>)) -> impl GridSchema<Source = T> {
-    struct FnGridSchema<T: ?Sized, F> {
+pub fn cells_schema<T: ?Sized>(
+    fmt: impl Fn(&mut CellsFormatter<T>),
+) -> impl CellsSchema<Source = T> {
+    struct FnCellsSchema<T: ?Sized, F> {
         fmt: F,
         _phantom: PhantomData<fn(&mut CellsFormatter<T>)>,
     }
 
-    impl<T: ?Sized, F: Fn(&mut CellsFormatter<T>)> GridSchema for FnGridSchema<T, F> {
+    impl<T: ?Sized, F: Fn(&mut CellsFormatter<T>)> CellsSchema for FnCellsSchema<T, F> {
         type Source = T;
         fn fmt(&self, f: &mut CellsFormatter<T>) {
             (self.fmt)(f)
         }
     }
-    FnGridSchema {
+    FnCellsSchema {
         fmt,
         _phantom: PhantomData,
     }
@@ -434,7 +436,7 @@ pub(crate) struct GridLayout {
     pub separators: Vec<bool>,
 }
 impl GridLayout {
-    pub fn from_schema<T: ?Sized>(schema: &dyn GridSchema<Source = T>) -> Self {
+    pub fn from_schema<T: ?Sized>(schema: &dyn CellsSchema<Source = T>) -> Self {
         let mut this = GridLayout::new();
         schema.fmt(&mut CellsFormatter {
             w: &mut this,
@@ -618,7 +620,7 @@ impl GridBuilder {
         }
     }
 
-    pub(crate) fn new_with_header<T: ?Sized>(schema: &dyn GridSchema<Source = T>) -> Self {
+    pub(crate) fn new_with_header<T: ?Sized>(schema: &dyn CellsSchema<Source = T>) -> Self {
         let mut this = Self::new();
         let layout = GridLayout::from_schema(schema);
         this.set_column_separators(layout.separators);
@@ -897,7 +899,7 @@ impl RowBuilder<'_> {
     pub fn extend_with_schema<T: ?Sized>(
         &mut self,
         source: &T,
-        schema: &dyn GridSchema<Source = T>,
+        schema: &dyn CellsSchema<Source = T>,
     ) {
         schema.fmt(&mut CellsFormatter {
             w: &mut BodyWriter::new(self),
@@ -963,9 +965,9 @@ macro_rules! impl_for_tuple {
             }
         }
 
-        impl<$($ty),*> GridSchema for ($($ty,)*)
+        impl<$($ty),*> CellsSchema for ($($ty,)*)
         where
-            $($ty: GridSchema, $ty::Source: Sized,)*
+            $($ty: CellsSchema, $ty::Source: Sized,)*
         {
             type Source = ($($ty::Source,)*);
             fn fmt(&self, f: &mut CellsFormatter<Self::Source>) {

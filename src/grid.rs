@@ -31,26 +31,26 @@ use std::marker::PhantomData;
 ///    2 | 200 |
 /// "#);
 /// ```
-pub struct Grid<R: ?Sized, S = DefaultGridSchema<R>> {
+pub struct Grid<R: ?Sized, S = DefaultCellsSchema<R>> {
     b: GridBuilder,
     schema: S,
     _phantom: PhantomData<fn(&R)>,
 }
 
-impl<R: Cells + ?Sized> Default for Grid<R, DefaultGridSchema<R>> {
+impl<R: Cells + ?Sized> Default for Grid<R, DefaultCellsSchema<R>> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<R: Cells + ?Sized> Grid<R, DefaultGridSchema<R>> {
-    /// Create a new `Grid` with [`DefaultGridSchema`] and prepare header rows.
+impl<R: Cells + ?Sized> Grid<R, DefaultCellsSchema<R>> {
+    /// Create a new `Grid` with [`DefaultCellsSchema`] and prepare header rows.
     pub fn new() -> Self {
-        Self::new_with_schema(DefaultGridSchema::default())
+        Self::new_with_schema(DefaultCellsSchema::default())
     }
 }
 
-impl<R: ?Sized, S: GridSchema<Source = R>> Grid<S::Source, S> {
+impl<R: ?Sized, S: CellsSchema<Source = R>> Grid<S::Source, S> {
     /// Create a new `Grid` with specified schema and prepare header rows.
     pub fn new_with_schema(schema: S) -> Self {
         let b = GridBuilder::new_with_header(&schema);
@@ -61,7 +61,7 @@ impl<R: ?Sized, S: GridSchema<Source = R>> Grid<S::Source, S> {
         }
     }
 }
-impl<R: ?Sized, S: GridSchema<Source = R>> Grid<R, S> {
+impl<R: ?Sized, S: CellsSchema<Source = R>> Grid<R, S> {
     /// Append a row to the bottom of the grid.
     pub fn push(&mut self, source: &R) {
         self.b.push(|b| b.extend_with_schema(source, &self.schema));
@@ -72,14 +72,14 @@ impl<R: ?Sized, S: GridSchema<Source = R>> Grid<R, S> {
         self.b.push_separator();
     }
 }
-impl<R, S: GridSchema<Source = R>> Extend<R> for Grid<R, S> {
+impl<R, S: CellsSchema<Source = R>> Extend<R> for Grid<R, S> {
     fn extend<T: IntoIterator<Item = R>>(&mut self, iter: T) {
         for i in iter {
             self.push(&i);
         }
     }
 }
-impl<'a, R, S: GridSchema<Source = R>> Extend<&'a R> for Grid<R, S> {
+impl<'a, R, S: CellsSchema<Source = R>> Extend<&'a R> for Grid<R, S> {
     fn extend<T: IntoIterator<Item = &'a R>>(&mut self, iter: T) {
         for i in iter {
             self.push(i);

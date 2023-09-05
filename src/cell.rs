@@ -468,7 +468,7 @@ impl Cells for f64 {
 ///
 /// ```
 /// use text_grid::*;
-/// let s = grid_schema::<f64>(|f| {
+/// let s = cells_schema::<f64>(|f| {
 ///     f.column("",      |x| cell!("{x:e}"));
 ///     f.column("e",     |x| cells_f!("{x:e}"));
 ///     f.column(".2e",   |x| cells_f!("{x:.2e}"));

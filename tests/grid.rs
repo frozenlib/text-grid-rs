@@ -401,11 +401,11 @@ fn impl_debug() {
 
 #[test]
 fn with_schema() {
-    struct MyGridSchema {
+    struct MyCellsSchema {
         len: usize,
     }
 
-    impl GridSchema for MyGridSchema {
+    impl CellsSchema for MyCellsSchema {
         type Source = [u32];
         fn fmt(&self, f: &mut CellsFormatter<[u32]>) {
             for i in 0..self.len {
@@ -414,7 +414,7 @@ fn with_schema() {
         }
     }
 
-    let mut g = Grid::new_with_schema(MyGridSchema { len: 3 });
+    let mut g = Grid::new_with_schema(MyCellsSchema { len: 3 });
     g.push(&[1, 2, 3]);
     g.push(&[4, 5, 6]);
 
@@ -430,7 +430,7 @@ fn with_schema() {
 
 #[test]
 fn right() {
-    let s = grid_schema::<&str>(|f| f.column("x", |x| cell(x).right()));
+    let s = cells_schema::<&str>(|f| f.column("x", |x| cell(x).right()));
     do_test_with_schema(
         vec!["a", "ab", "abc"],
         &s,
@@ -503,7 +503,7 @@ fn root_content() {
 fn disparate_column_count() {
     let rows = vec![vec![1, 2, 3], vec![1, 2], vec![1, 2, 3, 4]];
     let max_colunm_count = rows.iter().map(|r| r.len()).max().unwrap_or(0);
-    let schema = grid_schema::<Vec<u32>>(move |f| {
+    let schema = cells_schema::<Vec<u32>>(move |f| {
         for i in 0..max_colunm_count {
             f.column(i, |x| x.get(i));
         }
@@ -531,14 +531,14 @@ fn extend() {
 
 #[test]
 fn cell_ref() {
-    let _ = grid_schema(|f: &mut CellsFormatter<&String>| {
+    let _ = cells_schema(|f: &mut CellsFormatter<&String>| {
         f.column("x", |x| cell!("__{}__", x));
     });
 }
 
 #[test]
 fn cells_f() {
-    let s = grid_schema::<f64>(|f| {
+    let s = cells_schema::<f64>(|f| {
         f.column("", |x| cell!("{x:e}"));
         f.column("e", |x| cells_f!("{x:e}"));
         f.column(".2e", |x| cells_f!("{x:.2e}"));
@@ -564,7 +564,7 @@ fn cells_f() {
 
 #[test]
 fn empty_group() {
-    let s = grid_schema::<()>(|f| {
+    let s = cells_schema::<()>(|f| {
         f.column_with("header", |_| {});
         f.column("1", |_| cell(1));
     });
@@ -595,11 +595,11 @@ fn result() {
 
 #[track_caller]
 fn do_test<T: Cells>(s: Vec<T>, e: &str) {
-    do_test_with_schema(s, DefaultGridSchema::default(), e);
+    do_test_with_schema(s, DefaultCellsSchema::default(), e);
 }
 
 #[track_caller]
-fn do_test_with_schema<T>(s: Vec<T>, schema: impl GridSchema<Source = T>, e: &str) {
+fn do_test_with_schema<T>(s: Vec<T>, schema: impl CellsSchema<Source = T>, e: &str) {
     let mut g = Grid::new_with_schema(schema);
     for s in s {
         g.push(&s);
