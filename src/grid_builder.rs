@@ -42,7 +42,16 @@ impl<T: Cells> Cells for Option<T> {
 }
 impl<T: Cells, E: RawCell> Cells for std::result::Result<T, E> {
     fn fmt(f: &mut CellsFormatter<Self>) {
-        f.ok_with(|f| f.content(|x| x))
+        if let Some(Err(_)) = &f.d {
+            f.w.content_start();
+        }
+        T::fmt(&mut CellsFormatter {
+            w: f.w,
+            d: f.d.and_then(|x| x.as_ref().ok()),
+        });
+        if let Some(Err(e)) = &f.d {
+            f.w.content_end(e);
+        }
     }
 }
 
@@ -360,23 +369,24 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
     /// Creates a [`CellsFormatter`] that both filters and maps.
     pub fn filter_map<U: 'b>(
         &mut self,
-        f: impl FnOnce(&T) -> Option<&U>,
+        m: impl FnOnce(&T) -> Option<&U>,
     ) -> CellsFormatter<'_, 'b, U> {
         CellsFormatter {
             w: self.w,
-            d: self.d.and_then(f),
+            d: self.d.and_then(m),
         }
     }
 
     /// Creates a [`CellsFormatter`] that both filters and maps.
-    pub fn filter_map_value<U: 'b>(
+    pub fn filter_map_with<U: 'b>(
         &mut self,
-        f: impl FnOnce(&'b T) -> Option<U>,
-    ) -> CellsFormatterMapValue<U> {
-        CellsFormatterMapValue {
+        m: impl FnOnce(&'b T) -> Option<U>,
+        f: impl FnOnce(&mut CellsFormatter<U>),
+    ) {
+        f(&mut CellsFormatter {
             w: self.w,
-            d: self.d.and_then(f),
-        }
+            d: self.d.and_then(m).as_ref(),
+        });
     }
 
     /// Apply `f` to self.
@@ -384,7 +394,7 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
         f(self);
     }
 }
-impl<T: ?Sized> CellsFormatter<'_, '_, &T> {
+impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, &T> {
     pub fn unref(&mut self) -> CellsFormatter<T> {
         CellsFormatter {
             w: self.w,
@@ -392,40 +402,11 @@ impl<T: ?Sized> CellsFormatter<'_, '_, &T> {
         }
     }
 }
-impl<T: ?Sized> CellsFormatter<'_, '_, &mut T> {
+impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, &mut T> {
     pub fn unref(&mut self) -> CellsFormatter<T> {
         CellsFormatter {
             w: self.w,
             d: self.d.map(|x| &**x),
-        }
-    }
-}
-
-impl<T, E: RawCell> CellsFormatter<'_, '_, std::result::Result<T, E>> {
-    /// If `Ok`, output the cells defined by `f`. If `Err`, output the cell by the error value using the colspan of the cells output by `f`.
-    pub fn ok_with(&mut self, f: impl FnOnce(&mut CellsFormatter<T>)) {
-        if let Some(Err(_)) = &self.d {
-            self.w.content_start();
-        }
-        f(&mut self.filter_map(|x| x.as_ref().ok()));
-        if let Some(Err(e)) = &self.d {
-            self.w.content_end(e);
-        }
-    }
-}
-
-/// [`CellsFormatter`] with converted value.
-///
-/// To obtain `CellsFormatter`, use [`f()`](CellsFormatterMapValue::f()).
-pub struct CellsFormatterMapValue<'a, T> {
-    w: &'a mut dyn CellsWrite,
-    d: Option<T>,
-}
-impl<T> CellsFormatterMapValue<'_, T> {
-    pub fn f(&mut self) -> CellsFormatter<T> {
-        CellsFormatter {
-            w: self.w,
-            d: self.d.as_ref(),
         }
     }
 }
