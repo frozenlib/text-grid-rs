@@ -38,7 +38,7 @@ pub enum HorizontalAlignment {
     Right,
 }
 
-/// A data structure that can be formatted into cell.
+/// A data structure that can be formatted into a cell.
 ///
 /// Normally, [`cell()`] or [`cell!`](crate::cell!) is used to create a value that implements `RawCell`.
 ///
