@@ -297,7 +297,7 @@ fn column_cell_macro() {
 }
 
 #[test]
-fn map_value() {
+fn map_with_value() {
     struct Source {
         a: u8,
         b: u8,
@@ -305,8 +305,33 @@ fn map_value() {
 
     impl Cells for Source {
         fn fmt(f: &mut CellsFormatter<Self>) {
-            f.map_value(|x| x.a).f().column("a", |x| x);
-            f.map_value(|x| x.b).f().column("b", |x| x);
+            f.map_with(|x| x.a, |f| f.column("a", |x| x));
+            f.map_with(|x| x.b, |f| f.column("b", |x| x));
+        }
+    }
+
+    do_test(
+        vec![Source { a: 100, b: 200 }, Source { a: 1, b: 2 }],
+        r"
+  a  |  b  |
+-----|-----|
+ 100 | 200 |
+   1 |   2 |
+",
+    );
+}
+
+#[test]
+fn map_with_ref() {
+    struct Source {
+        a: u8,
+        b: u8,
+    }
+
+    impl Cells for Source {
+        fn fmt(f: &mut CellsFormatter<Self>) {
+            f.map_with(|x| &x.a, |f| f.column("a", |x| x));
+            f.map_with(|x| &x.b, |f| f.column("b", |x| x));
         }
     }
 

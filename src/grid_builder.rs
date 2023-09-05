@@ -280,7 +280,7 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
     /// "#);
     /// ```
     pub fn content<U: Cells + 'b>(&mut self, f: impl FnOnce(&'b T) -> U) {
-        U::fmt(&mut self.map_value(f).f())
+        self.map_with(f, U::fmt)
     }
 
     /// Define column content.
@@ -326,14 +326,31 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
     }
 
     /// Creates a [`CellsFormatter`] whose source value was converted.
-    pub fn map<U>(&mut self, f: impl FnOnce(&T) -> &U) -> CellsFormatter<'_, 'b, U> {
+    ///
+    /// If you want to convert to an owned value instead of a reference, use [`map_with`](Self::map_with) instead.
+    pub fn map<U>(&mut self, m: impl FnOnce(&T) -> &U) -> CellsFormatter<'_, 'b, U> {
         CellsFormatter {
             w: self.w,
-            d: self.d.map(f),
+            d: self.d.map(m),
         }
     }
 
     /// Creates a [`CellsFormatter`] whose source value was converted.
+    ///
+    /// Unlike [`map`](Self::map), it can be converted to an owned value.
+    pub fn map_with<U>(
+        &mut self,
+        m: impl FnOnce(&'b T) -> U,
+        f: impl FnOnce(&mut CellsFormatter<U>),
+    ) {
+        f(&mut CellsFormatter {
+            w: self.w,
+            d: self.d.map(m).as_ref(),
+        });
+    }
+
+    /// Creates a [`CellsFormatter`] whose source value was converted.
+    #[deprecated]
     pub fn map_value<U: 'b>(&mut self, f: impl FnOnce(&'b T) -> U) -> CellsFormatterMapValue<U> {
         CellsFormatterMapValue {
             w: self.w,
@@ -960,7 +977,7 @@ macro_rules! impl_for_tuple {
         impl<$($ty),*> Cells for ($($ty,)*) where $($ty: Cells),* {
             fn fmt(f: &mut CellsFormatter<Self>) {
                 $(
-                    $ty::fmt(&mut f.map(|x| &x.$idx));
+                    f.map_with(|x| &x.$idx, Cells::fmt);
                 )*
             }
         }
@@ -976,6 +993,7 @@ macro_rules! impl_for_tuple {
         }
     };
 }
+
 impl_for_tuple!(0: T0,);
 impl_for_tuple!(0: T0, 1: T1,);
 impl_for_tuple!(0: T0, 1: T1, 2: T2,);
