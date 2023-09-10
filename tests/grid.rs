@@ -593,6 +593,81 @@ fn result() {
     );
 }
 
+#[test]
+#[ignore]
+fn zero_rows() {
+    struct Source {
+        a: u8,
+        b: u8,
+    }
+    impl Cells for Source {
+        fn fmt(f: &mut CellsFormatter<Self>) {
+            f.column("a", |x| x.a);
+            f.column("b", |x| x.b);
+        }
+    }
+
+    do_test(
+        Vec::<Source>::new(),
+        r"
+ a | b |
+---|---|
+",
+    );
+}
+
+#[test]
+#[ignore]
+fn zero_rows_column_group() {
+    struct Source {
+        a: u8,
+        b: u8,
+    }
+
+    impl Cells for Source {
+        fn fmt(f: &mut CellsFormatter<Self>) {
+            f.column_with("g", |f| {
+                f.column("a", |x| x.a);
+                f.column("b", |x| x.b);
+            })
+        }
+    }
+
+    do_test(
+        Vec::<Source>::new(),
+        r"
+   g   |
+-------|
+ a | b |
+---|---|
+",
+    );
+}
+
+#[test]
+fn zero_rows_colspan() {
+    struct Source {
+        a: f64,
+    }
+
+    impl Cells for Source {
+        fn fmt(f: &mut CellsFormatter<Self>) {
+            f.column("x", |x| x.a);
+        }
+    }
+
+    //     do_test(
+    //         Vec::<Source>::new(),
+    //         r"
+    //    g   |
+    // -------|
+    //  a | b |
+    // ---|---|
+    // ",
+    //     );
+    Grid::<Source>::new().to_string();
+}
+
 #[track_caller]
 fn do_test<T: Cells>(s: Vec<T>, e: &str) {
     do_test_with_schema(s, DefaultCellsSchema::default(), e);

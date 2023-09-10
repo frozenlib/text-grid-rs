@@ -73,11 +73,11 @@ fn colspan_3() {
 fn separator() {
     let mut g = GridBuilder::new();
     g.push(|b| {
-        b.push(cell("aaa").right());
+        b.push(cell("aaa"));
     });
     g.push_separator();
     g.push(|b| {
-        b.push(cell("aaa").right());
+        b.push(cell("aaa"));
     });
 
     let e = r"
@@ -86,6 +86,73 @@ fn separator() {
  aaa |";
     do_test(g, e);
 }
+
+#[test]
+fn separator_2() {
+    let mut g = GridBuilder::new();
+    g.push(|b| {
+        b.push(cell("aaa"));
+        b.push(cell("b"));
+    });
+    g.push_separator();
+    g.push(|b| {
+        b.push(cell("aaa"));
+        b.push(cell("b"));
+    });
+
+    let e = r"
+ aaa | b |
+-----|---|
+ aaa | b |";
+    do_test(g, e);
+}
+
+#[test]
+#[ignore]
+fn separator_end() {
+    let mut g = GridBuilder::new();
+    g.push(|b| {
+        b.push(cell("aaa"));
+    });
+    g.push_separator();
+
+    let e = r"
+ aaa |
+-----|";
+    do_test(g, e);
+}
+
+#[test]
+#[ignore]
+fn separator_end_2() {
+    let mut g = GridBuilder::new();
+    g.push(|b| {
+        b.push(cell("aaa"));
+        b.push(cell("b"));
+    });
+    g.push_separator();
+
+    let e = r"
+ aaa | b |
+-----|---|";
+    do_test(g, e);
+}
+
+#[test]
+fn separator_end_colspan() {
+    let mut g = GridBuilder::new();
+    g.push(|b| {
+        b.push_with_colspan(cell("aaa"), 2);
+    });
+    g.push_separator();
+
+    //     let e = r"
+    //  aaa |
+    // -----|";
+    //     do_test(g, e);
+    g.to_string();
+}
+
 fn do_test(g: GridBuilder, e: &str) {
     let a = format!("{}", g);
     let e = e.trim_matches('\n');
