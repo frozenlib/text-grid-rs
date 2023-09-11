@@ -735,16 +735,16 @@ impl GridBuilder {
 
     fn get_widths(&self) -> Vec<usize> {
         let mut widths = vec![0; self.columns];
-        for row in 0..self.rows.len() {
-            for c in self.row(row) {
+        for row in self.rows() {
+            for c in row {
                 if c.colspan == 1 {
                     widths[c.column] = max(widths[c.column], c.width);
                 }
             }
         }
         let mut smalls = Vec::new();
-        for row in 0..self.rows.len() {
-            for c in self.row(row) {
+        for row in self.rows() {
+            for c in row {
                 if c.colspan > 1 {
                     let mut width_sum = self.get_width(&widths, c.column, c.colspan);
                     while width_sum < c.width {
@@ -777,14 +777,22 @@ impl GridBuilder {
         }
         widths
     }
-    fn row(&self, row: usize) -> Cursor {
-        Cursor {
-            grid: self,
-            column: 0,
-            idx: self.cells_idx(row),
-            end: self.cells_idx(row + 1),
+    fn row(&self, row: usize) -> Option<Cursor> {
+        if row < self.rows.len() {
+            Some(Cursor {
+                grid: self,
+                column: 0,
+                idx: self.cells_idx(row),
+                end: self.cells_idx(row + 1),
+            })
+        } else {
+            None
         }
     }
+    fn rows(&self) -> impl Iterator<Item = Cursor> {
+        (0..self.rows.len()).map(|row| self.row(row).unwrap())
+    }
+
     fn cells_idx(&self, row: usize) -> usize {
         if let Some(row) = self.rows.get(row) {
             row.cells_idx
@@ -808,7 +816,7 @@ impl Display for GridBuilder {
             if self.has_border(0) {
                 write!(f, "|")?;
             }
-            for c in self.row(row) {
+            for c in self.row(row).unwrap() {
                 let width = self.get_width(&widths, c.column, c.colspan);
                 if self.has_left_padding(c.column) {
                     write!(f, " ")?;
@@ -841,11 +849,11 @@ impl Display for GridBuilder {
                     if self.has_right_padding(column) {
                         write!(f, "-")?;
                     }
-                    for c in cs.iter_mut() {
+                    for c in cs.iter_mut().flatten() {
                         while c.column <= column && c.next().is_some() {}
                     }
                     if self.has_border(column + 1) {
-                        if cs.iter().all(|x| x.column == column + 1) {
+                        if cs.iter().flatten().all(|x| x.column == column + 1) {
                             write!(f, "|")?;
                         } else {
                             write!(f, "-")?;

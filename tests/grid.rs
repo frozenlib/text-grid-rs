@@ -594,7 +594,6 @@ fn result() {
 }
 
 #[test]
-#[ignore]
 fn zero_rows() {
     struct Source {
         a: u8,
@@ -617,7 +616,6 @@ fn zero_rows() {
 }
 
 #[test]
-#[ignore]
 fn zero_rows_column_group() {
     struct Source {
         a: u8,

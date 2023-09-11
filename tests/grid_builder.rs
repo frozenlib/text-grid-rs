@@ -108,7 +108,6 @@ fn separator_2() {
 }
 
 #[test]
-#[ignore]
 fn separator_end() {
     let mut g = GridBuilder::new();
     g.push(|b| {
@@ -123,7 +122,6 @@ fn separator_end() {
 }
 
 #[test]
-#[ignore]
 fn separator_end_2() {
     let mut g = GridBuilder::new();
     g.push(|b| {
