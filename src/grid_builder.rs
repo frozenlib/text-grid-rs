@@ -918,8 +918,8 @@ impl RowBuilder<'_> {
 impl Drop for RowBuilder<'_> {
     fn drop(&mut self) {
         let mut columns = 0;
-        for i in self.cells_idx..self.grid.cells.len() {
-            columns += self.grid.cells[i].colspan;
+        for cell in &self.grid.cells[self.cells_idx..] {
+            columns += cell.colspan;
         }
         self.grid.columns = max(self.grid.columns, columns);
         self.grid.rows.push(RowEntry {
