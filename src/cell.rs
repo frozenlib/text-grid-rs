@@ -273,7 +273,7 @@ pub fn cell_by<F: Fn(&mut String) -> Result>(f: F) -> Cell<impl RawCell> {
 /// let s = String::from("ABC");
 /// let cell_a = cell(format!("{}", &s));
 /// let cell_b = cell(format!("{}", &s));
-/// // Retrun value owns formatted string.
+/// // Return value owns formatted string.
 /// // Therefore, the returned value can move anywhere.
 /// ```
 #[macro_export]
