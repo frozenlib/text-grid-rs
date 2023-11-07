@@ -666,6 +666,19 @@ fn zero_rows_colspan() {
     Grid::<Source>::new().to_string();
 }
 
+#[test]
+fn index_to_value_schema() {
+    struct IndexToValueSchema<T>(Vec<T>);
+
+    impl<T: Cells> CellsSchema for IndexToValueSchema<T> {
+        type Source = usize;
+
+        fn fmt(&self, f: &mut CellsFormatter<Self::Source>) {
+            f.column("header", |&index| &self.0[index])
+        }
+    }
+}
+
 #[track_caller]
 fn do_test<T: Cells>(s: Vec<T>, e: &str) {
     do_test_with_schema(s, DefaultCellsSchema::default(), e);

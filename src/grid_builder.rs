@@ -281,7 +281,7 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
     ///  300 |  1 500 |
     /// "#);
     /// ```
-    pub fn content<U: Cells + 'b>(&mut self, f: impl FnOnce(&'b T) -> U) {
+    pub fn content<U: Cells>(&mut self, f: impl FnOnce(&'b T) -> U) {
         self.map_with(f, U::fmt)
     }
 
@@ -323,7 +323,7 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
     ///    2 | 200 |
     /// "#);
     /// ```
-    pub fn column<U: Cells + 'b>(&mut self, header: impl RawCell, f: impl FnOnce(&'b T) -> U) {
+    pub fn column<U: Cells>(&mut self, header: impl RawCell, f: impl FnOnce(&'b T) -> U) {
         self.column_with(header, |cf| cf.content(f));
     }
 
@@ -360,10 +360,7 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
     }
 
     /// Creates a [`CellsFormatter`] that both filters and maps.
-    pub fn filter_map<U: 'b>(
-        &mut self,
-        f: impl FnOnce(&T) -> Option<&U>,
-    ) -> CellsFormatter<'_, 'b, U> {
+    pub fn filter_map<U>(&mut self, f: impl FnOnce(&T) -> Option<&U>) -> CellsFormatter<'_, 'b, U> {
         CellsFormatter {
             w: self.w,
             d: self.d.and_then(f),
@@ -371,7 +368,7 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
     }
 
     /// Creates a [`CellsFormatter`] that both filters and maps.
-    pub fn filter_map_with<U: 'b>(
+    pub fn filter_map_with<U>(
         &mut self,
         f: impl FnOnce(&'b T) -> Option<U>,
         some: impl FnOnce(&mut CellsFormatter<U>),
