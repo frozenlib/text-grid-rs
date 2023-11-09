@@ -1,4 +1,4 @@
-use crate::grid_builder::*;
+use crate::{grid_builder::*, Cells, CellsSchema, DefaultCellsSchema};
 use std::fmt::*;
 use std::marker::PhantomData;
 /// A builder used to create plain-text table from row values.
