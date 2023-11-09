@@ -2,7 +2,9 @@ use self::HorizontalAlignment::*;
 use crate::cell::*;
 use crate::Cells;
 use crate::CellsSchema;
+use derive_ex::derive_ex;
 use std::cmp::*;
+use std::collections::HashMap;
 use std::fmt::*;
 use std::ops::Deref;
 use unicode_width::UnicodeWidthStr;
@@ -15,9 +17,18 @@ use unicode_width::UnicodeWidthStr;
 pub struct CellsFormatter<'a, 'b, T: ?Sized> {
     w: &'a mut dyn CellsWrite,
     d: Option<&'b T>,
+    stretch: bool,
 }
 
 impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
+    fn new(w: &'a mut dyn CellsWrite, d: Option<&'b T>) -> Self {
+        Self {
+            w,
+            d,
+            stretch: false,
+        }
+    }
+
     /// Define column group. Used to create multi row header.
     ///
     /// - header : Column group header's cell. If horizontal alignment is not specified, it is set to the center.
@@ -122,8 +133,10 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
     ///
     /// - f : A function to obtain cell.
     pub(crate) fn content_cell<U: RawCell>(&mut self, f: impl FnOnce(&'b T) -> U) {
-        self.w
-            .content(self.d.map(f).as_ref().map(|x| x as &dyn RawCell));
+        self.w.content(
+            self.d.map(f).as_ref().map(|x| x as &dyn RawCell),
+            self.stretch,
+        );
     }
 
     /// Define column.
@@ -167,6 +180,7 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
         CellsFormatter {
             w: self.w,
             d: self.d.map(m),
+            stretch: self.stretch,
         }
     }
 
@@ -181,6 +195,7 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
         f(&mut CellsFormatter {
             w: self.w,
             d: self.d.map(m).as_ref(),
+            stretch: self.stretch,
         });
     }
 
@@ -189,6 +204,7 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
         CellsFormatter {
             w: self.w,
             d: self.d.filter(|data| f(data)),
+            stretch: self.stretch,
         }
     }
 
@@ -197,6 +213,7 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
         CellsFormatter {
             w: self.w,
             d: self.d.and_then(f),
+            stretch: self.stretch,
         }
     }
 
@@ -209,6 +226,7 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
         some(&mut CellsFormatter {
             w: self.w,
             d: self.d.and_then(f).as_ref(),
+            stretch: self.stretch,
         });
     }
 
@@ -224,9 +242,21 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
         ok(&mut CellsFormatter {
             w: self.w,
             d: d.as_ref().and_then(|x| x.as_ref().ok()),
+            stretch: self.stretch,
         });
         if let Some(Err(e)) = &d {
             self.w.content_end(e);
+        }
+    }
+
+    /// Return `CellsFormatter` that generates the columns to be stretched preferentially.
+    ///
+    /// See [`ColumnStyle::stretch`] for details.
+    pub fn stretch(&mut self) -> CellsFormatter<'_, 'b, T> {
+        CellsFormatter {
+            w: self.w,
+            d: self.d,
+            stretch: true,
         }
     }
 
@@ -240,6 +270,7 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, &T> {
         CellsFormatter {
             w: self.w,
             d: self.d.map(|x| &**x),
+            stretch: self.stretch,
         }
     }
 }
@@ -248,12 +279,13 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, &mut T> {
         CellsFormatter {
             w: self.w,
             d: self.d.map(|x| &**x),
+            stretch: self.stretch,
         }
     }
 }
 
 trait CellsWrite {
-    fn content(&mut self, cell: Option<&dyn RawCell>);
+    fn content(&mut self, cell: Option<&dyn RawCell>, stretch: bool);
     fn content_start(&mut self);
     fn content_end(&mut self, cell: &dyn RawCell);
     fn column_start(&mut self);
@@ -263,46 +295,46 @@ trait CellsWrite {
 pub(crate) struct GridLayout {
     pub depth: usize,
     pub depth_max: usize,
-    pub separators: Vec<bool>,
+    pub styles: Vec<ColumnStyle>,
 }
 impl GridLayout {
     pub fn from_schema<T: ?Sized>(schema: &dyn CellsSchema<Source = T>) -> Self {
         let mut this = GridLayout::new();
-        schema.fmt(&mut CellsFormatter {
-            w: &mut this,
-            d: None,
-        });
-        this.separators.pop();
+        schema.fmt(&mut CellsFormatter::new(&mut this, None));
+        this.styles.pop();
         this
     }
     fn new() -> Self {
         Self {
             depth: 0,
             depth_max: 0,
-            separators: Vec::new(),
+            styles: Vec::new(),
         }
     }
-    fn set_separator(&mut self) {
-        if let Some(last) = self.separators.last_mut() {
-            *last = true;
+    fn set_column_end_style(&mut self) {
+        if let Some(last) = self.styles.last_mut() {
+            last.column_end = true;
         }
     }
 }
 impl CellsWrite for GridLayout {
-    fn content(&mut self, _cell: Option<&dyn RawCell>) {
-        self.separators.push(false);
+    fn content(&mut self, _cell: Option<&dyn RawCell>, stretch: bool) {
+        self.styles.push(ColumnStyle {
+            column_end: false,
+            stretch,
+        });
     }
     fn content_start(&mut self) {}
     fn content_end(&mut self, _cell: &dyn RawCell) {}
     fn column_start(&mut self) {
-        self.set_separator();
+        self.set_column_end_style();
         self.depth += 1;
         self.depth_max = max(self.depth_max, self.depth);
     }
 
     fn column_end(&mut self, _header: &dyn RawCell) {
         self.depth -= 1;
-        self.set_separator()
+        self.set_column_end_style()
     }
 }
 
@@ -331,7 +363,7 @@ impl<'a, 'b> HeaderWriter<'a, 'b> {
     }
 }
 impl CellsWrite for HeaderWriter<'_, '_> {
-    fn content(&mut self, _cell: Option<&dyn RawCell>) {
+    fn content(&mut self, _cell: Option<&dyn RawCell>, _stretch: bool) {
         self.column += 1;
     }
     fn content_start(&mut self) {}
@@ -370,7 +402,7 @@ impl<'a, 'b> BodyWriter<'a, 'b> {
 }
 
 impl CellsWrite for BodyWriter<'_, '_> {
-    fn content(&mut self, cell: Option<&dyn RawCell>) {
+    fn content(&mut self, cell: Option<&dyn RawCell>, _stretch: bool) {
         if let Some(colspan) = &mut self.colspan {
             *colspan += 1;
         } else {
@@ -418,13 +450,14 @@ impl CellsWrite for BodyWriter<'_, '_> {
 ///     Y |     BBB      |
 /// "#);
 /// ```
-#[derive(Default)]
+#[derive_ex(Default)]
+#[default(Self::new())]
 pub struct GridBuilder {
     s: String,
     cells: Vec<CellEntry>,
     rows: Vec<RowEntry>,
     columns: usize,
-    column_separators: Vec<bool>,
+    column_styles: Vec<ColumnStyle>,
 }
 
 struct CellEntry {
@@ -446,58 +479,28 @@ impl GridBuilder {
             cells: Vec::new(),
             rows: Vec::new(),
             columns: 0,
-            column_separators: Vec::new(),
+            column_styles: Vec::new(),
         }
     }
 
     pub(crate) fn new_with_header<T: ?Sized>(schema: &dyn CellsSchema<Source = T>) -> Self {
         let mut this = Self::new();
         let layout = GridLayout::from_schema(schema);
-        this.set_column_separators(layout.separators);
+        this.set_column_styles(layout.styles);
         for target in 0..layout.depth_max {
             this.push(|b| {
-                schema.fmt(&mut CellsFormatter {
-                    w: &mut HeaderWriter::new(b, target),
-                    d: None,
-                })
+                schema.fmt(&mut CellsFormatter::new(
+                    &mut HeaderWriter::new(b, target),
+                    None,
+                ))
             });
             this.push_separator();
         }
         this
     }
 
-    /// Set column separator's visibility.
-    ///
-    /// `separators[0]` indicate visibility of the right side of the leftmost column.
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use text_grid::*;
-    /// let mut g = GridBuilder::new();
-    /// g.push(|b| {
-    ///     b.push("A");
-    ///     b.push("B");
-    ///     b.push("C");
-    /// });
-    /// g.push(|b| {
-    ///     b.push("AAA");
-    ///     b.push("BBB");
-    ///     b.push("CCC");
-    /// });
-    /// g.set_column_separators(vec![true, true]);
-    /// assert_eq!(format!("\n{g}"), r#"
-    ///  A   | B   | C   |
-    ///  AAA | BBB | CCC |
-    /// "#);
-    ///
-    /// g.set_column_separators(vec![false, true]);
-    /// assert_eq!(format!("\n{g}"), r#"
-    ///  A  B   | C   |
-    ///  AAABBB | CCC |
-    /// "#);
-    pub fn set_column_separators(&mut self, separators: Vec<bool>) {
-        self.column_separators = separators;
+    pub fn set_column_styles(&mut self, styles: Vec<ColumnStyle>) {
+        self.column_styles = styles;
     }
 
     /// Append a row to the bottom of the grid.
@@ -540,12 +543,10 @@ impl GridBuilder {
     fn has_border(&self, n: usize) -> bool {
         if n == 0 {
             false
-        } else if n == self.columns {
+        } else if n >= self.columns {
             true
-        } else if let Some(&value) = self.column_separators.get(n - 1) {
-            value
         } else {
-            true
+            self.column_style(n - 1).column_end
         }
     }
     fn has_left_padding(&self, n: usize) -> bool {
@@ -563,45 +564,100 @@ impl GridBuilder {
         }
     }
 
-    fn get_widths(&self) -> Vec<usize> {
-        let mut widths = vec![0; self.columns];
-        for row in self.rows() {
-            for c in row {
-                if c.colspan == 1 {
-                    widths[c.column] = max(widths[c.column], c.width);
-                }
+    fn column_style(&self, column: usize) -> &ColumnStyle {
+        self.column_styles
+            .get(column)
+            .unwrap_or(&ColumnStyle::DEFAULT)
+    }
+    fn stretch_count(&self, column: usize, colspan: usize) -> usize {
+        let mut count = 0;
+        for i in 0..colspan {
+            if self.column_style(column + i).stretch {
+                count += 1;
             }
         }
-        let mut smalls = Vec::new();
+        count
+    }
+
+    fn get_widths(&self) -> Vec<usize> {
+        #[derive(PartialEq, Eq, Hash)]
+        struct ColRange {
+            colspan: usize,
+            column: usize,
+        }
+
+        #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+        struct Block {
+            stretch: usize,
+            colspan: usize,
+            column: usize,
+            width: usize,
+        }
+
+        let mut widths = vec![0; self.columns];
+        let mut blocks = HashMap::new();
         for row in self.rows() {
             for c in row {
-                if c.colspan > 1 {
-                    let mut width_sum = self.get_width(&widths, c.column, c.colspan);
-                    while width_sum < c.width {
-                        smalls.clear();
-                        smalls.push(0);
-                        let mut min_width = widths[c.column];
-                        let mut next_width = usize::max_value();
-                        for i in 1..c.colspan {
-                            let width = widths[c.column + i];
-                            if width < min_width {
-                                smalls.clear();
-                                next_width = min_width;
-                                min_width = width;
-                            }
-                            if width == min_width {
-                                smalls.push(i);
-                            }
+                let e = if c.colspan == 1 {
+                    &mut widths[c.column]
+                } else {
+                    let key = ColRange {
+                        colspan: c.colspan,
+                        column: c.column,
+                    };
+                    blocks.entry(key).or_insert(0)
+                };
+                *e = max(*e, c.width);
+            }
+        }
+        let mut blocks: Vec<_> = blocks
+            .into_iter()
+            .map(|c| Block {
+                stretch: self.stretch_count(c.0.column, c.0.colspan),
+                colspan: c.0.colspan,
+                column: c.0.column,
+                width: c.1,
+            })
+            .collect();
+        blocks.sort();
+
+        let mut expand_cols = Vec::new();
+        for b in blocks {
+            let mut width_sum = self.get_width(&widths, b.column, b.colspan);
+            let start = if b.stretch == 0 {
+                b.column
+            } else {
+                (b.column..b.column + b.colspan)
+                    .find(|&column| self.column_style(column).stretch)
+                    .unwrap()
+            };
+
+            while width_sum < b.width {
+                expand_cols.clear();
+                expand_cols.push(start);
+                let mut min_width = widths[start];
+                let mut next_width = usize::max_value();
+                #[allow(clippy::needless_range_loop)]
+                for column in start + 1..b.column + b.colspan {
+                    if b.stretch == 0 || self.column_style(column).stretch {
+                        let width = widths[column];
+                        if width < min_width {
+                            expand_cols.clear();
+                            next_width = min_width;
+                            min_width = width;
                         }
-                        for i in 0..smalls.len() {
-                            let count = smalls.len() - i;
-                            let expand_width_all = c.width - width_sum;
-                            let expand_width = (expand_width_all + count - 1) / count;
-                            let expand_width = min(expand_width, next_width - min_width);
-                            width_sum += expand_width;
-                            widths[c.column + smalls[i]] += expand_width;
+                        if width == min_width {
+                            expand_cols.push(column);
                         }
                     }
+                }
+                for i in 0..expand_cols.len() {
+                    let count = expand_cols.len() - i;
+                    let expand_width_all = b.width - width_sum;
+                    let expand_width = (expand_width_all + count - 1) / count;
+                    let expand_width = min(expand_width, next_width - min_width);
+                    width_sum += expand_width;
+                    widths[expand_cols[i]] += expand_width;
                 }
             }
         }
@@ -729,20 +785,20 @@ impl RowBuilder<'_> {
     }
 
     pub fn extend<T: ?Sized + Cells>(&mut self, source: &T) {
-        T::fmt(&mut CellsFormatter {
-            w: &mut BodyWriter::new(self),
-            d: Some(source),
-        })
+        T::fmt(&mut CellsFormatter::new(
+            &mut BodyWriter::new(self),
+            Some(source),
+        ))
     }
     pub fn extend_with_schema<T: ?Sized>(
         &mut self,
         source: &T,
         schema: &dyn CellsSchema<Source = T>,
     ) {
-        schema.fmt(&mut CellsFormatter {
-            w: &mut BodyWriter::new(self),
-            d: Some(source),
-        })
+        schema.fmt(&mut CellsFormatter::new(
+            &mut BodyWriter::new(self),
+            Some(source),
+        ))
     }
 }
 impl Drop for RowBuilder<'_> {
@@ -797,3 +853,84 @@ impl<'a> Deref for CellRef<'a> {
     }
 }
 
+/// Column's style.
+#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive_ex(Default)]
+#[default(Self::DEFAULT)]
+pub struct ColumnStyle {
+    /// If true, display a separator on the right side of this column.
+    ///
+    /// This setting is ignored for the rightmost column, and the border is always displayed.
+    ///
+    /// The default for this is `true`.
+    ///
+    /// ```
+    /// use text_grid::*;
+    /// let mut g = GridBuilder::new();
+    /// g.push(|b| {
+    ///     b.push("A");
+    ///     b.push("B");
+    ///     b.push("C");
+    /// });
+    /// assert_eq!(format!("\n{g}"), E0);
+    ///
+    /// let mut styles = vec![ColumnStyle::default(); 2];
+    /// styles[0].column_end = false;
+    /// g.set_column_styles(styles);
+    ///
+    /// assert_eq!(format!("\n{g}"), E1);
+    ///
+    /// const E0: &str = r"
+    ///  A | B | C |
+    /// ";
+    ///
+    /// const E1: &str = r"
+    ///  AB | C |
+    /// ";
+    /// ```
+    pub column_end: bool,
+
+    /// If true, prioritize this column width expansion over others.
+    ///
+    /// When stretching a multi-column layout,
+    /// if any column has `stretch` set to true, only those columns will be stretched,
+    /// while columns with `stretch` set to false will not be stretched.
+    ///
+    /// The default for this is `false`.
+    ///
+    /// ```
+    /// use text_grid::*;
+    /// let mut g = GridBuilder::new();
+    /// g.push(|b| {
+    ///     b.push_with_colspan("............", 2);
+    /// });
+    /// g.push(|b| {
+    ///     b.push("A");
+    ///     b.push("B");
+    /// });
+    /// assert_eq!(format!("\n{g}"), E0);
+    ///
+    /// let mut styles = vec![ColumnStyle::default(); 2];
+    /// styles[0].stretch = true;
+    /// g.set_column_styles(styles);
+    ///
+    /// assert_eq!(format!("\n{g}"), E1);
+    ///
+    /// const E0: &str = r"
+    ///  ............ |
+    ///  A     | B    |
+    /// ";
+    ///
+    /// const E1: &str = r"
+    ///  ............ |
+    ///  A        | B |
+    /// ";
+    /// ```
+    pub stretch: bool,
+}
+impl ColumnStyle {
+    const DEFAULT: Self = Self {
+        column_end: true,
+        stretch: false,
+    };
+}

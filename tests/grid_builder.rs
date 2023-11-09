@@ -1,3 +1,5 @@
+use std::vec;
+
 use text_grid::*;
 
 #[test]
@@ -144,11 +146,61 @@ fn separator_end_colspan() {
     });
     g.push_separator();
 
-    //     let e = r"
-    //  aaa |
-    // -----|";
-    //     do_test(g, e);
-    g.to_string();
+    let e = r"
+ aaa |
+-----|";
+    do_test(g, e);
+}
+
+#[test]
+fn column_separator() {
+    let mut g = GridBuilder::new();
+    let mut styles = vec![ColumnStyle::default(); 2];
+    styles[0].column_end = false;
+    g.set_column_styles(styles);
+    g.push(|b| {
+        b.push(cell("aaa"));
+        b.push(cell("b"));
+    });
+
+    let e = r"
+ aaab |";
+    do_test(g, e);
+}
+
+#[test]
+fn colspan_witdh() {
+    let mut g = GridBuilder::new();
+    g.push(|b| {
+        b.push_with_colspan(cell("-----___-----"), 2);
+    });
+    g.push(|b| {
+        b.push(cell("a"));
+        b.push(cell("b"));
+    });
+    let e = r"
+ -----___----- |
+ a     | b     |";
+    do_test(g, e);
+}
+
+#[test]
+fn stretch() {
+    let mut g = GridBuilder::new();
+    let mut styles = vec![ColumnStyle::default(); 2];
+    styles[1].stretch = true;
+    g.set_column_styles(styles);
+    g.push(|b| {
+        b.push_with_colspan(cell("-----___-----"), 2);
+    });
+    g.push(|b| {
+        b.push(cell("a"));
+        b.push(cell("b"));
+    });
+    let e = r"
+ -----___----- |
+ a | b         |";
+    do_test(g, e);
 }
 
 fn do_test(g: GridBuilder, e: &str) {

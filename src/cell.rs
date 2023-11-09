@@ -523,7 +523,8 @@ impl ExpCells {
 
 impl Cells for ExpCells {
     fn fmt(f: &mut CellsFormatter<Self>) {
-        f.content(|x| cell(&x.value[..x.offset_dot]).right());
+        f.stretch()
+            .content(|x| cell(&x.value[..x.offset_dot]).right());
         f.content(|x| {
             if x.offset_dot < x.offset_e {
                 &x.value[x.offset_dot..x.offset_e]

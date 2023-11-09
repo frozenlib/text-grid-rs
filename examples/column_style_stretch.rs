@@ -4,23 +4,27 @@ fn main() {
     use text_grid::*;
     let mut g = GridBuilder::new();
     g.push(|b| {
+        b.push_with_colspan("............", 2);
+    });
+    g.push(|b| {
         b.push("A");
         b.push("B");
-        b.push("C");
     });
     assert_eq!(format!("\n{g}"), E0);
 
     let mut styles = vec![ColumnStyle::default(); 2];
-    styles[0].column_end = false;
+    styles[0].stretch = true;
     g.set_column_styles(styles);
 
     assert_eq!(format!("\n{g}"), E1);
 
     const E0: &str = r"
- A | B | C |
+ ............ |
+ A     | B    |
 ";
 
     const E1: &str = r"
- AB | C |
+ ............ |
+ A        | B |
 ";
 }

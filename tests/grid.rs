@@ -563,6 +563,23 @@ fn cells_f() {
 }
 
 #[test]
+fn cells_f_padding() {
+    let s = cells_schema::<f64>(|f| {
+        f.column("+++++++++", |x| cells_f!("{x}"));
+    });
+
+    do_test_with_schema(
+        vec![1.0],
+        s,
+        r"
+ +++++++++ |
+-----------|
+         1 |
+",
+    );
+}
+
+#[test]
 fn empty_group() {
     let s = cells_schema::<()>(|f| {
         f.column_with("header", |_| {});
