@@ -12,9 +12,8 @@ fn main() {
     });
     assert_eq!(format!("\n{g}"), E0);
 
-    let mut styles = vec![ColumnStyle::default(); 2];
-    styles[0].stretch = true;
-    g.set_column_styles(styles);
+    g.column_styles = vec![ColumnStyle::default(); 2];
+    g.column_styles[0].stretch = true;
 
     assert_eq!(format!("\n{g}"), E1);
 

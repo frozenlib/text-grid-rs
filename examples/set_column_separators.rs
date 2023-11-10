@@ -10,9 +10,8 @@ fn main() {
     });
     assert_eq!(format!("\n{g}"), E0);
 
-    let mut styles = vec![ColumnStyle::default(); 2];
-    styles[0].column_end = false;
-    g.set_column_styles(styles);
+    g.column_styles = vec![ColumnStyle::default(); 2];
+    g.column_styles[0].column_end = false;
 
     assert_eq!(format!("\n{g}"), E1);
 

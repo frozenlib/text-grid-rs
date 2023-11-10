@@ -457,7 +457,7 @@ pub struct GridBuilder {
     cells: Vec<CellEntry>,
     rows: Vec<RowEntry>,
     columns: usize,
-    column_styles: Vec<ColumnStyle>,
+    pub column_styles: Vec<ColumnStyle>,
 }
 
 struct CellEntry {
@@ -486,7 +486,7 @@ impl GridBuilder {
     pub(crate) fn new_with_header<T: ?Sized>(schema: &dyn CellsSchema<Source = T>) -> Self {
         let mut this = Self::new();
         let layout = GridLayout::from_schema(schema);
-        this.set_column_styles(layout.styles);
+        this.column_styles = layout.styles;
         for target in 0..layout.depth_max {
             this.push(|b| {
                 schema.fmt(&mut CellsFormatter::new(
@@ -497,10 +497,6 @@ impl GridBuilder {
             this.push_separator();
         }
         this
-    }
-
-    pub fn set_column_styles(&mut self, styles: Vec<ColumnStyle>) {
-        self.column_styles = styles;
     }
 
     /// Append a row to the bottom of the grid.
@@ -874,9 +870,8 @@ pub struct ColumnStyle {
     /// });
     /// assert_eq!(format!("\n{g}"), E0);
     ///
-    /// let mut styles = vec![ColumnStyle::default(); 2];
-    /// styles[0].column_end = false;
-    /// g.set_column_styles(styles);
+    /// g.column_styles = vec![ColumnStyle::default(); 2];
+    /// g.column_styles[0].column_end = false;
     ///
     /// assert_eq!(format!("\n{g}"), E1);
     ///
@@ -910,9 +905,8 @@ pub struct ColumnStyle {
     /// });
     /// assert_eq!(format!("\n{g}"), E0);
     ///
-    /// let mut styles = vec![ColumnStyle::default(); 2];
-    /// styles[0].stretch = true;
-    /// g.set_column_styles(styles);
+    /// g.column_styles = vec![ColumnStyle::default(); 2];
+    /// g.column_styles[0].stretch = true;
     ///
     /// assert_eq!(format!("\n{g}"), E1);
     ///

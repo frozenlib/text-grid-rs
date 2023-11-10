@@ -155,9 +155,8 @@ fn separator_end_colspan() {
 #[test]
 fn column_separator() {
     let mut g = GridBuilder::new();
-    let mut styles = vec![ColumnStyle::default(); 2];
-    styles[0].column_end = false;
-    g.set_column_styles(styles);
+    g.column_styles = vec![ColumnStyle::default(); 2];
+    g.column_styles[0].column_end = false;
     g.push(|b| {
         b.push(cell("aaa"));
         b.push(cell("b"));
@@ -187,9 +186,8 @@ fn colspan_witdh() {
 #[test]
 fn stretch() {
     let mut g = GridBuilder::new();
-    let mut styles = vec![ColumnStyle::default(); 2];
-    styles[1].stretch = true;
-    g.set_column_styles(styles);
+    g.column_styles = vec![ColumnStyle::default(); 2];
+    g.column_styles[1].stretch = true;
     g.push(|b| {
         b.push_with_colspan(cell("-----___-----"), 2);
     });
