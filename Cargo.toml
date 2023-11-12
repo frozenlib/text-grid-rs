@@ -13,7 +13,7 @@ exclude = ["/.vscode/*", "/.github/*"]
 edition = "2021"
 
 [dependencies]
-unicode-width = "0.1.10"
+unicode-width = "0.1.11"
 derive-ex = "0.1.7"
 
 [dev-dependencies]
