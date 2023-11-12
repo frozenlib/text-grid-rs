@@ -9,7 +9,7 @@ documentation = "https://docs.rs/text-grid/"
 keywords = ["text", "pretty", "table", "grid"]
 categories = ["command-line-interface"]
 description = "A library to create formatted plain-text tables."
-exclude = [".vscode/*"]
+exclude = ["/.vscode/*", "/.github/*"]
 edition = "2021"
 
 [dependencies]
