@@ -414,7 +414,7 @@ fn with_schema() {
         }
     }
 
-    let mut g = Grid::new_with_schema(MyCellsSchema { len: 3 });
+    let mut g = Grid::with_schema(MyCellsSchema { len: 3 });
     g.push(&[1, 2, 3]);
     g.push(&[4, 5, 6]);
 
@@ -508,7 +508,7 @@ fn disparate_column_count() {
             f.column(i, |x| x.get(i));
         }
     });
-    let mut g = Grid::new_with_schema(schema);
+    let mut g = Grid::with_schema(schema);
     g.extend(rows);
     assert_eq!(format!("\n{g}"), OUTPUT);
 
@@ -703,7 +703,7 @@ fn do_test<T: Cells>(s: Vec<T>, e: &str) {
 
 #[track_caller]
 fn do_test_with_schema<T>(s: Vec<T>, schema: impl CellsSchema<Source = T>, e: &str) {
-    let mut g = Grid::new_with_schema(schema);
+    let mut g = Grid::with_schema(schema);
     for s in s {
         g.push(&s);
     }

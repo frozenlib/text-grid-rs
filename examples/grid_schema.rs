@@ -14,7 +14,7 @@ fn main() {
         }
     }
 
-    let mut g = Grid::new_with_schema(MyCellsSchema { len: 3 });
+    let mut g = Grid::with_schema(MyCellsSchema { len: 3 });
     g.push(&[1, 2, 3]);
     g.push(&[4, 5, 6]);
 

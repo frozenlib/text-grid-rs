@@ -46,13 +46,13 @@ impl<R: Cells + ?Sized> Default for Grid<R, DefaultCellsSchema<R>> {
 impl<R: Cells + ?Sized> Grid<R, DefaultCellsSchema<R>> {
     /// Create a new `Grid` with [`DefaultCellsSchema`] and prepare header rows.
     pub fn new() -> Self {
-        Self::new_with_schema(DefaultCellsSchema::default())
+        Self::with_schema(DefaultCellsSchema::default())
     }
 }
 
 impl<R: ?Sized, S: CellsSchema<Source = R>> Grid<S::Source, S> {
     /// Create a new `Grid` with specified schema and prepare header rows.
-    pub fn new_with_schema(schema: S) -> Self {
+    pub fn with_schema(schema: S) -> Self {
         let b = GridBuilder::new_with_header(&schema);
         Grid {
             b,
