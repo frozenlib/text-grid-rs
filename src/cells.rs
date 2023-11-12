@@ -65,7 +65,7 @@ impl<T: Cells, E: RawCell> Cells for std::result::Result<T, E> {
 ///     }
 /// }
 ///
-/// let mut g = Grid::new_with_schema(MyCellsSchema { len: 3 });
+/// let mut g = Grid::with_schema(MyCellsSchema { len: 3 });
 /// g.push(&[1, 2, 3]);
 /// g.push(&[4, 5, 6]);
 ///
@@ -138,7 +138,7 @@ impl<T: Cells + ?Sized> CellsSchema for DefaultCellsSchema<T> {
 ///         f.column(i, |x| x.get(i));
 ///     }
 /// });
-/// let mut g = Grid::new_with_schema(schema);
+/// let mut g = Grid::with_schema(schema);
 /// g.extend(rows);
 /// assert_eq!(format!("\n{g}"), OUTPUT);
 ///

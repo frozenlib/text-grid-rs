@@ -476,7 +476,7 @@ impl Cells for f64 {
 ///     f.column("debug", |x| cells_f!("{x:?}"));
 /// });
 ///
-/// let mut g = Grid::new_with_schema(s);
+/// let mut g = Grid::with_schema(s);
 /// g.extend(vec![1.0, 0.95, 123.45, 0.000001, 1.0e-20, 10000000000.0]);
 /// assert_eq!(format!("\n{g}"), OUTPUT);
 ///
