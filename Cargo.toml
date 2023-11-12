@@ -15,4 +15,6 @@ edition = "2021"
 [dependencies]
 unicode-width = "0.1.10"
 derive-ex = "0.1.7"
+
+[dev-dependencies]
 pretty_assertions = "1.4.0"
