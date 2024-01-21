@@ -293,9 +293,9 @@ trait CellsWrite {
 }
 
 struct GridLayout {
-    pub depth: usize,
-    pub depth_max: usize,
-    pub styles: Vec<ColumnStyle>,
+    depth: usize,
+    depth_max: usize,
+    styles: Vec<ColumnStyle>,
 }
 impl GridLayout {
     pub fn from_schema<T: ?Sized>(schema: &dyn CellsSchema<Source = T>) -> Self {
