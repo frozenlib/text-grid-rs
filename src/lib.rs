@@ -4,11 +4,13 @@
 
 mod cell;
 mod cells;
+mod cells_formatter;
 mod grid;
 mod grid_builder;
 
 pub use self::cell::*;
 pub use self::cells::*;
+pub use self::cells_formatter::*;
 pub use self::grid::*;
 pub use self::grid_builder::*;
 
