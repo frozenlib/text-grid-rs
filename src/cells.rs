@@ -57,8 +57,8 @@ impl<T: Cells, E: RawCell> Cells for std::result::Result<T, E> {
 /// }
 ///
 /// impl CellsSchema for MyCellsSchema {
-///     type Source = [u32];
-///     fn fmt(&self, f: &mut CellsFormatter<[u32]>) {
+///     type Source = [u32; 3];
+///     fn fmt(&self, f: &mut CellsFormatter<[u32; 3]>) {
 ///         for i in 0..self.len {
 ///             f.column(i, |s| s[i]);
 ///         }
@@ -66,8 +66,8 @@ impl<T: Cells, E: RawCell> Cells for std::result::Result<T, E> {
 /// }
 ///
 /// let mut g = Grid::with_schema(MyCellsSchema { len: 3 });
-/// g.push(&[1, 2, 3]);
-/// g.push(&[4, 5, 6]);
+/// g.push([1, 2, 3]);
+/// g.push([4, 5, 6]);
 ///
 /// assert_eq!(format!("\n{g}"), r#"
 ///  0 | 1 | 2 |
@@ -81,6 +81,19 @@ pub trait CellsSchema {
 
     /// Define column information. see [`CellsFormatter`] for details.
     fn fmt(&self, f: &mut CellsFormatter<Self::Source>);
+}
+
+/// Extension trait for [`CellsSchema`].
+pub trait CellsSchemaExt: CellsSchema {
+    fn as_ref(&self) -> impl CellsSchema<Source = &Self::Source>;
+}
+impl<T> CellsSchemaExt for T
+where
+    T: CellsSchema,
+{
+    fn as_ref(&self) -> impl CellsSchema<Source = &Self::Source> {
+        cells_schema(move |f| self.fmt(&mut f.map(|x| *x)))
+    }
 }
 
 impl<T: CellsSchema> CellsSchema for Vec<T> {

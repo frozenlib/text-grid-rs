@@ -19,13 +19,13 @@ fn main() {
     }
 
     let mut g = Grid::new();
-    g.push(&RowData {
+    g.push(RowData {
         a: "ABC".to_string(),
         b: 300,
         c: 1,
         d: 100.1,
     });
-    g.push(&RowData {
+    g.push(RowData {
         a: "XY".to_string(),
         b: 2,
         c: 200,

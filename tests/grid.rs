@@ -406,8 +406,8 @@ fn with_schema() {
     }
 
     impl CellsSchema for MyCellsSchema {
-        type Source = [u32];
-        fn fmt(&self, f: &mut CellsFormatter<[u32]>) {
+        type Source = [u32; 3];
+        fn fmt(&self, f: &mut CellsFormatter<[u32; 3]>) {
             for i in 0..self.len {
                 f.column(i, |s| s[i]);
             }
@@ -415,8 +415,8 @@ fn with_schema() {
     }
 
     let mut g = Grid::with_schema(MyCellsSchema { len: 3 });
-    g.push(&[1, 2, 3]);
-    g.push(&[4, 5, 6]);
+    g.push([1, 2, 3]);
+    g.push([4, 5, 6]);
 
     let d = format!("{:?}", g);
     let e = r"
@@ -524,9 +524,7 @@ fn disparate_column_count() {
 #[test]
 fn extend() {
     let mut g: Grid<u32> = Grid::new();
-    let items = vec![1, 2, 3];
-    g.extend(&items);
-    g.extend(items);
+    g.extend(vec![1, 2, 3]);
 }
 
 #[test]
@@ -705,7 +703,7 @@ fn do_test<T: Cells>(s: Vec<T>, e: &str) {
 fn do_test_with_schema<T>(s: Vec<T>, schema: impl CellsSchema<Source = T>, e: &str) {
     let mut g = Grid::with_schema(schema);
     for s in s {
-        g.push(&s);
+        g.push(s);
     }
     let a = format!("{}", g);
     let e = e.trim_matches('\n');

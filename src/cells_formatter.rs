@@ -70,7 +70,7 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
         header: impl RawCell,
         f: impl FnOnce(&mut CellsFormatter<'_, 'b, T>),
     ) {
-        self.w.column_start();
+        self.w.column_start(&header);
         f(self);
         self.w.column_end(&header);
     }
@@ -168,7 +168,7 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
     /// Creates a [`CellsFormatter`] whose source value was converted.
     ///
     /// If you want to convert to an owned value instead of a reference, use [`map_with`](Self::map_with) instead.
-    pub fn map<U>(&mut self, m: impl FnOnce(&T) -> &U) -> CellsFormatter<'_, 'b, U> {
+    pub fn map<U: ?Sized>(&mut self, m: impl FnOnce(&T) -> &U) -> CellsFormatter<'_, 'b, U> {
         CellsFormatter {
             w: self.w,
             d: self.d.map(m),
@@ -228,8 +228,8 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
         ok: impl FnOnce(&mut CellsFormatter<O>),
     ) {
         let d = self.d.map(f);
-        if let Some(Err(_)) = &d {
-            self.w.content_start();
+        if let Some(Err(e)) = &d {
+            self.w.content_start(e);
         }
         ok(&mut CellsFormatter {
             w: self.w,
@@ -243,7 +243,7 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
 
     /// Return `CellsFormatter` that generates the columns to be stretched preferentially.
     ///
-    /// See [`ColumnStyle::stretch`] for details.
+    /// See [`ColumnStyle::stretch`](crate::ColumnStyle::stretch) for details.
     pub fn stretch(&mut self) -> CellsFormatter<'_, 'b, T> {
         CellsFormatter {
             w: self.w,
@@ -277,9 +277,21 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, &mut T> {
 }
 
 pub(crate) trait CellsWrite {
+    /// Called once for each cell.
+    /// In the case of merged cells, it is also called for each unmerged cells.
+    ///
+    /// `cell`: Cell's value. If `None`, it is merged cells.
     fn content(&mut self, cell: Option<&dyn RawCell>, stretch: bool);
-    fn content_start(&mut self);
+
+    /// Called when merged cells start.
+    fn content_start(&mut self, cell: &dyn RawCell);
+
+    /// Called when merged cells end.
     fn content_end(&mut self, cell: &dyn RawCell);
-    fn column_start(&mut self);
+
+    /// Called at the start of cells separated by ruled lines.
+    fn column_start(&mut self, header: &dyn RawCell);
+
+    /// Called at the end of cells separated by ruled lines.
     fn column_end(&mut self, header: &dyn RawCell);
 }

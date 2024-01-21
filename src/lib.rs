@@ -4,6 +4,7 @@
 
 mod cell;
 mod cells;
+mod cells_csv_writer;
 mod cells_formatter;
 mod grid;
 mod grid_builder;

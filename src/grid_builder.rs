@@ -4,6 +4,7 @@ use crate::Cells;
 use crate::CellsFormatter;
 use crate::CellsSchema;
 use crate::CellsWrite;
+use crate::DefaultCellsSchema;
 use derive_ex::derive_ex;
 use std::cmp::*;
 use std::collections::HashMap;
@@ -43,9 +44,9 @@ impl CellsWrite for GridLayout {
             stretch,
         });
     }
-    fn content_start(&mut self) {}
+    fn content_start(&mut self, _cell: &dyn RawCell) {}
     fn content_end(&mut self, _cell: &dyn RawCell) {}
-    fn column_start(&mut self) {
+    fn column_start(&mut self, _header: &dyn RawCell) {
         self.set_column_end_style();
         self.depth += 1;
         self.depth_max = max(self.depth_max, self.depth);
@@ -85,9 +86,9 @@ impl CellsWrite for HeaderWriter<'_, '_> {
     fn content(&mut self, _cell: Option<&dyn RawCell>, _stretch: bool) {
         self.column += 1;
     }
-    fn content_start(&mut self) {}
+    fn content_start(&mut self, _cell: &dyn RawCell) {}
     fn content_end(&mut self, _cell: &dyn RawCell) {}
-    fn column_start(&mut self) {
+    fn column_start(&mut self, _header: &dyn RawCell) {
         if self.depth <= self.target {
             self.push_cell(Cell::empty());
         }
@@ -128,7 +129,7 @@ impl CellsWrite for BodyWriter<'_, '_> {
             self.b.push(cell);
         }
     }
-    fn content_start(&mut self) {
+    fn content_start(&mut self, _cell: &dyn RawCell) {
         assert!(self.colspan.is_none());
         self.colspan = Some(0);
     }
@@ -137,7 +138,7 @@ impl CellsWrite for BodyWriter<'_, '_> {
         self.b.push_with_colspan(cell, colspan);
     }
 
-    fn column_start(&mut self) {}
+    fn column_start(&mut self, _header: &dyn RawCell) {}
     fn column_end(&mut self, _header: &dyn RawCell) {}
 }
 
@@ -202,19 +203,19 @@ impl GridBuilder {
         }
     }
 
+    pub fn from_iter_with_schema<T>(
+        source: impl IntoIterator<Item = T>,
+        schema: &dyn CellsSchema<Source = T>,
+    ) -> Self {
+        let mut this = Self::new();
+        this.extend_header_with_schema(schema);
+        this.extend_body_with_schema(source, schema);
+        this
+    }
+
     pub(crate) fn new_with_header<T: ?Sized>(schema: &dyn CellsSchema<Source = T>) -> Self {
         let mut this = Self::new();
-        let layout = GridLayout::from_schema(schema);
-        this.column_styles = layout.styles;
-        for target in 0..layout.depth_max {
-            this.push(|b| {
-                schema.fmt(&mut CellsFormatter::new(
-                    &mut HeaderWriter::new(b, target),
-                    None,
-                ))
-            });
-            this.push_separator();
-        }
+        this.extend_header_with_schema(schema);
         this
     }
 
@@ -231,6 +232,51 @@ impl GridBuilder {
     pub fn push_separator(&mut self) {
         if let Some(row) = self.rows.last_mut() {
             row.has_separator = true;
+        }
+    }
+
+    pub fn extend_header<T: ?Sized + Cells>(&mut self) {
+        self.extend_header_with_schema::<T>(&DefaultCellsSchema::default());
+    }
+
+    pub fn extend_header_with_schema<T: ?Sized>(&mut self, schema: &dyn CellsSchema<Source = T>) {
+        let layout = GridLayout::from_schema(schema);
+        self.column_styles = layout.styles;
+        for target in 0..layout.depth_max {
+            self.push(|b| {
+                schema.fmt(&mut CellsFormatter::new(
+                    &mut HeaderWriter::new(b, target),
+                    None,
+                ))
+            });
+            self.push_separator();
+        }
+    }
+
+    pub fn push_body(&mut self, source: &impl Cells) {
+        self.push_body_with_schema(source, &DefaultCellsSchema::default());
+    }
+    pub fn push_body_with_schema<T: ?Sized>(
+        &mut self,
+        source: &T,
+        schema: &dyn CellsSchema<Source = T>,
+    ) {
+        self.push(|b| {
+            b.extend_with_schema(source, schema);
+        });
+    }
+    pub fn extend_body(&mut self, source: impl IntoIterator<Item = impl Cells>) {
+        self.extend_body_with_schema(source, &DefaultCellsSchema::default());
+    }
+    pub fn extend_body_with_schema<T>(
+        &mut self,
+        source: impl IntoIterator<Item = T>,
+        schema: &dyn CellsSchema<Source = T>,
+    ) {
+        for source in source {
+            self.push(|b| {
+                b.extend_with_schema(&source, schema);
+            });
         }
     }
 
@@ -470,6 +516,14 @@ impl Display for GridBuilder {
 impl Debug for GridBuilder {
     fn fmt(&self, f: &mut Formatter) -> Result {
         Display::fmt(self, f)
+    }
+}
+impl<T: Cells> FromIterator<T> for GridBuilder {
+    fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
+        let mut b = Self::new();
+        b.extend_header::<T>();
+        b.extend_body(iter);
+        b
     }
 }
 

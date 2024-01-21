@@ -6,8 +6,8 @@ fn main() {
     }
 
     impl CellsSchema for MyCellsSchema {
-        type Source = [u32];
-        fn fmt(&self, f: &mut CellsFormatter<[u32]>) {
+        type Source = [u32; 3];
+        fn fmt(&self, f: &mut CellsFormatter<[u32; 3]>) {
             for i in 0..self.len {
                 f.column(i, |s| s[i]);
             }
@@ -15,8 +15,8 @@ fn main() {
     }
 
     let mut g = Grid::with_schema(MyCellsSchema { len: 3 });
-    g.push(&[1, 2, 3]);
-    g.push(&[4, 5, 6]);
+    g.push([1, 2, 3]);
+    g.push([4, 5, 6]);
 
     print!("{}", g);
 }
