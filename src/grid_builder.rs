@@ -292,7 +292,7 @@ trait CellsWrite {
     fn column_end(&mut self, header: &dyn RawCell);
 }
 
-pub(crate) struct GridLayout {
+struct GridLayout {
     pub depth: usize,
     pub depth_max: usize,
     pub styles: Vec<ColumnStyle>,
