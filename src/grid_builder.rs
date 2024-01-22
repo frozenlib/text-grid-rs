@@ -213,12 +213,6 @@ impl GridBuilder {
         this
     }
 
-    pub(crate) fn new_with_header<T: ?Sized>(schema: &dyn CellsSchema<Source = T>) -> Self {
-        let mut this = Self::new();
-        this.extend_header_with_schema(schema);
-        this
-    }
-
     /// Append a row to the bottom of the grid.
     pub fn push(&mut self, f: impl FnOnce(&mut RowBuilder)) {
         let cells_idx = self.cells.len();

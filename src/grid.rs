@@ -49,7 +49,7 @@ impl<T: Cells> Grid<T, DefaultCellsSchema<T>> {
     }
 }
 
-impl<T, S: CellsSchema<Source = T>> Grid<S::Source, S> {
+impl<T, S: CellsSchema<Source = T>> Grid<T, S> {
     /// Create a new `Grid` with specified schema and prepare header rows.
     pub fn with_schema(schema: S) -> Self {
         Grid {
@@ -57,6 +57,12 @@ impl<T, S: CellsSchema<Source = T>> Grid<S::Source, S> {
             schema,
         }
     }
+
+    /// Append a row to the bottom of the grid.
+    pub fn push(&mut self, item: T) {
+        self.source.push(item);
+    }
+
     pub fn to_csv(&self) -> String {
         let mut bytes = Vec::new();
         {
@@ -68,17 +74,7 @@ impl<T, S: CellsSchema<Source = T>> Grid<S::Source, S> {
     }
 
     fn build(&self) -> GridBuilder {
-        let mut b = GridBuilder::new_with_header(&self.schema);
-        for source in &self.source {
-            b.push_body_with_schema(source, &self.schema);
-        }
-        b
-    }
-}
-impl<T, S: CellsSchema<Source = T>> Grid<T, S> {
-    /// Append a row to the bottom of the grid.
-    pub fn push(&mut self, item: T) {
-        self.source.push(item);
+        GridBuilder::from_iter_with_schema(&self.source, &self.schema.as_ref())
     }
 }
 impl<T, S: CellsSchema<Source = T>> Extend<T> for Grid<T, S> {
