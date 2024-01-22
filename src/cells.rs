@@ -1,5 +1,7 @@
 use std::marker::PhantomData;
 
+use derive_ex::derive_ex;
+
 use crate::{CellsFormatter, RawCell};
 
 /// A data structure that can be formatted into cells.
@@ -121,13 +123,9 @@ impl<T: ?Sized + CellsSchema> CellsSchema for &T {
 
 /// [`CellsSchema`] implementation that use [`Cells`].
 #[derive(Clone, Copy, Debug)]
+#[derive_ex(Default(bound()))]
 pub struct DefaultCellsSchema<T: ?Sized>(PhantomData<T>);
 
-impl<T: Cells + ?Sized> Default for DefaultCellsSchema<T> {
-    fn default() -> Self {
-        Self(PhantomData)
-    }
-}
 impl<T: Cells + ?Sized> CellsSchema for DefaultCellsSchema<T> {
     type Source = T;
     fn fmt(&self, f: &mut CellsFormatter<Self::Source>) {
