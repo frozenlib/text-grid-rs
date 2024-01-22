@@ -58,6 +58,12 @@ impl<T, S: CellsSchema<Source = T>> Grid<T, S> {
         }
     }
 
+    pub fn from_iter_with_schema(iter: impl IntoIterator<Item = T>, schema: S) -> Self {
+        let mut g = Self::with_schema(schema);
+        g.extend(iter);
+        g
+    }
+
     /// Append a row to the bottom of the grid.
     pub fn push(&mut self, item: T) {
         self.source.push(item);
