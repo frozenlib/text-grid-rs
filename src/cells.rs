@@ -87,13 +87,21 @@ pub trait CellsSchema {
 
 /// Extension trait for [`CellsSchema`].
 pub trait CellsSchemaExt: CellsSchema {
-    fn as_ref(&self) -> impl CellsSchema<Source = &Self::Source>;
+    fn as_ref(&self) -> impl CellsSchema<Source = &Self::Source> {
+        self.map_ref()
+    }
+    fn map_ref<'a>(self) -> impl CellsSchema<Source = &'a Self::Source>
+    where
+        Self::Source: 'a;
 }
 impl<T> CellsSchemaExt for T
 where
     T: CellsSchema,
 {
-    fn as_ref(&self) -> impl CellsSchema<Source = &Self::Source> {
+    fn map_ref<'a>(self) -> impl CellsSchema<Source = &'a Self::Source>
+    where
+        Self::Source: 'a,
+    {
         cells_schema(move |f| self.fmt(&mut f.map(|x| *x)))
     }
 }
