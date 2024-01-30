@@ -1,6 +1,6 @@
 use crate::cells_csv_writer::write_csv;
 use crate::{grid_builder::*, Cells, CellsSchema, CellsSchemaExt, DefaultCellsSchema};
-/// Generate a table using the columns defined by [`CellsFormatter`](crate::CellsFormatter).
+/// Generate a table using the columns defined by [`Cells`](crate::Cells).
 ///
 /// # Examples
 ///
@@ -32,12 +32,16 @@ use crate::{grid_builder::*, Cells, CellsSchema, CellsSchemaExt, DefaultCellsSch
 pub fn to_grid(rows: impl IntoIterator<Item = impl Cells>) -> String {
     to_grid_with_schema(rows, DefaultCellsSchema::default())
 }
+
+/// Generate a table using the columns defined by [`CellsSchema`](crate::CellsSchema).
 pub fn to_grid_with_schema<T>(
     rows: impl IntoIterator<Item = T>,
     schema: impl CellsSchema<Source = T>,
 ) -> String {
     GridBuilder::from_iter_with_schema(rows, &schema).to_string()
 }
+
+/// Generate a table using the columns defined by [`CellsSchema`](crate::CellsSchema).
 pub fn to_grid_with_schema_ref<'a, T: 'a>(
     rows: impl IntoIterator<Item = &'a T>,
     schema: impl CellsSchema<Source = T>,
@@ -45,9 +49,12 @@ pub fn to_grid_with_schema_ref<'a, T: 'a>(
     GridBuilder::from_iter_with_schema(rows, &schema.map_ref()).to_string()
 }
 
+/// Generate csv using the columns defined by [`Cells`](crate::Cells).
 pub fn to_csv(rows: impl IntoIterator<Item = impl Cells>) -> String {
     to_csv_with_schema(rows, DefaultCellsSchema::default())
 }
+
+/// Generate csv using the columns defined by [`CellsSchema`](crate::CellsSchema).
 pub fn to_csv_with_schema<T>(
     rows: impl IntoIterator<Item = T>,
     schema: impl CellsSchema<Source = T>,
@@ -60,6 +67,8 @@ pub fn to_csv_with_schema<T>(
     }
     String::from_utf8(bytes).unwrap()
 }
+
+/// Generate csv using the columns defined by [`CellsSchema`](crate::CellsSchema).
 pub fn to_csv_with_schema_ref<'a, T: 'a>(
     rows: impl IntoIterator<Item = &'a T>,
     schema: impl CellsSchema<Source = T>,
