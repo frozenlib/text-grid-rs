@@ -106,3 +106,41 @@ impl<T, S: CellsSchema<Source = T>> Debug for Grid<T, S> {
         Debug::fmt(&self.build(), f)
     }
 }
+
+pub fn to_grid(iter: impl IntoIterator<Item = impl Cells>) -> String {
+    to_grid_with_schema(iter, DefaultCellsSchema::default())
+}
+pub fn to_grid_with_schema<T>(
+    iter: impl IntoIterator<Item = T>,
+    schema: impl CellsSchema<Source = T>,
+) -> String {
+    GridBuilder::from_iter_with_schema(iter, &schema).to_string()
+}
+pub fn to_grid_with_schema_ref<'a, T: 'a>(
+    iter: impl IntoIterator<Item = &'a T>,
+    schema: impl CellsSchema<Source = T>,
+) -> String {
+    GridBuilder::from_iter_with_schema(iter, &schema.map_ref()).to_string()
+}
+
+pub fn to_csv(iter: impl IntoIterator<Item = impl Cells>) -> String {
+    to_csv_with_schema(iter, DefaultCellsSchema::default())
+}
+pub fn to_csv_with_schema<T>(
+    iter: impl IntoIterator<Item = T>,
+    schema: impl CellsSchema<Source = T>,
+) -> String {
+    let mut bytes = Vec::new();
+    {
+        let mut csv_writer = csv::Writer::from_writer(&mut bytes);
+        write_csv(&mut csv_writer, iter, &schema, ".").unwrap();
+        csv_writer.flush().unwrap();
+    }
+    String::from_utf8(bytes).unwrap()
+}
+pub fn to_csv_with_schema_ref<'a, T: 'a>(
+    iter: impl IntoIterator<Item = &'a T>,
+    schema: impl CellsSchema<Source = T>,
+) -> String {
+    to_csv_with_schema(iter, schema.map_ref())
+}
