@@ -16,17 +16,17 @@ fn main() {
         }
     }
 
-    let mut g = Grid::new();
-    g.push(&RowData {
-        a: 300,
-        b_1: 10,
-        b_2: 20,
-    });
-    g.push(&RowData {
-        a: 300,
-        b_1: 1,
-        b_2: 500,
-    });
-
-    print!("{}", g);
+    let rows = [
+        RowData {
+            a: 300,
+            b_1: 10,
+            b_2: 20,
+        },
+        RowData {
+            a: 300,
+            b_1: 1,
+            b_2: 500,
+        },
+    ];
+    print!("{}", to_grid(rows));
 }

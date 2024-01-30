@@ -11,9 +11,6 @@ fn main() {
         }
     }
 
-    let mut g = Grid::new();
-    g.push(&RowData { a: 300, b: 1 });
-    g.push(&RowData { a: 2, b: 200 });
-
-    print!("{}", g);
+    let rows = [RowData { a: 300, b: 1 }, RowData { a: 2, b: 200 }];
+    print!("{}", to_grid(rows));
 }

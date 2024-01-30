@@ -11,9 +11,8 @@ fn main() {
         }
     }
 
-    let mut g = Grid::new();
-    g.push(&RowData { a: 1.10, b: 1.11 });
-    g.push(&RowData { a: 1.00, b: 0.10 });
+    let rows = vec![RowData { a: 300.0, b: 1.0 }, RowData { a: 2.0, b: 200.0 }];
+    let g = to_grid(rows);
 
     print!("{}", g);
 

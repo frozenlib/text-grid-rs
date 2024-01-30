@@ -18,19 +18,21 @@ fn main() {
         }
     }
 
-    let mut g = Grid::new();
-    g.push(RowData {
-        a: "ABC".to_string(),
-        b: 300,
-        c: 1,
-        d: 100.1,
-    });
-    g.push(RowData {
-        a: "XY".to_string(),
-        b: 2,
-        c: 200,
-        d: 1.234,
-    });
+    let rows = [
+        RowData {
+            a: "ABC".to_string(),
+            b: 300,
+            c: 1,
+            d: 100.1,
+        },
+        RowData {
+            a: "XY".to_string(),
+            b: 2,
+            c: 200,
+            d: 1.234,
+        },
+    ];
+    let g = to_grid(rows);
     println!("\n{g}");
     assert_eq!(format!("\n{g}"), OUTPUT);
 }

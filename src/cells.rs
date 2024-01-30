@@ -67,9 +67,12 @@ impl<T: Cells, E: RawCell> Cells for std::result::Result<T, E> {
 ///     }
 /// }
 ///
-/// let mut g = Grid::with_schema(MyCellsSchema { len: 3 });
-/// g.push([1, 2, 3]);
-/// g.push([4, 5, 6]);
+/// let rows = [
+///    [1, 2, 3],
+///    [4, 5, 6],
+/// ];
+/// let schema = MyCellsSchema { len: 3 };
+/// let g = to_grid_with_schema(rows, schema);
 ///
 /// assert_eq!(format!("\n{g}"), r#"
 ///  0 | 1 | 2 |
@@ -150,15 +153,14 @@ impl<T: Cells + ?Sized> CellsSchema for DefaultCellsSchema<T> {
 ///
 /// ```rust
 /// use text_grid::*;
-/// let rows = vec![vec![1, 2, 3], vec![1, 2], vec![1, 2, 3, 4]];
+/// let rows = [vec![1, 2, 3], vec![1, 2], vec![1, 2, 3, 4]];
 /// let max_colunm_count = rows.iter().map(|r| r.len()).max().unwrap_or(0);
 /// let schema = cells_schema::<Vec<u32>>(move |f| {
 ///     for i in 0..max_colunm_count {
 ///         f.column(i, |x| x.get(i));
 ///     }
 /// });
-/// let mut g = Grid::with_schema(schema);
-/// g.extend(rows);
+/// let g = to_grid_with_schema(rows, schema);
 /// assert_eq!(format!("\n{g}"), OUTPUT);
 ///
 /// const OUTPUT: &str = r"

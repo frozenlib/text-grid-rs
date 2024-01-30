@@ -45,17 +45,11 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
     ///     }
     /// }
     ///
-    /// let mut g = Grid::new();
-    /// g.push(&RowData {
-    ///     a: 300,
-    ///     b_1: 10,
-    ///     b_2: 20,
-    /// });
-    /// g.push(&RowData {
-    ///     a: 300,
-    ///     b_1: 1,
-    ///     b_2: 500,
-    /// });
+    /// let rows = [
+    ///     RowData { a: 300,b_1: 10, b_2: 20 },
+    ///     RowData { a: 300,b_1: 1, b_2: 500 },
+    /// ];
+    /// let g = to_grid(rows);
     /// assert_eq!(format!("\n{g}"), r#"
     ///   a  |    b     |
     /// -----|----------|
@@ -99,17 +93,11 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
     ///     }
     /// }
     ///
-    /// let mut g = Grid::new();
-    /// g.push(&RowData {
-    ///     a: 300,
-    ///     b_1: 10,
-    ///     b_2: 20,
-    /// });
-    /// g.push(&RowData {
-    ///     a: 300,
-    ///     b_1: 1,
-    ///     b_2: 500,
-    /// });
+    /// let rows = [
+    ///     RowData { a: 300, b_1: 10, b_2: 20 },
+    ///     RowData { a: 300, b_1: 1, b_2: 500 },
+    /// ];
+    /// let g = to_grid(rows);
     /// assert_eq!(format!("\n{g}"), r#"
     ///   a  |   b    |
     /// -----|--------|
@@ -151,9 +139,11 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
     ///     }
     /// }
     ///
-    /// let mut g = Grid::new();
-    /// g.push(&RowData { a: 300, b: 1 });
-    /// g.push(&RowData { a: 2, b: 200 });
+    /// let rows = [
+    ///     RowData { a: 300, b: 1 },
+    ///     RowData { a: 2, b: 200 },
+    /// ];
+    /// let g = to_grid(rows);
     /// assert_eq!(format!("\n{g}"), r#"
     ///   a  |  b  |
     /// -----|-----|

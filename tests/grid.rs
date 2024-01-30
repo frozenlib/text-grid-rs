@@ -372,34 +372,6 @@ fn map() {
 }
 
 #[test]
-fn impl_debug() {
-    struct Source {
-        a: u8,
-        b: u8,
-    }
-
-    impl Cells for Source {
-        fn fmt(f: &mut CellsFormatter<Self>) {
-            f.column("a", |x| x.a);
-            f.column("b", |x| x.b);
-        }
-    }
-
-    let mut g = Grid::new();
-    g.push(&Source { a: 100, b: 200 });
-    g.push(&Source { a: 1, b: 2 });
-
-    let d = format!("{:?}", g);
-    let e = r"
-  a  |  b  |
------|-----|
- 100 | 200 |
-   1 |   2 |
-";
-    assert_eq!(d.trim(), e.trim());
-}
-
-#[test]
 fn with_schema() {
     struct MyCellsSchema {
         len: usize,
@@ -414,18 +386,15 @@ fn with_schema() {
         }
     }
 
-    let mut g = Grid::with_schema(MyCellsSchema { len: 3 });
-    g.push([1, 2, 3]);
-    g.push([4, 5, 6]);
-
-    let d = format!("{:?}", g);
+    let rows = [[1, 2, 3], [4, 5, 6]];
+    let g = to_grid_with_schema(rows, MyCellsSchema { len: 3 });
     let e = r"
  0 | 1 | 2 |
 ---|---|---|
  1 | 2 | 3 |
  4 | 5 | 6 |
 ";
-    assert_eq!(d.trim(), e.trim());
+    assert_eq!(g.trim(), e.trim());
 }
 
 #[test]
@@ -508,8 +477,8 @@ fn disparate_column_count() {
             f.column(i, |x| x.get(i));
         }
     });
-    let mut g = Grid::with_schema(schema);
-    g.extend(rows);
+
+    let g = to_grid_with_schema(rows, schema);
     assert_eq!(format!("\n{g}"), OUTPUT);
 
     const OUTPUT: &str = r"
@@ -519,12 +488,6 @@ fn disparate_column_count() {
  1 | 2 |   |   |
  1 | 2 | 3 | 4 |
 ";
-}
-
-#[test]
-fn extend() {
-    let mut g: Grid<u32> = Grid::new();
-    g.extend(vec![1, 2, 3]);
 }
 
 #[test]
@@ -669,16 +632,13 @@ fn zero_rows_colspan() {
         }
     }
 
-    //     do_test(
-    //         Vec::<Source>::new(),
-    //         r"
-    //    g   |
-    // -------|
-    //  a | b |
-    // ---|---|
-    // ",
-    //     );
-    Grid::<Source>::new().to_string();
+    do_test(
+        Vec::<Source>::new(),
+        r"
+ x |
+---|
+",
+    );
 }
 
 #[test]
@@ -701,11 +661,7 @@ fn do_test<T: Cells>(s: Vec<T>, e: &str) {
 
 #[track_caller]
 fn do_test_with_schema<T>(s: Vec<T>, schema: impl CellsSchema<Source = T>, e: &str) {
-    let mut g = Grid::with_schema(schema);
-    for s in s {
-        g.push(s);
-    }
-    let a = format!("{}", g);
+    let a = to_grid_with_schema(s, schema).to_string();
     let e = e.trim_matches('\n');
     let a = a.trim_matches('\n');
     assert!(a == e, "\nexpected :\n{}\nactual :\n{}\n", e, a);

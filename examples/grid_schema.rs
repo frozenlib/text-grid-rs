@@ -14,9 +14,6 @@ fn main() {
         }
     }
 
-    let mut g = Grid::with_schema(MyCellsSchema { len: 3 });
-    g.push([1, 2, 3]);
-    g.push([4, 5, 6]);
-
-    print!("{}", g);
+    let rows = [[1, 2, 3], [4, 5, 6]];
+    print!("{}", to_grid(rows));
 }

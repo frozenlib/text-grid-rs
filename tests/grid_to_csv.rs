@@ -1,7 +1,7 @@
-use text_grid::{Cells, CellsFormatter, Grid};
+use text_grid::{to_csv, Cells, CellsFormatter};
 
 #[test]
-fn to_csv() {
+fn to_csv_test() {
     struct X {
         a: u8,
         b: u8,
@@ -13,9 +13,8 @@ fn to_csv() {
             f.column("b", |x| x.b);
         }
     }
-    let g = Grid::from_iter([X { a: 1, b: 2 }, X { a: 3, b: 4 }]);
-
-    assert_eq!(g.to_csv(), "a,b\n1,2\n3,4\n");
+    let csv = to_csv([X { a: 1, b: 2 }, X { a: 3, b: 4 }]);
+    assert_eq!(csv, "a,b\n1,2\n3,4\n");
 }
 
 #[test]
@@ -42,7 +41,7 @@ fn to_csv_nested() {
         }
     }
 
-    let g = Grid::from_iter([
+    let csv = to_csv([
         X {
             a: 1,
             y: Y { b: 2, c: 3 },
@@ -53,5 +52,5 @@ fn to_csv_nested() {
         },
     ]);
 
-    assert_eq!(g.to_csv(), "a,y.b,y.c\n1,2,3\n4,5,6\n");
+    assert_eq!(csv, "a,y.b,y.c\n1,2,3\n4,5,6\n");
 }

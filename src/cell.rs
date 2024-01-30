@@ -216,9 +216,11 @@ pub fn cell_by<F: Fn(&mut String) -> Result>(f: F) -> Cell<impl RawCell> {
 ///     }
 /// }
 ///
-/// let mut g = Grid::new();
-/// g.push(&RowData { a: 1.10, b: 1.11 });
-/// g.push(&RowData { a: 1.00, b: 0.10 });
+/// let rows = [
+///    RowData { a: 1.10, b: 1.11 },
+///    RowData { a: 1.00, b: 0.10 },
+/// ];
+/// let g = to_grid(rows);
 ///
 /// assert_eq!(format!("\n{g}"), r#"
 ///   a   |   b   |
@@ -339,10 +341,12 @@ impl<T: RawCell> Cell<T> {
     ///         f.column("baseline", |x| cell(&x.0).baseline("-"));
     ///     }
     /// }
-    /// let mut g = Grid::new();
-    /// g.push(&Source("1-2345"));
-    /// g.push(&Source("1234-5"));
-    /// g.push(&Source("12345"));
+    /// let rows = [
+    ///     Source("1-2345"),
+    ///     Source("1234-5"),
+    ///     Source("12345"),
+    /// ];
+    /// let g = to_grid(rows);
     ///
     /// assert_eq!(format!("\n{g}"), r#"
     ///  default |  baseline  |
@@ -476,8 +480,7 @@ impl Cells for f64 {
 ///     f.column("debug", |x| cells_f!("{x:?}"));
 /// });
 ///
-/// let mut g = Grid::with_schema(s);
-/// g.extend(vec![1.0, 0.95, 123.45, 0.000001, 1.0e-20, 10000000000.0]);
+/// let g = to_grid_with_schema(vec![1.0, 0.95, 123.45, 0.000001, 1.0e-20, 10000000000.0], s);
 /// assert_eq!(format!("\n{g}"), OUTPUT);
 ///
 /// const OUTPUT: &str = r"
