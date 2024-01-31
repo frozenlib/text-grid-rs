@@ -6,6 +6,7 @@ use crate::CellsSchema;
 use crate::CellsWrite;
 use crate::DefaultCellsSchema;
 use derive_ex::derive_ex;
+use std::borrow::Borrow;
 use std::cmp::*;
 use std::collections::HashMap;
 use std::fmt::*;
@@ -203,9 +204,9 @@ impl GridBuilder {
         }
     }
 
-    pub fn from_iter_with_schema<T>(
+    pub fn from_iter_with_schema<T: Borrow<U>, U>(
         source: impl IntoIterator<Item = T>,
-        schema: &dyn CellsSchema<Source = T>,
+        schema: &dyn CellsSchema<Source = U>,
     ) -> Self {
         let mut this = Self::new();
         this.extend_header_with_schema(schema);
@@ -262,14 +263,14 @@ impl GridBuilder {
     pub fn extend_body(&mut self, source: impl IntoIterator<Item = impl Cells>) {
         self.extend_body_with_schema(source, &DefaultCellsSchema::default());
     }
-    pub fn extend_body_with_schema<T>(
+    pub fn extend_body_with_schema<T: Borrow<U>, U>(
         &mut self,
         source: impl IntoIterator<Item = T>,
-        schema: &dyn CellsSchema<Source = T>,
+        schema: &dyn CellsSchema<Source = U>,
     ) {
         for source in source {
             self.push(|b| {
-                b.extend_with_schema(&source, schema);
+                b.extend_with_schema(source.borrow(), schema);
             });
         }
     }

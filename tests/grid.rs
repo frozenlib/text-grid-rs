@@ -685,7 +685,7 @@ fn to_grid_with_schema_test_ref() {
         f.column("x", |x| x.0);
     });
 
-    to_grid_with_schema_ref(&[X(1), X(2)], schema);
+    to_grid_with_schema(&[X(1), X(2)], schema);
 }
 
 #[track_caller]

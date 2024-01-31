@@ -1,3 +1,4 @@
+use std::borrow::Borrow;
 use std::fmt::{Debug, Display, Formatter};
 
 use crate::cells_csv_writer::write_csv;
@@ -36,19 +37,11 @@ pub fn to_grid(rows: impl IntoIterator<Item = impl Cells>) -> String {
 }
 
 /// Generate a table using the columns defined by [`CellsSchema`](crate::CellsSchema).
-pub fn to_grid_with_schema<T>(
+pub fn to_grid_with_schema<T: Borrow<U>, U>(
     rows: impl IntoIterator<Item = T>,
-    schema: impl CellsSchema<Source = T>,
+    schema: impl CellsSchema<Source = U>,
 ) -> String {
     GridBuilder::from_iter_with_schema(rows, &schema).to_string()
-}
-
-/// Generate a table using the columns defined by [`CellsSchema`](crate::CellsSchema).
-pub fn to_grid_with_schema_ref<'a, T: 'a>(
-    rows: impl IntoIterator<Item = &'a T>,
-    schema: impl CellsSchema<Source = T>,
-) -> String {
-    GridBuilder::from_iter_with_schema(rows, &schema.map_ref()).to_string()
 }
 
 /// Generate csv using the columns defined by [`Cells`](crate::Cells).
@@ -57,9 +50,9 @@ pub fn to_csv(rows: impl IntoIterator<Item = impl Cells>) -> String {
 }
 
 /// Generate csv using the columns defined by [`CellsSchema`](crate::CellsSchema).
-pub fn to_csv_with_schema<T>(
+pub fn to_csv_with_schema<T: Borrow<U>, U>(
     rows: impl IntoIterator<Item = T>,
-    schema: impl CellsSchema<Source = T>,
+    schema: impl CellsSchema<Source = U>,
 ) -> String {
     let mut bytes = Vec::new();
     {
@@ -68,14 +61,6 @@ pub fn to_csv_with_schema<T>(
         csv_writer.flush().unwrap();
     }
     String::from_utf8(bytes).unwrap()
-}
-
-/// Generate csv using the columns defined by [`CellsSchema`](crate::CellsSchema).
-pub fn to_csv_with_schema_ref<'a, T: 'a>(
-    rows: impl IntoIterator<Item = &'a T>,
-    schema: impl CellsSchema<Source = T>,
-) -> String {
-    to_csv_with_schema(rows, schema.map_ref())
 }
 
 /// A builder used to create plain-text table.
