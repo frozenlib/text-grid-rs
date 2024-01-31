@@ -3,6 +3,12 @@ use std::marker::PhantomData;
 use derive_ex::derive_ex;
 
 use crate::{CellsFormatter, RawCell};
+
+/// Derive [`Cells`].
+///
+/// - enum : the variant name becomes the cell value.
+/// - record struct : the field name becomes the column name, and the field value becomes the cell value.
+/// - tuple struct : the field value becomes the cell value.
 pub use text_grid_macros::Cells;
 
 /// A data structure that can be formatted into cells.
