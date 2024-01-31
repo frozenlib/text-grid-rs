@@ -41,7 +41,7 @@ pub fn to_grid_with_schema<T>(
     rows: impl IntoIterator<Item = impl Borrow<T>>,
     schema: impl CellsSchema<Source = T>,
 ) -> String {
-    GridBuilder::from_iter_with_schema(rows, &schema).to_string()
+    GridBuilder::from_iter_with_schema(rows, schema).to_string()
 }
 
 /// Generate csv using the columns defined by [`Cells`](crate::Cells).
@@ -57,7 +57,7 @@ pub fn to_csv_with_schema<T>(
     let mut bytes = Vec::new();
     {
         let mut csv_writer = csv::Writer::from_writer(&mut bytes);
-        write_csv(&mut csv_writer, rows, &schema, ".").unwrap();
+        write_csv(&mut csv_writer, rows, schema, ".").unwrap();
         csv_writer.flush().unwrap();
     }
     String::from_utf8(bytes).unwrap()

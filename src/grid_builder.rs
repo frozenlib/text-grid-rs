@@ -206,11 +206,11 @@ impl GridBuilder {
 
     pub fn from_iter_with_schema<T>(
         source: impl IntoIterator<Item = impl Borrow<T>>,
-        schema: &dyn CellsSchema<Source = T>,
+        schema: impl CellsSchema<Source = T>,
     ) -> Self {
         let mut this = Self::new();
-        this.extend_header_with_schema(schema);
-        this.extend_body_with_schema(source, schema);
+        this.extend_header_with_schema(&schema);
+        this.extend_body_with_schema(source, &schema);
         this
     }
 
@@ -234,8 +234,8 @@ impl GridBuilder {
         self.extend_header_with_schema::<T>(&DefaultCellsSchema::default());
     }
 
-    pub fn extend_header_with_schema<T: ?Sized>(&mut self, schema: &dyn CellsSchema<Source = T>) {
-        let layout = GridLayout::from_schema(schema);
+    pub fn extend_header_with_schema<T: ?Sized>(&mut self, schema: impl CellsSchema<Source = T>) {
+        let layout = GridLayout::from_schema(&schema);
         self.column_styles = layout.styles;
         for target in 0..layout.depth_max {
             self.push(|b| {
@@ -254,10 +254,10 @@ impl GridBuilder {
     pub fn push_body_with_schema<T: ?Sized>(
         &mut self,
         source: &T,
-        schema: &dyn CellsSchema<Source = T>,
+        schema: impl CellsSchema<Source = T>,
     ) {
         self.push(|b| {
-            b.extend_with_schema(source, schema);
+            b.extend_with_schema(source, &schema);
         });
     }
     pub fn extend_body(&mut self, source: impl IntoIterator<Item = impl Cells>) {
@@ -266,11 +266,11 @@ impl GridBuilder {
     pub fn extend_body_with_schema<T>(
         &mut self,
         source: impl IntoIterator<Item = impl Borrow<T>>,
-        schema: &dyn CellsSchema<Source = T>,
+        schema: impl CellsSchema<Source = T>,
     ) {
         for source in source {
             self.push(|b| {
-                b.extend_with_schema(source.borrow(), schema);
+                b.extend_with_schema(source.borrow(), &schema);
             });
         }
     }
@@ -557,7 +557,7 @@ impl RowBuilder<'_> {
     pub fn extend_with_schema<T: ?Sized>(
         &mut self,
         source: &T,
-        schema: &dyn CellsSchema<Source = T>,
+        schema: impl CellsSchema<Source = T>,
     ) {
         schema.fmt(&mut CellsFormatter::new(
             &mut BodyWriter::new(self),

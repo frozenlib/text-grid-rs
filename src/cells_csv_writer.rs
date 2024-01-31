@@ -7,7 +7,7 @@ use crate::{CellsFormatter, CellsSchema, CellsWrite, RawCell};
 pub fn write_csv<T>(
     csv_writer: &mut Writer<impl Write>,
     source: impl IntoIterator<Item = impl Borrow<T>>,
-    schema: &impl CellsSchema<Source = T>,
+    schema: impl CellsSchema<Source = T>,
     separator: &str,
 ) -> csv::Result<()> {
     let source = source.into_iter();
