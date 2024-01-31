@@ -1,3 +1,5 @@
+use std::fmt::{Debug, Display, Formatter};
+
 use crate::cells_csv_writer::write_csv;
 use crate::{grid_builder::*, Cells, CellsSchema, CellsSchemaExt, DefaultCellsSchema};
 /// Generate a table using the columns defined by [`Cells`](crate::Cells).
@@ -74,4 +76,92 @@ pub fn to_csv_with_schema_ref<'a, T: 'a>(
     schema: impl CellsSchema<Source = T>,
 ) -> String {
     to_csv_with_schema(rows, schema.map_ref())
+}
+
+/// A builder used to create plain-text table.
+#[deprecated = "use `to_grid`"]
+pub struct Grid<T, S = DefaultCellsSchema<T>> {
+    source: Vec<T>,
+    schema: S,
+}
+
+#[allow(deprecated)]
+impl<T: Cells> Default for Grid<T, DefaultCellsSchema<T>> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[allow(deprecated)]
+impl<T: Cells> Grid<T, DefaultCellsSchema<T>> {
+    /// Create a new `Grid` with [`DefaultCellsSchema`] and prepare header rows.
+    pub fn new() -> Self {
+        Self::with_schema(DefaultCellsSchema::default())
+    }
+}
+
+#[allow(deprecated)]
+impl<T, S: CellsSchema<Source = T>> Grid<T, S> {
+    /// Create a new `Grid` with specified schema and prepare header rows.
+    pub fn with_schema(schema: S) -> Self {
+        Grid {
+            source: Vec::new(),
+            schema,
+        }
+    }
+
+    pub fn from_iter_with_schema(iter: impl IntoIterator<Item = T>, schema: S) -> Self {
+        let mut g = Self::with_schema(schema);
+        g.extend(iter);
+        g
+    }
+
+    /// Append a row to the bottom of the grid.
+    pub fn push(&mut self, item: T) {
+        self.source.push(item);
+    }
+
+    pub fn to_csv(&self) -> String {
+        let mut bytes = Vec::new();
+        {
+            let mut csv_writer = csv::Writer::from_writer(&mut bytes);
+            write_csv(&mut csv_writer, &self.source, &self.schema.as_ref(), ".").unwrap();
+            csv_writer.flush().unwrap();
+        }
+        String::from_utf8(bytes).unwrap()
+    }
+
+    fn build(&self) -> GridBuilder {
+        GridBuilder::from_iter_with_schema(&self.source, &self.schema.as_ref())
+    }
+}
+
+#[allow(deprecated)]
+impl<T, S: CellsSchema<Source = T>> Extend<T> for Grid<T, S> {
+    fn extend<I: IntoIterator<Item = T>>(&mut self, iter: I) {
+        self.source.extend(iter);
+    }
+}
+
+#[allow(deprecated)]
+impl<T: Cells> FromIterator<T> for Grid<T> {
+    fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
+        let mut g = Self::new();
+        g.extend(iter);
+        g
+    }
+}
+
+#[allow(deprecated)]
+impl<T, S: CellsSchema<Source = T>> Display for Grid<T, S> {
+    fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
+        Display::fmt(&self.build(), f)
+    }
+}
+
+#[allow(deprecated)]
+impl<T, S: CellsSchema<Source = T>> Debug for Grid<T, S> {
+    fn fmt(&self, f: &mut Formatter) -> std::fmt::Result {
+        Debug::fmt(&self.build(), f)
+    }
 }
