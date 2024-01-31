@@ -654,6 +654,40 @@ fn index_to_value_schema() {
     }
 }
 
+#[test]
+fn to_grid_with_schema_test() {
+    struct X(u8);
+
+    impl Cells for X {
+        fn fmt(f: &mut CellsFormatter<Self>) {
+            f.column("x", |x| x.0);
+        }
+    }
+
+    let schema = cells_schema(|f: &mut CellsFormatter<X>| {
+        f.column("x", |x| x.0);
+    });
+
+    to_grid_with_schema([X(1), X(2)], schema);
+}
+
+#[test]
+fn to_grid_with_schema_test_ref() {
+    struct X(u8);
+
+    impl Cells for X {
+        fn fmt(f: &mut CellsFormatter<Self>) {
+            f.column("x", |x| x.0);
+        }
+    }
+
+    let schema = cells_schema(|f: &mut CellsFormatter<X>| {
+        f.column("x", |x| x.0);
+    });
+
+    to_grid_with_schema_ref(&[X(1), X(2)], schema);
+}
+
 #[track_caller]
 fn do_test<T: Cells>(s: Vec<T>, e: &str) {
     do_test_with_schema(s, DefaultCellsSchema::default(), e);
