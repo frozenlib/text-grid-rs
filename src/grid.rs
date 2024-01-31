@@ -64,6 +64,13 @@ pub fn to_csv_with_schema<T>(
 }
 
 /// A builder used to create plain-text table.
+///
+/// This type will be removed in the future. Use the following methods instead.
+///
+/// - [`to_grid`](crate::to_grid)
+/// - [`to_grid_with_schema`](crate::to_grid_with_schema)
+/// - [`to_csv`](crate::to_csv)
+/// - [`to_csv_with_schema`](crate::to_csv_with_schema)
 #[deprecated = "use `to_grid`"]
 pub struct Grid<T, S = DefaultCellsSchema<T>> {
     source: Vec<T>,
