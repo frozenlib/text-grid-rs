@@ -204,9 +204,9 @@ impl GridBuilder {
         }
     }
 
-    pub fn from_iter_with_schema<T: Borrow<U>, U>(
-        source: impl IntoIterator<Item = T>,
-        schema: &dyn CellsSchema<Source = U>,
+    pub fn from_iter_with_schema<T>(
+        source: impl IntoIterator<Item = impl Borrow<T>>,
+        schema: &dyn CellsSchema<Source = T>,
     ) -> Self {
         let mut this = Self::new();
         this.extend_header_with_schema(schema);
@@ -263,10 +263,10 @@ impl GridBuilder {
     pub fn extend_body(&mut self, source: impl IntoIterator<Item = impl Cells>) {
         self.extend_body_with_schema(source, &DefaultCellsSchema::default());
     }
-    pub fn extend_body_with_schema<T: Borrow<U>, U>(
+    pub fn extend_body_with_schema<T>(
         &mut self,
-        source: impl IntoIterator<Item = T>,
-        schema: &dyn CellsSchema<Source = U>,
+        source: impl IntoIterator<Item = impl Borrow<T>>,
+        schema: &dyn CellsSchema<Source = T>,
     ) {
         for source in source {
             self.push(|b| {

@@ -37,9 +37,9 @@ pub fn to_grid(rows: impl IntoIterator<Item = impl Cells>) -> String {
 }
 
 /// Generate a table using the columns defined by [`CellsSchema`](crate::CellsSchema).
-pub fn to_grid_with_schema<T: Borrow<U>, U>(
-    rows: impl IntoIterator<Item = T>,
-    schema: impl CellsSchema<Source = U>,
+pub fn to_grid_with_schema<T>(
+    rows: impl IntoIterator<Item = impl Borrow<T>>,
+    schema: impl CellsSchema<Source = T>,
 ) -> String {
     GridBuilder::from_iter_with_schema(rows, &schema).to_string()
 }
@@ -50,9 +50,9 @@ pub fn to_csv(rows: impl IntoIterator<Item = impl Cells>) -> String {
 }
 
 /// Generate csv using the columns defined by [`CellsSchema`](crate::CellsSchema).
-pub fn to_csv_with_schema<T: Borrow<U>, U>(
-    rows: impl IntoIterator<Item = T>,
-    schema: impl CellsSchema<Source = U>,
+pub fn to_csv_with_schema<T>(
+    rows: impl IntoIterator<Item = impl Borrow<T>>,
+    schema: impl CellsSchema<Source = T>,
 ) -> String {
     let mut bytes = Vec::new();
     {
