@@ -688,6 +688,67 @@ fn to_grid_with_schema_test_ref() {
     to_grid_with_schema(&[X(1), X(2)], schema);
 }
 
+#[test]
+fn derive_cells_for_record_struct() {
+    #[derive(Cells)]
+    struct X {
+        a: String,
+        b: u32,
+    }
+
+    do_test(
+        vec![
+            X {
+                a: "aaa".into(),
+                b: 100,
+            },
+            X {
+                a: "bbb".into(),
+                b: 200,
+            },
+        ],
+        r"
+  a  |  b  |
+-----|-----|
+ aaa | 100 |
+ bbb | 200 |
+",
+    );
+}
+
+#[test]
+fn derive_cells_for_tuple_struct() {
+    #[derive(Cells)]
+    struct X(String, u32);
+
+    do_test(
+        vec![X("aaa".into(), 100), X("bbb".into(), 200)],
+        r"
+ aaa100 |
+ bbb200 |
+",
+    );
+}
+
+#[test]
+fn derive_cells_for_enum() {
+    #[derive(Cells)]
+    enum X {
+        A,
+        B,
+        C,
+    }
+
+    do_test(
+        vec![X::A, X::B, X::C],
+        r"
+ A |
+ B |
+ C |
+",
+    );
+}
+
 #[track_caller]
 fn do_test<T: Cells>(s: Vec<T>, e: &str) {
     do_test_with_schema(s, DefaultCellsSchema::default(), e);

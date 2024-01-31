@@ -1,0 +1,19 @@
+[package]
+name = "text-grid-macros"
+version = "0.5.0"
+edition = "2021"
+authors = ["frozenlib"]
+license = "MIT OR Apache-2.0"
+readme = "../README.md"
+repository = "https://github.com/frozenlib/text-grid-rs"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+proc-macro = true
+
+[dependencies]
+proc-macro2 = "1.0.78"
+quote = "1.0.35"
+syn = "2.0.48"
+structmeta = "0.2.0"

@@ -3,6 +3,7 @@ use std::marker::PhantomData;
 use derive_ex::derive_ex;
 
 use crate::{CellsFormatter, RawCell};
+pub use text_grid_macros::Cells;
 
 /// A data structure that can be formatted into cells.
 ///
