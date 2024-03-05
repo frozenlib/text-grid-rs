@@ -1,11 +1,13 @@
 [package]
 name = "text-grid-macros"
-version = "0.5.0"
+version = "0.4.1"
 edition = "2021"
 authors = ["frozenlib"]
 license = "MIT OR Apache-2.0"
 readme = "../README.md"
 repository = "https://github.com/frozenlib/text-grid-rs"
+description = "A library to create formatted plain-text tables."
+
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 

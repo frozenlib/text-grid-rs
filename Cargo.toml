@@ -1,8 +1,9 @@
 [package]
 name = "text-grid"
-version = "0.4.0"
+version = "0.4.1"
+edition = "2021"
 authors = ["frozenlib"]
-license = "MIT/Apache-2.0"
+license = "MIT OR Apache-2.0"
 readme = "README.md"
 repository = "https://github.com/frozenlib/text-grid-rs"
 documentation = "https://docs.rs/text-grid/"
@@ -10,13 +11,12 @@ keywords = ["text", "pretty", "table", "grid"]
 categories = ["command-line-interface"]
 description = "A library to create formatted plain-text tables."
 exclude = ["/.vscode/*", "/.github/*"]
-edition = "2021"
 
 [dependencies]
 unicode-width = "0.1.11"
 derive-ex = "0.1.7"
 csv = "1.3.0"
-text-grid-macros = { path = "macros" }
+text-grid-macros = { path = "macros", version = "=0.4.1" }
 
 [dev-dependencies]
 pretty_assertions = "1.4.0"
