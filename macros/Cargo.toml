@@ -15,5 +15,5 @@ proc-macro = true
 [dependencies]
 proc-macro2 = "1.0.78"
 quote = "1.0.35"
-syn = "2.0.48"
-structmeta = "0.2.0"
+syn = "2.0.52"
+structmeta = "0.3.0"
