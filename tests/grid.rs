@@ -652,10 +652,20 @@ fn index_to_value_schema() {
             f.column("header", |&index| &self.0[index])
         }
     }
+    do_test_with_schema(
+        vec![0, 1, 2],
+        IndexToValueSchema(vec!["a", "b", "c"]),
+        r"
+ header |
+--------|
+ a      |
+ b      |
+ c      |",
+    );
 }
 
 #[test]
-fn to_grid_with_schema_test() {
+fn to_grid_with_schema_array() {
     struct X(u8);
 
     impl Cells for X {
@@ -672,7 +682,7 @@ fn to_grid_with_schema_test() {
 }
 
 #[test]
-fn to_grid_with_schema_test_ref() {
+fn to_grid_with_schema_slice() {
     struct X(u8);
 
     impl Cells for X {

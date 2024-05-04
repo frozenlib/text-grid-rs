@@ -15,5 +15,5 @@ fn main() {
     }
 
     let rows = [[1, 2, 3], [4, 5, 6]];
-    print!("{}", to_grid(rows));
+    print!("{}", to_grid_with_schema(rows, MyCellsSchema { len: 3 }));
 }
