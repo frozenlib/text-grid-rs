@@ -392,7 +392,7 @@ impl GridBuilder {
                 expand_cols.clear();
                 expand_cols.push(start);
                 let mut min_width = widths[start];
-                let mut next_width = usize::max_value();
+                let mut next_width = usize::MAX;
                 #[allow(clippy::needless_range_loop)]
                 for column in start + 1..b.column + b.colspan {
                     if b.stretch == 0 || self.column_style(column).stretch {
