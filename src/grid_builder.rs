@@ -249,7 +249,7 @@ impl GridBuilder {
     }
 
     pub fn push_body(&mut self, source: &impl Cells) {
-        self.push_body_with_schema(source, &DefaultCellsSchema::default());
+        self.push_body_with_schema(source, DefaultCellsSchema::default());
     }
     pub fn push_body_with_schema<T: ?Sized>(
         &mut self,
@@ -261,7 +261,7 @@ impl GridBuilder {
         });
     }
     pub fn extend_body(&mut self, source: impl IntoIterator<Item = impl Cells>) {
-        self.extend_body_with_schema(source, &DefaultCellsSchema::default());
+        self.extend_body_with_schema(source, DefaultCellsSchema::default());
     }
     pub fn extend_body_with_schema<T>(
         &mut self,

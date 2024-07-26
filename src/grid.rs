@@ -117,14 +117,14 @@ impl<T, S: CellsSchema<Source = T>> Grid<T, S> {
         let mut bytes = Vec::new();
         {
             let mut csv_writer = csv::Writer::from_writer(&mut bytes);
-            write_csv(&mut csv_writer, &self.source, &self.schema.as_ref(), ".").unwrap();
+            write_csv(&mut csv_writer, &self.source, self.schema.as_ref(), ".").unwrap();
             csv_writer.flush().unwrap();
         }
         String::from_utf8(bytes).unwrap()
     }
 
     fn build(&self) -> GridBuilder {
-        GridBuilder::from_iter_with_schema(&self.source, &self.schema.as_ref())
+        GridBuilder::from_iter_with_schema(&self.source, self.schema.as_ref())
     }
 }
 
