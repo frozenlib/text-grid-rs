@@ -45,8 +45,8 @@ impl CellsWrite for GridLayout {
             stretch,
         });
     }
-    fn content_start(&mut self, _cell: &dyn RawCell) {}
-    fn content_end(&mut self, _cell: &dyn RawCell) {}
+    fn merged_body_start(&mut self, _cell: &dyn RawCell) {}
+    fn merged_body_end(&mut self, _cell: &dyn RawCell) {}
     fn column_start(&mut self, _header: &dyn RawCell) {
         self.set_column_end_style();
         self.depth += 1;
@@ -87,8 +87,8 @@ impl CellsWrite for HeaderWriter<'_, '_> {
     fn content(&mut self, _cell: Option<&dyn RawCell>, _stretch: bool) {
         self.column += 1;
     }
-    fn content_start(&mut self, _cell: &dyn RawCell) {}
-    fn content_end(&mut self, _cell: &dyn RawCell) {}
+    fn merged_body_start(&mut self, _cell: &dyn RawCell) {}
+    fn merged_body_end(&mut self, _cell: &dyn RawCell) {}
     fn column_start(&mut self, _header: &dyn RawCell) {
         if self.depth <= self.target {
             self.push_cell(Cell::empty());
@@ -130,11 +130,11 @@ impl CellsWrite for BodyWriter<'_, '_> {
             self.b.push(cell);
         }
     }
-    fn content_start(&mut self, _cell: &dyn RawCell) {
+    fn merged_body_start(&mut self, _cell: &dyn RawCell) {
         assert!(self.colspan.is_none());
         self.colspan = Some(0);
     }
-    fn content_end(&mut self, cell: &dyn RawCell) {
+    fn merged_body_end(&mut self, cell: &dyn RawCell) {
         let colspan = self.colspan.take().unwrap();
         self.b.push_with_colspan(cell, colspan);
     }

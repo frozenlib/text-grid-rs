@@ -48,8 +48,8 @@ impl<'a> CellsWrite for CsvHeaderWriter<'a> {
         self.has_content = true;
     }
 
-    fn content_start(&mut self, _cell: &dyn RawCell) {}
-    fn content_end(&mut self, _cell: &dyn RawCell) {}
+    fn merged_body_start(&mut self, _cell: &dyn RawCell) {}
+    fn merged_body_end(&mut self, _cell: &dyn RawCell) {}
 
     fn column_start(&mut self, header: &dyn RawCell) {
         self.lens.push(self.value.len());
@@ -94,12 +94,12 @@ impl CellsWrite for CsvBodyWriter {
         self.has_content = true;
     }
 
-    fn content_start(&mut self, cell: &dyn RawCell) {
+    fn merged_body_start(&mut self, cell: &dyn RawCell) {
         self.is_merged = true;
         cell.fmt(&mut self.value);
     }
 
-    fn content_end(&mut self, _cell: &dyn RawCell) {
+    fn merged_body_end(&mut self, _cell: &dyn RawCell) {
         self.is_merged = false;
     }
 

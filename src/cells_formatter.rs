@@ -268,7 +268,7 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
     ) {
         let d = self.d.map(f);
         if let Some(Err(e)) = &d {
-            self.w.content_start(e);
+            self.w.merged_body_start(e);
         }
         ok(&mut CellsFormatter {
             w: self.w,
@@ -276,7 +276,7 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
             stretch: self.stretch,
         });
         if let Some(Err(e)) = &d {
-            self.w.content_end(e);
+            self.w.merged_body_end(e);
         }
     }
 
@@ -319,14 +319,18 @@ pub(crate) trait CellsWrite {
     /// Called once for each cell.
     /// In the case of merged cells, it is also called for each unmerged cells.
     ///
-    /// `cell`: Cell's value. If `None`, it is merged cells.
+    /// `cell`: Cell's value. If `None`, it is merged cells or headers.
     fn content(&mut self, cell: Option<&dyn RawCell>, stretch: bool);
 
-    /// Called when merged cells start.
-    fn content_start(&mut self, cell: &dyn RawCell);
+    /// Called when merged body start.
+    ///
+    /// Not called for headers or when cells are not merged.
+    fn merged_body_start(&mut self, cell: &dyn RawCell);
 
-    /// Called when merged cells end.
-    fn content_end(&mut self, cell: &dyn RawCell);
+    /// Called when merged body end.
+    ///
+    /// Not called for headers or when cells are not merged.
+    fn merged_body_end(&mut self, cell: &dyn RawCell);
 
     /// Called at the start of cells separated by ruled lines.
     fn column_start(&mut self, header: &dyn RawCell);
