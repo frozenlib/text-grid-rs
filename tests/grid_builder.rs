@@ -168,7 +168,7 @@ fn column_separator() {
 }
 
 #[test]
-fn colspan_witdh() {
+fn colspan_width() {
     let mut g = GridBuilder::new();
     g.push(|b| {
         b.push_with_colspan(cell("-----___-----"), 2);
