@@ -254,7 +254,7 @@ pub fn cell_by<F: Fn(&mut String) -> Result>(f: F) -> Cell<impl RawCell> {
 /// // Therefore, the returned value can not be move out of the lifetime of the reference.
 /// ```
 ///
-/// or use [`cell_by`] and `write!`.
+/// or use [`cell_by`] and [`std::write!`].
 ///
 /// ```
 /// use text_grid::*;
@@ -267,7 +267,7 @@ pub fn cell_by<F: Fn(&mut String) -> Result>(f: F) -> Cell<impl RawCell> {
 /// // Therefore, the returned value can not be move out of the lifetime of the reference.
 /// ```
 ///
-/// or use [`cell()`] and `format!`.
+/// or use [`cell()`] and [`std::format!`].
 ///
 /// ```
 /// use text_grid::*;
