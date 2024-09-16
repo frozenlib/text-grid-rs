@@ -783,6 +783,21 @@ fn derive_cells_for_enum() {
     );
 }
 
+#[test]
+fn derive_cells_generic() {
+    #[derive(Cells)]
+    struct X<T>(T);
+
+    do_test(
+        vec![X(1), X(2), X(3)],
+        r"
+ 1 |
+ 2 |
+ 3 |
+",
+    );
+}
+
 #[track_caller]
 fn do_test<T: Cells>(s: Vec<T>, e: &str) {
     do_test_with_schema(s, DefaultCellsSchema::default(), e);

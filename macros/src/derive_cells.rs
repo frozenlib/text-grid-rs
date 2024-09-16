@@ -21,6 +21,7 @@ pub fn build(input: TokenStream) -> Result<TokenStream> {
             dump |= attr.dump;
         }
     }
+    let (impl_g, self_g, _) = input.generics.split_for_impl();
     let mut wcb = WhereClauseBuilder::new(&input.generics);
     let code = match &input.data {
         Data::Struct(data) => build_from_struct(data, &mut wcb)?,
@@ -30,7 +31,7 @@ pub fn build(input: TokenStream) -> Result<TokenStream> {
     let self_ident = &input.ident;
     let wheres = wcb.build(|ty| quote!(#ty : ::text_grid::Cells));
     let code = quote! {
-        impl ::text_grid::Cells for #self_ident #wheres {
+        impl #impl_g ::text_grid::Cells for #self_ident #self_g #wheres {
             fn fmt(f: &mut ::text_grid::CellsFormatter<Self>) {
                 #code
             }
