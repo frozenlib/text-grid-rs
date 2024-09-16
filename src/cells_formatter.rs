@@ -168,7 +168,7 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
 
     /// Creates a [`CellsFormatter`] whose source value was converted.
     ///
-    /// Unlike [`map`](Self::map), it can be converted to an owned value.
+    /// Unlike [`map`](Self::map), `m` can be converted to an owned value.
     pub fn map_with<U>(
         &mut self,
         m: impl FnOnce(&'b T) -> U,

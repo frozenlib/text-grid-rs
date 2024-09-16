@@ -151,7 +151,7 @@ impl<T: Cells + ?Sized> CellsSchema for DefaultCellsSchema<T> {
     }
 }
 
-/// Create [`CellsSchema`] from closure.
+/// Create [`CellsSchema`] from a closure.
 ///
 /// # Examples
 ///
