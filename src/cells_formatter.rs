@@ -37,8 +37,8 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
     /// }
     /// impl Cells for RowData {
     ///     fn fmt(f: &mut CellsFormatter<Self>) {
-    ///         f.column("a", |s| s.a);
-    ///         f.column("b", |s| &s.b);
+    ///         f.column("a", |s| s.a);  // Returns owned value.
+    ///         f.column("b", |s| &s.b); // Returns references.
     ///     }
     /// }
     ///
