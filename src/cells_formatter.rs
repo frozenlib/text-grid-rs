@@ -21,6 +21,42 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
         }
     }
 
+    /// Define column.
+    ///
+    /// - header : Column header's cell. If horizontal alignment is not specified, it is set to the center.
+    /// - f : A function to obtain cell.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use text_grid::*;
+    /// struct RowData {
+    ///     a: u32,
+    ///     b: u32,
+    /// }
+    /// impl Cells for RowData {
+    ///     fn fmt(f: &mut CellsFormatter<Self>) {
+    ///         f.column("a", |s| s.a);
+    ///         f.column("b", |s| s.b);
+    ///     }
+    /// }
+    ///
+    /// let rows = [
+    ///     RowData { a: 300, b: 1 },
+    ///     RowData { a: 2, b: 200 },
+    /// ];
+    /// let g = to_grid(rows);
+    /// assert_eq!(format!("\n{g}"), r#"
+    ///   a  |  b  |
+    /// -----|-----|
+    ///  300 |   1 |
+    ///    2 | 200 |
+    /// "#);
+    /// ```
+    pub fn column<U: Cells>(&mut self, header: impl RawCell, f: impl FnOnce(&'b T) -> U) {
+        self.column_with(header, |cf| cf.content(f));
+    }
+
     /// Define column group. Used to create multi row header.
     ///
     /// - header : Column group header's cell. If horizontal alignment is not specified, it is set to the center.
@@ -117,42 +153,6 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
             self.d.map(f).as_ref().map(|x| x as &dyn RawCell),
             self.stretch,
         );
-    }
-
-    /// Define column.
-    ///
-    /// - header : Column header's cell. If horizontal alignment is not specified, it is set to the center.
-    /// - f : A function to obtain cell.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use text_grid::*;
-    /// struct RowData {
-    ///     a: u32,
-    ///     b: u32,
-    /// }
-    /// impl Cells for RowData {
-    ///     fn fmt(f: &mut CellsFormatter<Self>) {
-    ///         f.column("a", |s| s.a);
-    ///         f.column("b", |s| s.b);
-    ///     }
-    /// }
-    ///
-    /// let rows = [
-    ///     RowData { a: 300, b: 1 },
-    ///     RowData { a: 2, b: 200 },
-    /// ];
-    /// let g = to_grid(rows);
-    /// assert_eq!(format!("\n{g}"), r#"
-    ///   a  |  b  |
-    /// -----|-----|
-    ///  300 |   1 |
-    ///    2 | 200 |
-    /// "#);
-    /// ```
-    pub fn column<U: Cells>(&mut self, header: impl RawCell, f: impl FnOnce(&'b T) -> U) {
-        self.column_with(header, |cf| cf.content(f));
     }
 
     /// Creates a [`CellsFormatter`] whose source value was converted.
