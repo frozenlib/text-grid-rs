@@ -68,15 +68,18 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
     /// ```
     /// use text_grid::*;
     /// let s0 = cells_schema::<i32>(|f| f.content(|x| *x + 1));
-    /// struct X {
+    /// struct RowData {
     ///     a: i32,
     ///     b: i32,
     /// }
-    /// let s1 = cells_schema::<X>(|f| {
+    /// let s1 = cells_schema::<RowData>(|f| {
     ///     f.column_with_schame("a", |x| x.a, &s0);
     ///     f.column_with_schame("b", |x| &x.b, s0.as_ref());
     /// });
-    /// let rows = vec![X { a: 1, b: 2 }, X { a: 4, b: 5 }];
+    /// let rows = vec![
+    ///     RowData { a: 1, b: 2 },
+    ///     RowData { a: 4, b: 5 },
+    /// ];
     /// let g = to_grid_with_schema(&rows, &s1);
     /// assert_eq!(format!("\n{g}"), r#"
     ///  a | b |
