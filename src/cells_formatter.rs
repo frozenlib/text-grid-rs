@@ -38,7 +38,7 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
     /// impl Cells for RowData {
     ///     fn fmt(f: &mut CellsFormatter<Self>) {
     ///         f.column("a", |s| s.a);
-    ///         f.column("b", |s| s.b);
+    ///         f.column("b", |s| &s.b);
     ///     }
     /// }
     ///
@@ -59,6 +59,32 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
     }
 
     /// Define column with schema.
+    ///
+    /// - f : A function to obtain cells.
+    /// - schema : Schema to format cells.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use text_grid::*;
+    /// let s0 = cells_schema::<i32>(|f| f.content(|x| *x + 1));
+    /// struct X {
+    ///     a: i32,
+    ///     b: i32,
+    /// }
+    /// let s1 = cells_schema::<X>(|f| {
+    ///     f.column_with_schame("a", |x| x.a, &s0);
+    ///     f.column_with_schame("b", |x| &x.b, s0.as_ref());
+    /// });
+    /// let rows = vec![X { a: 1, b: 2 }, X { a: 4, b: 5 }];
+    /// let g = to_grid_with_schema(&rows, &s1);
+    /// assert_eq!(format!("\n{g}"), r#"
+    ///  a | b |
+    /// ---|---|
+    ///  2 | 3 |
+    ///  5 | 6 |
+    /// "#);    
+    /// ```
     pub fn column_with_schame<U>(
         &mut self,
         header: impl RawCell,
