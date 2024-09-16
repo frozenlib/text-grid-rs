@@ -1,5 +1,6 @@
 use crate::cell::*;
 use crate::Cells;
+use crate::CellsSchema;
 
 /// Used to define columns.
 ///
@@ -55,6 +56,16 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
     /// ```
     pub fn column<U: Cells>(&mut self, header: impl RawCell, f: impl FnOnce(&'b T) -> U) {
         self.column_with(header, |cf| cf.content(f));
+    }
+
+    /// Define column with schema.
+    pub fn column_with_schame<U>(
+        &mut self,
+        header: impl RawCell,
+        f: impl FnOnce(&'b T) -> U,
+        schema: impl CellsSchema<Source = U>,
+    ) {
+        self.map_with(f, |cf| cf.column_with(header, |cf| schema.fmt(cf)));
     }
 
     /// Define column group. Used to create multi row header.
@@ -143,6 +154,15 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
     /// ```
     pub fn content<U: Cells>(&mut self, f: impl FnOnce(&'b T) -> U) {
         self.map_with(f, U::fmt)
+    }
+
+    /// Define column content with schema. Used to create shared header column.
+    pub fn content_with_schame<U>(
+        &mut self,
+        f: impl FnOnce(&'b T) -> U,
+        schema: impl CellsSchema<Source = U>,
+    ) {
+        self.map_with(f, |cf| schema.fmt(cf));
     }
 
     /// Define column content.
