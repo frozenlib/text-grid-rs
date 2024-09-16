@@ -13,13 +13,13 @@ description = "A library to create formatted plain-text tables."
 exclude = ["/.vscode/*", "/.github/*"]
 
 [dependencies]
-unicode-width = "0.1.11"
-derive-ex = "0.1.7"
+unicode-width = "0.1.13"
+derive-ex = "0.1.8"
 csv = "1.3.0"
 text-grid-macros = { path = "macros", version = "=0.4.1" }
 
 [dev-dependencies]
-pretty_assertions = "1.4.0"
+pretty_assertions = "1.4.1"
 
 [workspace]
 members = ["macros"]

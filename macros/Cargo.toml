@@ -15,7 +15,7 @@ description = "A library to create formatted plain-text tables."
 proc-macro = true
 
 [dependencies]
-proc-macro2 = "1.0.78"
-quote = "1.0.35"
-syn = { version = "2.0.52", features = ["visit", "extra-traits"] }
+proc-macro2 = "1.0.86"
+quote = "1.0.37"
+syn = { version = "2.0.77", features = ["visit", "extra-traits"] }
 structmeta = "0.3.0"
