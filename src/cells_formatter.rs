@@ -73,8 +73,8 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
     ///     b: i32,
     /// }
     /// let s1 = cells_schema::<RowData>(|f| {
-    ///     f.column_with_schame("a", |x| x.a, &s0);
-    ///     f.column_with_schame("b", |x| &x.b, s0.as_ref());
+    ///     f.column_with_schema("a", |x| x.a, &s0);
+    ///     f.column_with_schema("b", |x| &x.b, s0.as_ref());
     /// });
     /// let rows = vec![
     ///     RowData { a: 1, b: 2 },
@@ -88,7 +88,7 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
     ///  5 | 6 |
     /// "#);    
     /// ```
-    pub fn column_with_schame<U>(
+    pub fn column_with_schema<U>(
         &mut self,
         header: impl RawCell,
         f: impl FnOnce(&'b T) -> U,
@@ -186,7 +186,7 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
     }
 
     /// Define column content with schema. Used to create shared header column.
-    pub fn content_with_schame<U>(
+    pub fn content_with_schema<U>(
         &mut self,
         f: impl FnOnce(&'b T) -> U,
         schema: impl CellsSchema<Source = U>,

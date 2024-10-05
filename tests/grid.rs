@@ -297,15 +297,15 @@ fn column_cell_macro() {
 }
 
 #[test]
-fn column_with_schame() {
+fn column_with_schema() {
     let s0 = cells_schema::<i32>(|f| f.content(|x| *x + 1));
     struct X {
         a: i32,
         b: i32,
     }
     let s1 = cells_schema::<X>(|f| {
-        f.column_with_schame("a", |x| x.a, &s0);
-        f.column_with_schame("b", |x| &x.b, s0.as_ref());
+        f.column_with_schema("a", |x| x.a, &s0);
+        f.column_with_schema("b", |x| &x.b, s0.as_ref());
     });
     let x = vec![X { a: 1, b: 2 }, X { a: 4, b: 5 }];
     do_test_with_schema(
