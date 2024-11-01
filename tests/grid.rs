@@ -784,6 +784,91 @@ fn derive_cells_for_enum() {
 }
 
 #[test]
+fn derive_cells_for_enum_tuple_field() {
+    #[derive(Cells)]
+    enum X {
+        A,
+        B(u32),
+        C(u32, u32),
+    }
+
+    do_test(
+        vec![X::A, X::B(1), X::C(2, 3)],
+        r"
+   | 0 | 1 |
+---|---|---|
+ A |   |   |
+ B | 1 |   |
+ C | 2 | 3 |
+",
+    );
+}
+
+#[test]
+fn derive_cells_for_enum_record_field() {
+    #[derive(Cells)]
+    enum X {
+        A,
+        B { x: u32 },
+        C { x: u32, y: u32 },
+    }
+
+    do_test(
+        vec![X::A, X::B { x: 1 }, X::C { x: 2, y: 3 }],
+        r"
+   | x | y |
+---|---|---|
+ A |   |   |
+ B | 1 |   |
+ C | 2 | 3 |
+",
+    );
+}
+
+#[test]
+fn derive_cells_for_enum_both_field2() {
+    #[derive(Cells)]
+    enum X {
+        A,
+        B(u32),
+        C { x: u32, y: u32 },
+    }
+
+    let g = to_grid(vec![X::A, X::B(1), X::C { x: 2, y: 3 }]);
+    assert_eq!(
+        format!("\n{g}"),
+        r"
+   | 0 | x | y |
+---|---|---|---|
+ A |   |   |   |
+ B | 1 |   |   |
+ C |   | 2 | 3 |
+",
+    );
+}
+
+#[test]
+fn derive_cells_for_enum_both_field() {
+    #[derive(Cells)]
+    enum X {
+        A,
+        B(u32),
+        C { x: u32, y: u32 },
+    }
+
+    do_test(
+        vec![X::A, X::B(1), X::C { x: 2, y: 3 }],
+        r"
+   | 0 | x | y |
+---|---|---|---|
+ A |   |   |   |
+ B | 1 |   |   |
+ C |   | 2 | 3 |
+",
+    );
+}
+
+#[test]
 fn derive_cells_generic() {
     #[derive(Cells)]
     struct X<T>(T);

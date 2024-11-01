@@ -6,9 +6,75 @@ use crate::{CellsFormatter, RawCell};
 
 /// Derive [`Cells`].
 ///
-/// - enum : the variant name becomes the cell value.
-/// - record struct : the field name becomes the column name, and the field value becomes the cell value.
-/// - tuple struct : the field value becomes the cell value.
+/// ## For tuple structs
+/// Fields become cell contents.
+/// They are not separated into columns.
+///
+/// ```
+/// use text_grid::{Cells, to_grid};
+///
+/// #[derive(Cells)]
+/// struct X(&'static str, u32);
+///
+/// let g = to_grid(vec![
+///     X("a", 1),
+///     X("bbb", 200)
+/// ]);
+/// assert_eq!(format!("\n{g}"), r#"
+///  a    1 |
+///  bbb200 |
+/// "#);
+/// ```
+///
+/// ## For record structs
+/// Field names become column names, and field values become column values.
+///
+/// ```
+/// use text_grid::{to_grid, Cells};
+///
+/// #[derive(Cells)]
+/// struct X {
+///     a: &'static str,
+///     b: u32,
+/// }
+/// let g = to_grid(vec![
+///     X { a: "a",   b: 1 },
+///     X { a: "bbb", b: 200 }
+/// ]);
+/// assert_eq!(format!("\n{g}"), r#"
+///   a  |  b  |
+/// -----|-----|
+///  a   |   1 |
+///  bbb | 200 |
+/// "#);
+/// ```
+///
+///
+/// ## For enums
+/// Variant names become cell contents.
+/// When variants have fields, field names (for records) or indices (for tuples) become column names,
+/// and field values become column values.
+/// Fields with the same name (for records) or same index (for tuples) must be of the same type.
+///
+/// ```
+/// use text_grid::{to_grid, Cells};
+///
+/// #[derive(Cells)]
+/// enum X {
+///     A,
+///     B(u32),
+///     C { x: u32, y: u32 },
+/// }
+///
+/// let g = to_grid(vec![X::A, X::B(1), X::C { x: 2, y: 3 }]);
+/// assert_eq!(format!("\n{g}"), r"
+///    | 0 | x | y |
+/// ---|---|---|---|
+///  A |   |   |   |
+///  B | 1 |   |   |
+///  C |   | 2 | 3 |
+/// ");
+/// ```
 pub use text_grid_macros::Cells;
 
 /// A data structure that can be formatted into cells.
