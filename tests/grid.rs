@@ -56,7 +56,7 @@ fn column_str() {
         s: &'s str,
     }
 
-    impl<'s> Cells for Source<'s> {
+    impl Cells for Source<'_> {
         fn fmt(f: &mut CellsFormatter<Self>) {
             f.column("a", |x| x.s);
         }

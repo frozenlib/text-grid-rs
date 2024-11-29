@@ -296,7 +296,7 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
         f(self);
     }
 }
-impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, &T> {
+impl<T: ?Sized> CellsFormatter<'_, '_, &T> {
     pub fn unref(&mut self) -> CellsFormatter<T> {
         CellsFormatter {
             w: self.w,
@@ -305,7 +305,7 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, &T> {
         }
     }
 }
-impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, &mut T> {
+impl<T: ?Sized> CellsFormatter<'_, '_, &mut T> {
     pub fn unref(&mut self) -> CellsFormatter<T> {
         CellsFormatter {
             w: self.w,

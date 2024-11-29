@@ -410,7 +410,7 @@ impl GridBuilder {
                 for i in 0..expand_cols.len() {
                     let count = expand_cols.len() - i;
                     let expand_width_all = b.width - width_sum;
-                    let expand_width = (expand_width_all + count - 1) / count;
+                    let expand_width = expand_width_all.div_ceil(count);
                     let expand_width = min(expand_width, next_width - min_width);
                     width_sum += expand_width;
                     widths[expand_cols[i]] += expand_width;

@@ -43,7 +43,7 @@ impl<'a> CsvHeaderWriter<'a> {
     }
 }
 
-impl<'a> CellsWrite for CsvHeaderWriter<'a> {
+impl CellsWrite for CsvHeaderWriter<'_> {
     fn content(&mut self, _cell: Option<&dyn RawCell>, _stretch: bool) {
         self.has_content = true;
     }
