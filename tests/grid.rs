@@ -893,5 +893,5 @@ fn do_test_with_schema<T>(s: Vec<T>, schema: impl CellsSchema<Source = T>, e: &s
     let a = to_grid_with_schema(s, schema).to_string();
     let e = e.trim_matches('\n');
     let a = a.trim_matches('\n');
-    assert!(a == e, "\nexpected :\n{}\nactual :\n{}\n", e, a);
+    assert!(a == e, "\nexpected :\n{e}\nactual :\n{a}\n");
 }

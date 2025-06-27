@@ -14,7 +14,7 @@ fn main() {
     let rows = vec![RowData { a: 300.0, b: 1.0 }, RowData { a: 2.0, b: 200.0 }];
     let g = to_grid(rows);
 
-    print!("{}", g);
+    print!("{g}");
 
     panic!("failed");
 }

@@ -16,5 +16,5 @@ fn main() {
         b.push(cell("Y").right());
         b.push_with_colspan(cell("BBB").center(), 2);
     });
-    print!("{}", g);
+    print!("{g}");
 }

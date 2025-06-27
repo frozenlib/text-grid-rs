@@ -202,8 +202,8 @@ fn stretch() {
 }
 
 fn do_test(g: GridBuilder, e: &str) {
-    let a = format!("{}", g);
+    let a = format!("{g}");
     let e = e.trim_matches('\n');
     let a = a.trim_matches('\n');
-    assert!(a == e, "\nexpected :\n{}\nactual :\n{}\n", e, a);
+    assert!(a == e, "\nexpected :\n{e}\nactual :\n{a}\n");
 }
