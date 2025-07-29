@@ -4,26 +4,34 @@ use proc_macro2::TokenStream;
 use quote::{format_ident, quote, ToTokens};
 use structmeta::StructMeta;
 use syn::{
-    parse2, spanned::Spanned, Data, DataEnum, DataStruct, DeriveInput, Field, Fields, Member,
-    Result, Variant,
+    parse::Parse, parse2, spanned::Spanned, Data, DataEnum, DataStruct, DeriveInput, Expr, Field,
+    Fields, Member, Result, Variant,
 };
 
 use crate::bound::WhereClauseBuilder;
 
-#[derive(StructMeta)]
+#[derive(StructMeta, Default)]
 struct CellsAttr {
     dump: bool,
 }
 
-pub fn build(input: TokenStream) -> Result<TokenStream> {
-    let input: DeriveInput = parse2(input)?;
-    let mut dump = false;
-    for attr in &input.attrs {
-        if attr.meta.path().is_ident("cells") {
-            let attr: CellsAttr = attr.parse_args()?;
-            dump |= attr.dump;
+#[derive(StructMeta, Default)]
+struct CellsAttrForField {
+    header: Option<Expr>,
+}
+
+fn parse_attrs<T: Parse + Default>(name: &str, attrs: &[syn::Attribute]) -> Result<T> {
+    for attr in attrs {
+        if attr.path().is_ident(name) {
+            return attr.parse_args();
         }
     }
+    Ok(Default::default())
+}
+
+pub fn build(input: TokenStream) -> Result<TokenStream> {
+    let input: DeriveInput = parse2(input)?;
+    let attr = parse_attrs::<CellsAttr>("cells", &input.attrs)?;
     let (impl_g, self_g, _) = input.generics.split_for_impl();
     let mut wcb = WhereClauseBuilder::new(&input.generics);
     let code = match &input.data {
@@ -42,7 +50,7 @@ pub fn build(input: TokenStream) -> Result<TokenStream> {
             }
         }
     };
-    if dump {
+    if attr.dump {
         panic!("dump :\n{code}");
     }
     Ok(code)
@@ -50,13 +58,26 @@ pub fn build(input: TokenStream) -> Result<TokenStream> {
 fn build_from_struct(data: &DataStruct, wcb: &mut WhereClauseBuilder) -> Result<TokenStream> {
     let mut codes = Vec::new();
     for (index, field) in data.fields.iter().enumerate() {
-        if let Some(ident) = &field.ident {
+        let attr = parse_attrs::<CellsAttrForField>("cells", &field.attrs)?;
+        let header = if let Some(header) = &attr.header {
+            Some(quote!(#header))
+        } else if let Some(ident) = &field.ident {
             let ident_str = ident.to_string();
-            codes.push(quote!(::text_grid::CellsFormatter::column(f, #ident_str, |x| &x.#ident)));
+            Some(quote!(#ident_str))
+        } else {
+            None
+        };
+        let content = if let Some(ident) = &field.ident {
+            quote!(|x| &x.#ident)
         } else {
             let m = Member::Unnamed(index.into());
-            codes.push(quote!(::text_grid::CellsFormatter::content(f, |x| &x.#m)));
+            quote!(|x| &x.#m)
         };
+        if let Some(header) = header {
+            codes.push(quote!(::text_grid::CellsFormatter::column(f, #header, #content)));
+        } else {
+            codes.push(quote!(::text_grid::CellsFormatter::content(f, #content)));
+        }
         wcb.push_bounds_for_field(field);
     }
     Ok(quote!(#(#codes;)*))

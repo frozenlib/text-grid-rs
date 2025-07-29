@@ -331,3 +331,27 @@ fn derive_single_variant_enum() {
     );
 }
 
+#[test]
+fn derive_custom_header() {
+    #[derive(Cells)]
+    struct Person {
+        #[cells(header = "Full Name")]
+        name: String,
+        #[cells(header = "Years")]
+        age: u32,
+    }
+
+    check(
+        vec![
+            Person { name: "Alice".to_string(), age: 25 },
+            Person { name: "Bob".to_string(), age: 30 },
+        ],
+        r"
+ Full Name | Years |
+-----------|-------|
+ Alice     |    25 |
+ Bob       |    30 |
+",
+    );
+}
+
