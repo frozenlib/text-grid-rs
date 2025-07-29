@@ -19,6 +19,7 @@ struct CellsAttr {
 struct CellsAttrForField {
     header: Option<Expr>,
     body: Option<Expr>,
+    skip: bool,
 }
 
 fn parse_attrs<T: Parse + Default>(name: &str, attrs: &[syn::Attribute]) -> Result<T> {
@@ -71,6 +72,9 @@ fn build_from_struct(
 ) -> Result<()> {
     for (index, field) in data.fields.iter().enumerate() {
         let attr = parse_attrs::<CellsAttrForField>("cells", &field.attrs)?;
+        if attr.skip {
+            continue;
+        }
         let header = if let Some(header) = &attr.header {
             Some(quote!(#header))
         } else if let Some(ident) = &field.ident {

@@ -443,3 +443,35 @@ fn derive_custom_body() {
 ",
     );
 }
+
+#[test]
+fn derive_skip_field() {
+    #[derive(Cells)]
+    struct Person {
+        name: String,
+        #[cells(skip)]
+        password: String,
+        age: u32,
+    }
+
+    check(
+        vec![
+            Person {
+                name: "Alice".to_string(),
+                password: "secret123".to_string(),
+                age: 25,
+            },
+            Person {
+                name: "Bob".to_string(),
+                password: "password456".to_string(),
+                age: 30,
+            },
+        ],
+        r"
+ name  | age |
+-------|-----|
+ Alice |  25 |
+ Bob   |  30 |
+",
+    );
+}
