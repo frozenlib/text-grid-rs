@@ -450,6 +450,7 @@ fn derive_skip_field() {
     struct Person {
         name: String,
         #[cells(skip)]
+        #[allow(dead_code)]
         password: String,
         age: u32,
     }
