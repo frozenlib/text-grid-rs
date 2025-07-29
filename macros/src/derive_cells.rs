@@ -18,6 +18,7 @@ struct CellsAttr {
 #[derive(StructMeta, Default)]
 struct CellsAttrForField {
     header: Option<Expr>,
+    body: Option<Expr>,
 }
 
 fn parse_attrs<T: Parse + Default>(name: &str, attrs: &[syn::Attribute]) -> Result<T> {
@@ -34,9 +35,11 @@ pub fn build(input: TokenStream) -> Result<TokenStream> {
     let attr = parse_attrs::<CellsAttr>("cells", &input.attrs)?;
     let (impl_g, self_g, _) = input.generics.split_for_impl();
     let mut wcb = WhereClauseBuilder::new(&input.generics);
-    let code = match &input.data {
-        Data::Struct(data) => build_from_struct(data, &mut wcb)?,
-        Data::Enum(data) => build_from_enum(data)?,
+    let mut fmt_codes = TokenStream::new();
+    let mut helper_codes = TokenStream::new();
+    match &input.data {
+        Data::Struct(data) => build_from_struct(data, &mut fmt_codes, &mut helper_codes, &mut wcb)?,
+        Data::Enum(data) => build_from_enum(data, &mut fmt_codes)?,
         Data::Union(_) => bail!(input.span(), "`#[derive(Cells)] not supported for unions"),
     };
     let self_ident = &input.ident;
@@ -46,8 +49,13 @@ pub fn build(input: TokenStream) -> Result<TokenStream> {
         impl #impl_g ::text_grid::Cells for #self_ident #self_g #wheres {
             #[allow(unused_variables)]
             fn fmt(f: &mut ::text_grid::CellsFormatter<Self>) {
-                #code
+                #fmt_codes
             }
+        }
+
+        #[automatically_derived]
+        impl #impl_g #self_ident #self_g #wheres {
+            #helper_codes
         }
     };
     if attr.dump {
@@ -55,8 +63,12 @@ pub fn build(input: TokenStream) -> Result<TokenStream> {
     }
     Ok(code)
 }
-fn build_from_struct(data: &DataStruct, wcb: &mut WhereClauseBuilder) -> Result<TokenStream> {
-    let mut codes = Vec::new();
+fn build_from_struct(
+    data: &DataStruct,
+    fmt_codes: &mut TokenStream,
+    helper_codes: &mut TokenStream,
+    wcb: &mut WhereClauseBuilder,
+) -> Result<()> {
     for (index, field) in data.fields.iter().enumerate() {
         let attr = parse_attrs::<CellsAttrForField>("cells", &field.attrs)?;
         let header = if let Some(header) = &attr.header {
@@ -67,22 +79,35 @@ fn build_from_struct(data: &DataStruct, wcb: &mut WhereClauseBuilder) -> Result<
         } else {
             None
         };
-        let content = if let Some(ident) = &field.ident {
+        let body = if let Some(body) = &attr.body {
+            let helper_name = if let Some(ident) = &field.ident {
+                format_ident!("__cells_helper_for_{ident}")
+            } else {
+                format_ident!("__cells_helper_for_{index}")
+            };
+            helper_codes.extend(quote! {
+                fn #helper_name(&self) -> impl ::text_grid::Cells {
+                    #body
+                }
+            });
+            quote!(|x| Self::#helper_name(x))
+        } else if let Some(ident) = &field.ident {
             quote!(|x| &x.#ident)
         } else {
             let m = Member::Unnamed(index.into());
             quote!(|x| &x.#m)
         };
-        if let Some(header) = header {
-            codes.push(quote!(::text_grid::CellsFormatter::column(f, #header, #content)));
+        let code = if let Some(header) = header {
+            quote!(::text_grid::CellsFormatter::column(f, #header, #body))
         } else {
-            codes.push(quote!(::text_grid::CellsFormatter::content(f, #content)));
-        }
+            quote!(::text_grid::CellsFormatter::content(f, #body))
+        };
         wcb.push_bounds_for_field(field);
+        fmt_codes.extend(quote!(#code;));
     }
-    Ok(quote!(#(#codes;)*))
+    Ok(())
 }
-fn build_from_enum(data: &DataEnum) -> Result<TokenStream> {
+fn build_from_enum(data: &DataEnum, fmt_codes: &mut TokenStream) -> Result<()> {
     let mut key_to_offset = HashMap::new();
 
     let mut name_count = 0;
@@ -132,12 +157,13 @@ fn build_from_enum(data: &DataEnum) -> Result<TokenStream> {
         let ident_str = variant.ident.to_string();
         name_arms.push(quote!(Self::#pat => #ident_str));
     }
-    Ok(quote! {
+    fmt_codes.extend(quote! {
         ::text_grid::CellsFormatter::content(f, |x| match x {
             #(#name_arms,)*
         });
         #(#columns;)*
-    })
+    });
+    Ok(())
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

@@ -24,8 +24,16 @@ fn derive_record_struct() {
 
     check(
         vec![
-            Person { name: "Alice", age: 25, active: true },
-            Person { name: "Bob", age: 30, active: false },
+            Person {
+                name: "Alice",
+                age: 25,
+                active: true,
+            },
+            Person {
+                name: "Bob",
+                age: 30,
+                active: false,
+            },
         ],
         r"
  name  | age | active |
@@ -55,9 +63,12 @@ fn derive_unit_struct() {
     #[derive(Cells)]
     struct Empty;
 
-    check(vec![Empty, Empty], r"
+    check(
+        vec![Empty, Empty],
+        r"
 
-");
+",
+    );
 }
 
 #[test]
@@ -131,7 +142,10 @@ fn derive_enum_with_record_fields() {
         vec![
             Event::Click { x: 10, y: 20 },
             Event::KeyPress { key: 'a' },
-            Event::Resize { width: 800, height: 600 },
+            Event::Resize {
+                width: 800,
+                height: 600,
+            },
         ],
         r"
           | x  | y  | key | width | height |
@@ -158,7 +172,10 @@ fn derive_enum_mixed_fields() {
             Data::Empty,
             Data::Single("10".to_string()),
             Data::Pair("1".to_string(), "2".to_string()),
-            Data::Named { value: "42".to_string(), label: "answer".to_string() },
+            Data::Named {
+                value: "42".to_string(),
+                label: "answer".to_string(),
+            },
         ],
         r"
         | 0  | 1 | value | label  |
@@ -181,8 +198,14 @@ fn derive_generic_struct() {
 
     check(
         vec![
-            Container { value: "hello", name: "first".to_string() },
-            Container { value: "world", name: "second".to_string() },
+            Container {
+                value: "hello",
+                name: "first".to_string(),
+            },
+            Container {
+                value: "world",
+                name: "second".to_string(),
+            },
         ],
         r"
  value |  name  |
@@ -199,10 +222,7 @@ fn derive_generic_tuple_struct() {
     struct Pair<T, U>(T, U);
 
     check(
-        vec![
-            Pair("a", "1"),
-            Pair("b", "2"),
-        ],
+        vec![Pair("a", "1"), Pair("b", "2")],
         r"
  a1 |
  b2 |
@@ -225,8 +245,14 @@ fn derive_nested_struct() {
 
     check(
         vec![
-            Outer { inner: Inner { value: 10 }, name: "first".to_string() },
-            Outer { inner: Inner { value: 20 }, name: "second".to_string() },
+            Outer {
+                inner: Inner { value: 10 },
+                name: "first".to_string(),
+            },
+            Outer {
+                inner: Inner { value: 20 },
+                name: "second".to_string(),
+            },
         ],
         r"
  inner |  name  |
@@ -257,7 +283,10 @@ fn derive_nested_enum() {
     check(
         vec![
             Shape::Circle { radius: 5.0 },
-            Shape::Rectangle { width: 10.0, height: 20.0 },
+            Shape::Rectangle {
+                width: 10.0,
+                height: 20.0,
+            },
             Shape::Point(Point { x: 1, y: 2 }),
         ],
         r"
@@ -279,8 +308,20 @@ fn derive_large_tuple_struct() {
 
     check(
         vec![
-            BigTuple("a".to_string(), "b".to_string(), "c".to_string(), "d".to_string(), "e".to_string()),
-            BigTuple("1".to_string(), "2".to_string(), "3".to_string(), "4".to_string(), "5".to_string()),
+            BigTuple(
+                "a".to_string(),
+                "b".to_string(),
+                "c".to_string(),
+                "d".to_string(),
+                "e".to_string(),
+            ),
+            BigTuple(
+                "1".to_string(),
+                "2".to_string(),
+                "3".to_string(),
+                "4".to_string(),
+                "5".to_string(),
+            ),
         ],
         r"
  abcde |
@@ -302,8 +343,20 @@ fn derive_many_fields_struct() {
 
     check(
         vec![
-            ManyFields { a: "a1".to_string(), b: "b1".to_string(), c: "c1".to_string(), d: "d1".to_string(), e: "e1".to_string() },
-            ManyFields { a: "a2".to_string(), b: "b2".to_string(), c: "c2".to_string(), d: "d2".to_string(), e: "e2".to_string() },
+            ManyFields {
+                a: "a1".to_string(),
+                b: "b1".to_string(),
+                c: "c1".to_string(),
+                d: "d1".to_string(),
+                e: "e1".to_string(),
+            },
+            ManyFields {
+                a: "a2".to_string(),
+                b: "b2".to_string(),
+                c: "c2".to_string(),
+                d: "d2".to_string(),
+                e: "e2".to_string(),
+            },
         ],
         r"
  a  | b  | c  | d  | e  |
@@ -343,8 +396,14 @@ fn derive_custom_header() {
 
     check(
         vec![
-            Person { name: "Alice".to_string(), age: 25 },
-            Person { name: "Bob".to_string(), age: 30 },
+            Person {
+                name: "Alice".to_string(),
+                age: 25,
+            },
+            Person {
+                name: "Bob".to_string(),
+                age: 30,
+            },
         ],
         r"
  Full Name | Years |
@@ -355,3 +414,32 @@ fn derive_custom_header() {
     );
 }
 
+#[test]
+fn derive_custom_body() {
+    #[derive(Cells)]
+    struct Person {
+        #[cells(body = format!("Name: {}", self.name))]
+        name: String,
+        #[cells(body = format!("{} years old", self.age))]
+        age: u32,
+    }
+
+    check(
+        vec![
+            Person {
+                name: "Alice".to_string(),
+                age: 25,
+            },
+            Person {
+                name: "Bob".to_string(),
+                age: 30,
+            },
+        ],
+        r"
+    name     |     age      |
+-------------|--------------|
+ Name: Alice | 25 years old |
+ Name: Bob   | 30 years old |
+",
+    );
+}
