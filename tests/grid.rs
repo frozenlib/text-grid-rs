@@ -14,7 +14,7 @@ fn column_u8() {
         }
     }
 
-    do_test(
+    check(
         vec![Source { a: 100, b: 200 }, Source { a: 1, b: 2 }],
         r"
   a  |  b  |
@@ -39,7 +39,7 @@ fn column_u8_ref() {
         }
     }
 
-    do_test(
+    check(
         vec![Source { a: 100, b: 200 }, Source { a: 1, b: 2 }],
         r"
   a  |  b  |
@@ -62,7 +62,7 @@ fn column_str() {
         }
     }
 
-    do_test(
+    check(
         vec![Source { s: "aaa" }, Source { s: "bbb" }],
         r"
   a  |
@@ -88,7 +88,7 @@ fn column_static_str() {
         }
     }
 
-    do_test(
+    check(
         vec![Source { a: 100, b: 200 }, Source { a: 1, b: 2 }],
         r"
   a  |  p  |  b  |
@@ -115,7 +115,7 @@ fn column_group() {
         }
     }
 
-    do_test(
+    check(
         vec![Source { a: 100, b: 200 }, Source { a: 1, b: 2 }],
         r"
      g     |
@@ -145,7 +145,7 @@ fn column_group_differing_level() {
         }
     }
 
-    do_test(
+    check(
         vec![
             Source {
                 a: 300,
@@ -191,7 +191,7 @@ fn column_group_differing_level_2() {
         }
     }
 
-    do_test(
+    check(
         vec![
             Source {
                 a: 300,
@@ -234,7 +234,7 @@ fn column_multipart() {
         }
     }
 
-    do_test(
+    check(
         vec![Source { a: 10, b: 200 }, Source { a: 1, b: 2 }],
         r"
    g   |
@@ -260,7 +260,7 @@ fn column_cell_by() {
         }
     }
 
-    do_test(
+    check(
         vec![Source { a: 10.0, b: 30 }, Source { a: 1.22, b: 40 }],
         r"
    a   | b  |
@@ -285,7 +285,7 @@ fn column_cell_macro() {
         }
     }
 
-    do_test(
+    check(
         vec![Source { a: 10.0, b: 30 }, Source { a: 1.22, b: 40 }],
         r"
    a   | b  |
@@ -308,7 +308,7 @@ fn column_with_schema() {
         f.column_with_schema("b", |x| &x.b, s0.as_ref());
     });
     let x = vec![X { a: 1, b: 2 }, X { a: 4, b: 5 }];
-    do_test_with_schema(
+    check_with_schema(
         x,
         s1,
         r"
@@ -334,7 +334,7 @@ fn map_with_value() {
         }
     }
 
-    do_test(
+    check(
         vec![Source { a: 100, b: 200 }, Source { a: 1, b: 2 }],
         r"
   a  |  b  |
@@ -359,7 +359,7 @@ fn map_with_ref() {
         }
     }
 
-    do_test(
+    check(
         vec![Source { a: 100, b: 200 }, Source { a: 1, b: 2 }],
         r"
   a  |  b  |
@@ -384,7 +384,7 @@ fn map() {
         }
     }
 
-    do_test(
+    check(
         vec![Source { a: 100, b: 200 }, Source { a: 1, b: 2 }],
         r"
   a  |  b  |
@@ -424,7 +424,7 @@ fn with_schema() {
 #[test]
 fn right() {
     let s = cells_schema::<&str>(|f| f.column("x", |x| cell(x).right()));
-    do_test_with_schema(
+    check_with_schema(
         vec!["a", "ab", "abc"],
         &s,
         r"
@@ -450,7 +450,7 @@ fn baseline() {
         }
     }
 
-    do_test(
+    check(
         vec![
             Source {
                 a: 100.1,
@@ -484,7 +484,7 @@ fn root_content() {
         }
     }
 
-    do_test(
+    check(
         vec![Source { a: 10, b: 1 }, Source { a: 30, b: 100 }],
         r"
  10   1 |
@@ -531,7 +531,7 @@ fn cells_f() {
         f.column("debug", |x| cells_f!("{x:?}"));
     });
 
-    do_test_with_schema(
+    check_with_schema(
         vec![1.0, 0.95, 123.45, 0.000001, 1.0e-20, 10000000000.0],
         s,
         r"
@@ -553,7 +553,7 @@ fn cells_f_padding() {
         f.column("+++++++++", |x| cells_f!("{x}"));
     });
 
-    do_test_with_schema(
+    check_with_schema(
         vec![1.0],
         s,
         r"
@@ -571,7 +571,7 @@ fn empty_group() {
         f.column("1", |_| cell(1));
     });
 
-    do_test_with_schema(
+    check_with_schema(
         vec![()],
         s,
         r"
@@ -584,7 +584,7 @@ fn empty_group() {
 
 #[test]
 fn result() {
-    do_test(
+    check(
         vec![Ok(["a", "b"]), Err("********")],
         r"
   0  | 1  |
@@ -608,7 +608,7 @@ fn zero_rows() {
         }
     }
 
-    do_test(
+    check(
         Vec::<Source>::new(),
         r"
  a | b |
@@ -633,7 +633,7 @@ fn zero_rows_column_group() {
         }
     }
 
-    do_test(
+    check(
         Vec::<Source>::new(),
         r"
    g   |
@@ -656,7 +656,7 @@ fn zero_rows_colspan() {
         }
     }
 
-    do_test(
+    check(
         Vec::<Source>::new(),
         r"
  x |
@@ -676,7 +676,7 @@ fn index_to_value_schema() {
             f.column("header", |&index| &self.0[index])
         }
     }
-    do_test_with_schema(
+    check_with_schema(
         vec![0, 1, 2],
         IndexToValueSchema(vec!["a", "b", "c"]),
         r"
@@ -730,7 +730,7 @@ fn derive_cells_for_record_struct() {
         b: u32,
     }
 
-    do_test(
+    check(
         vec![
             X {
                 a: "aaa".into(),
@@ -755,7 +755,7 @@ fn derive_cells_for_tuple_struct() {
     #[derive(Cells)]
     struct X(String, u32);
 
-    do_test(
+    check(
         vec![X("aaa".into(), 100), X("bbb".into(), 200)],
         r"
  aaa100 |
@@ -773,7 +773,7 @@ fn derive_cells_for_enum() {
         C,
     }
 
-    do_test(
+    check(
         vec![X::A, X::B, X::C],
         r"
  A |
@@ -792,7 +792,7 @@ fn derive_cells_for_enum_tuple_field() {
         C(u32, u32),
     }
 
-    do_test(
+    check(
         vec![X::A, X::B(1), X::C(2, 3)],
         r"
    | 0 | 1 |
@@ -813,7 +813,7 @@ fn derive_cells_for_enum_record_field() {
         C { x: u32, y: u32 },
     }
 
-    do_test(
+    check(
         vec![X::A, X::B { x: 1 }, X::C { x: 2, y: 3 }],
         r"
    | x | y |
@@ -856,7 +856,7 @@ fn derive_cells_for_enum_both_field() {
         C { x: u32, y: u32 },
     }
 
-    do_test(
+    check(
         vec![X::A, X::B(1), X::C { x: 2, y: 3 }],
         r"
    | 0 | x | y |
@@ -873,7 +873,7 @@ fn derive_cells_generic() {
     #[derive(Cells)]
     struct X<T>(T);
 
-    do_test(
+    check(
         vec![X(1), X(2), X(3)],
         r"
  1 |
@@ -884,12 +884,12 @@ fn derive_cells_generic() {
 }
 
 #[track_caller]
-fn do_test<T: Cells>(s: Vec<T>, e: &str) {
-    do_test_with_schema(s, DefaultCellsSchema::default(), e);
+fn check<T: Cells>(s: Vec<T>, e: &str) {
+    check_with_schema(s, DefaultCellsSchema::default(), e);
 }
 
 #[track_caller]
-fn do_test_with_schema<T>(s: Vec<T>, schema: impl CellsSchema<Source = T>, e: &str) {
+fn check_with_schema<T>(s: Vec<T>, schema: impl CellsSchema<Source = T>, e: &str) {
     let a = to_grid_with_schema(s, schema).to_string();
     let e = e.trim_matches('\n');
     let a = a.trim_matches('\n');
