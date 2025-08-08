@@ -419,7 +419,7 @@ impl GridBuilder {
         }
         widths
     }
-    fn row(&self, row: usize) -> Option<Cursor> {
+    fn row(&self, row: usize) -> Option<Cursor<'_>> {
         if row < self.rows.len() {
             Some(Cursor {
                 grid: self,
@@ -431,7 +431,7 @@ impl GridBuilder {
             None
         }
     }
-    fn rows(&self) -> impl Iterator<Item = Cursor> {
+    fn rows(&self) -> impl Iterator<Item = Cursor<'_>> {
         (0..self.rows.len()).map(|row| self.row(row).unwrap())
     }
 

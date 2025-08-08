@@ -2,6 +2,7 @@ use text_grid::{Cell, CellStyle, Cells, CellsFormatter, HorizontalAlignment, Raw
 
 #[test]
 fn impl_cell() {
+    #[allow(dead_code)]
     struct X(String);
 
     impl RawCell for X {

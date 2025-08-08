@@ -231,7 +231,7 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
     }
 
     /// Creates a [`CellsFormatter`] that outputs the body cell only when the source value satisfies the condition.
-    pub fn filter(&mut self, f: impl FnOnce(&T) -> bool) -> CellsFormatter<T> {
+    pub fn filter(&mut self, f: impl FnOnce(&T) -> bool) -> CellsFormatter<'_, '_, T> {
         CellsFormatter {
             w: self.w,
             d: self.d.filter(|data| f(data)),
@@ -297,7 +297,7 @@ impl<'a, 'b, T: ?Sized> CellsFormatter<'a, 'b, T> {
     }
 }
 impl<T: ?Sized> CellsFormatter<'_, '_, &T> {
-    pub fn unref(&mut self) -> CellsFormatter<T> {
+    pub fn unref(&mut self) -> CellsFormatter<'_, '_, T> {
         CellsFormatter {
             w: self.w,
             d: self.d.map(|x| &**x),
@@ -306,7 +306,7 @@ impl<T: ?Sized> CellsFormatter<'_, '_, &T> {
     }
 }
 impl<T: ?Sized> CellsFormatter<'_, '_, &mut T> {
-    pub fn unref(&mut self) -> CellsFormatter<T> {
+    pub fn unref(&mut self) -> CellsFormatter<'_, '_, T> {
         CellsFormatter {
             w: self.w,
             d: self.d.map(|x| &**x),
